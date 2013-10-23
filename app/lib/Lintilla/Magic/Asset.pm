@@ -36,6 +36,7 @@ sub render {
       die $err if $err;
     }
     else {
+      # Wait
       flock( $lh, LOCK_EX );
     }
   }
