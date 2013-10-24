@@ -2,6 +2,8 @@ package Lintilla::Magic::Asset;
 
 use Moose;
 
+use Dancer ':syntax';
+
 use Fcntl qw( :flock );
 use Lintilla::Util qw( wait_for_file );
 use Path::Class;
@@ -30,6 +32,7 @@ sub render {
     file($lockf)->parent->mkpath;
     open my $lh, '>>', $lockf or die "Can't write $lockf: $!\n";
     if ( flock( $lh, LOCK_EX | LOCK_NB ) ) {
+      debug "Rendering $fn";
       eval { $self->provider->create };
       my $err = @_;
       close $lh;
