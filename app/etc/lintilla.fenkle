@@ -6,14 +6,14 @@ ProxyRequests Off
   ServerName lintilla.fenkle
   ServerAlias lintilla
 
-  DocumentRoot /opt/newstream/lintilla/app/public
-  CustomLog /opt/newstream/lintilla/app/logs/apache.access_log combined
-  ErrorLog /opt/newstream/lintilla/app/logs/apache.error_log
+  DocumentRoot /opt/lintilla/app/public
+  CustomLog /opt/lintilla/app/logs/apache.access_log combined
+  ErrorLog /opt/lintilla/app/logs/apache.error_log
   LogLevel debug
-  RewriteLog /opt/newstream/lintilla/app/logs/apache.rewrite_log
+  RewriteLog /opt/lintilla/app/logs/apache.rewrite_log
   RewriteLogLevel 9
 
-  <Directory "/opt/newstream/lintilla/app/public">
+  <Directory "/opt/lintilla/app/public">
     AllowOverride None
     Options +ExecCGI -MultiViews +SymLinksIfOwnerMatch
     Order allow,deny
