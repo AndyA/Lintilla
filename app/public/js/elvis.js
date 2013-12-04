@@ -23,19 +23,16 @@ $(function() {
     return db.path + '/' + img[0] + '/var/' + variant + '/' + img[1] + '.jpg';
   }
 
-  getJson('/config/recipe', function(recipe) {
-    console.log(recipe);
-    getJson('/catalogue.json', function(db) {
-      var $c = $('#content');
-      var imgs = db.img;
-      for (var i = 0; i < imgs.length; i++) {
-        var iurl = imageURL(db, imgs[i], 'slice');
-        $c.append($('<img></img>').attr({
-          class: 'slice',
-          src: iurl
-        }));
-      }
-    });
+  getJson('/catalogue.json', function(db) {
+    var $c = $('#content');
+    var imgs = db.img;
+    for (var i = 0; i < imgs.length; i++) {
+      var iurl = imageURL(db, imgs[i], 'slice');
+      $c.append($('<img></img>').attr({
+        class: 'slice',
+        src: iurl
+      }));
+    }
   });
 
 });
