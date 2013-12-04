@@ -2,8 +2,14 @@ $(function() {
   var here = new URLParser(window.location.href);
 
   var img_path = '/asset/elvis';
+  var kinds;
+  var state = "idle";
+  var margin = 300;
+  var page = 50;
+  var current = 0;
 
   function getJson(url, cb) {
+    console.log("getJson(" + url + ")");
     $.ajax({
       url: url,
       context: this,
@@ -19,25 +25,48 @@ $(function() {
     return sz;
   }
 
-  function imageURL(kinds, img, variant) {
+  function imageURL(img, variant) {
     var kind = kinds[img.kind_id];
     if (!variant || variant == 'full') return img_path + '/' + kind + '/' + img.acno + '.jpg';
     return img_path + '/' + kind + '/var/' + variant + '/' + img.acno + '.jpg';
   }
 
-  var loaded = new Join(function() {});
+  function addImages(imgs) {
+    var $c = $('#content');
+    for (var i = 0; i < imgs.length; i++) {
+      var iurl = imageURL(imgs[i], 'slice');
+      $c.append($('<img></img>').attr({
+        class: 'slice',
+        src: iurl
+      }));
+    }
+  }
 
-  getJson('/data/ref/kind', function(kinds) {
-    getJson('/data/page/50/0', function(imgs) {
-      var $c = $('#content');
-      for (var i = 0; i < imgs.length; i++) {
-        var iurl = imageURL(kinds, imgs[i], 'slice');
-        $c.append($('<img></img>').attr({
-          class: 'slice',
-          src: iurl
-        }));
+  function loadNext() {
+    state = 'loading';
+    getJson('/data/page/' + page + '/' + current, function(imgs) {
+      if (imgs.length) {
+        addImages(imgs);
+        current += imgs.length;
+        state = 'idle';
+      }
+      else {
+        state = 'done';
       }
     });
+  }
+
+  $(window).scroll(function(ev) {
+    if (window.innerHeight + window.scrollY + margin >= document.body.offsetHeight) {
+      if (state == 'idle') {
+        loadNext();
+      }
+    }
+  });
+
+  getJson('/data/ref/kind', function(k) {
+    kinds = k;
+    loadNext();
   });
 
 });

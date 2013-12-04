@@ -5,12 +5,13 @@ function Join(cb) {
 }
 
 Join.prototype = {
-  getCallback: function() {
+  getCallback: function(chain) {
     var id = 'x' + this.id++;
     var reg = this.reg;
     var cb = this.cb;
     reg[id] = true;
     return function() {
+      if (chain) chain();
       if (!(id in reg)) return;
       delete reg[id];
       for (var x in reg) if (reg.hasOwnProperty(x)) return;
