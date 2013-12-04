@@ -1,5 +1,6 @@
 package Lintilla::Site;
 use Dancer ':syntax';
+use Dancer::Plugin::Database;
 
 use Lintilla::Image::Scaler;
 use Lintilla::Magic::Asset;
