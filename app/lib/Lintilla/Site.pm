@@ -1,7 +1,7 @@
 package Lintilla::Site;
 use Dancer ':syntax';
-use Dancer::Plugin::Database;
 
+use Lintilla::Data;
 use Lintilla::Image::Scaler;
 use Lintilla::Magic::Asset;
 use Path::Class;
