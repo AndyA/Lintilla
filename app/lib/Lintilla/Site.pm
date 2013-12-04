@@ -7,7 +7,7 @@ use Path::Class;
 
 our $VERSION = '0.1';
 
-use constant DOCROOT => '/opt/newstream/lintilla/app/public';    # FIXME
+use constant DOCROOT => '/opt/lintilla/app/public';    # FIXME
 
 get '/' => sub {
   template 'index';
