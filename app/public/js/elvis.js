@@ -47,7 +47,7 @@ $(function() {
     getJson('/data/page/' + page + '/' + current, function(imgs) {
       if (imgs.length) {
         addImages(imgs);
-        current += imgs.length;
+        current += page;
         state = 'idle';
       }
       else {
