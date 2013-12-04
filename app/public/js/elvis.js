@@ -25,6 +25,8 @@ $(function() {
     return img_path + '/' + kind + '/var/' + variant + '/' + img.acno + '.jpg';
   }
 
+  var loaded = new Join(function() {});
+
   getJson('/data/ref/kind', function(kinds) {
     getJson('/data/page/50/0', function(imgs) {
       var $c = $('#content');
