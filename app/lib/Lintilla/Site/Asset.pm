@@ -37,6 +37,8 @@ my %RECIPE = (
   },
 );
 
+get '/data/recipe' => sub { \%RECIPE };
+
 sub our_uri_for {
   my $uri = request->uri_for( join '/', '', @_ );
   $uri =~ s@/dispatch\.f?cgi/@/@;    # hack

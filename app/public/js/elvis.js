@@ -2,7 +2,7 @@ $(function() {
   var here = new URLParser(window.location.href);
 
   var img_path = '/asset/elvis';
-  var kinds;
+  var kinds, recipe;
   var state = "idle";
   var margin = 300;
   var page = 50;
@@ -64,9 +64,12 @@ $(function() {
     }
   });
 
-  getJson('/data/ref/kind', function(k) {
-    kinds = k;
-    loadNext();
+  getJson('/data/recipe', function(r) {
+    recipe = r;
+    getJson('/data/ref/kind', function(k) {
+      kinds = k;
+      loadNext();
+    });
   });
 
 });
