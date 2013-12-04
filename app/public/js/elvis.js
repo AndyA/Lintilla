@@ -1,6 +1,8 @@
 $(function() {
   var here = new URLParser(window.location.href);
 
+  var img_path = '/asset/elvis';
+
   function getJson(url, cb) {
     $.ajax({
       url: url,
@@ -17,22 +19,25 @@ $(function() {
     return sz;
   }
 
-  function imageURL(db, img, variant) {
-    var tail = '/' + img[0] + '/' + img[1] + '.jpg';
-    if (!variant || variant == 'full') return db.path + '/' + img[0] + '/' + img[1] + '.jpg';
-    return db.path + '/' + img[0] + '/var/' + variant + '/' + img[1] + '.jpg';
+  function imageURL(kinds, img, variant) {
+    var kind = kinds[img.kind_id];
+    if (!variant || variant == 'full') return img_path + '/' + kind + '/' + img.acno + '.jpg';
+    return img_path + '/' + kind + '/var/' + variant + '/' + img.acno + '.jpg';
   }
 
-  getJson('/catalogue.json', function(db) {
-    var $c = $('#content');
-    var imgs = db.img;
-    for (var i = 0; i < imgs.length; i++) {
-      var iurl = imageURL(db, imgs[i], 'slice');
-      $c.append($('<img></img>').attr({
-        class: 'slice',
-        src: iurl
-      }));
-    }
+  getJson('/data/ref/kind', function(kinds) {
+    console.log("kinds: ", kinds);
+    getJson('/data/page/50/0', function(imgs) {
+      console.log("imgs: ", imgs);
+      var $c = $('#content');
+      for (var i = 0; i < imgs.length; i++) {
+        var iurl = imageURL(kinds, imgs[i], 'slice');
+        $c.append($('<img></img>').attr({
+          class: 'slice',
+          src: iurl
+        }));
+      }
+    });
   });
 
 });

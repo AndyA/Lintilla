@@ -21,7 +21,11 @@ my %REF = map { $_ => 1 } qw(
 sub refdata {
   my $name = shift;
   die "Bad refdata name $name" unless $REF{$name};
-  database->selectall_hashref( "SELECT id, name FROM elvis_$name", 'id' );
+  my $ref
+   = database->selectall_hashref( "SELECT id, name FROM elvis_$name",
+    'id' );
+  $_ = $_->{name} for values %$ref;
+  return $ref;
 }
 
 sub page {

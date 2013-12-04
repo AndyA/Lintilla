@@ -4,6 +4,7 @@ use Dancer ':syntax';
 use Lintilla::Image::Scaler;
 use Lintilla::Magic::Asset;
 use Moose;
+use Path::Class;
 
 =head1 NAME
 
