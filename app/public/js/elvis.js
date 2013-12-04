@@ -26,9 +26,7 @@ $(function() {
   }
 
   getJson('/data/ref/kind', function(kinds) {
-    console.log("kinds: ", kinds);
     getJson('/data/page/50/0', function(imgs) {
-      console.log("imgs: ", imgs);
       var $c = $('#content');
       for (var i = 0; i < imgs.length; i++) {
         var iurl = imageURL(kinds, imgs[i], 'slice');
