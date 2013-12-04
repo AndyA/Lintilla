@@ -60,6 +60,14 @@ sub _save {
    or die "Can't link $tmp to $fn: $!\n";
 }
 
+sub fit {
+  my ( $self, $iw, $ih ) = @_;
+  my $spec = $self->spec;
+  return $self->_fit( $iw, $ih, $spec->{width}, $spec->{height} )
+   if $iw > $spec->{width} || $ih > $spec->{height};
+  return ( $iw, $ih );
+}
+
 sub create {
   my $self     = shift;
   my $out_file = $self->out_file;
@@ -68,17 +76,13 @@ sub create {
   my $spec = $self->spec;
 
   my ( $iw, $ih ) = $img->getBounds;
-  if ( $iw > $spec->{width} || $ih > $spec->{height} ) {
-    my ( $ow, $oh )
-     = $self->_fit( $iw, $ih, $spec->{width}, $spec->{height} );
-    #    debug "scale ${iw}x${ih} -> ${ow}x${oh}";
+  my ( $ow, $oh ) = $self->fit( $iw, $ih );
+  if ( $iw != $ow || $ih != $oh ) {
     my $thb = GD::Image->new( $ow, $oh, 1 );
     $thb->copyResampled( $img, 0, 0, 0, 0, $ow, $oh, $iw, $ih );
-    #    debug "save $out_file";
     $self->_save( $out_file, $thb );
   }
   else {
-    #    debug "duplicate to $out_file";
     $self->_save( $out_file, $img );
   }
 }
