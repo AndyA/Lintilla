@@ -1,4 +1,4 @@
-package Lintilla::Data;
+package Lintilla::Site::Data;
 
 use Moose;
 

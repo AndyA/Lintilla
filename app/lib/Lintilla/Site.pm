@@ -1,9 +1,9 @@
 package Lintilla::Site;
 use Dancer ':syntax';
 
-use Lintilla::Data;
 use Lintilla::Image::Scaler;
 use Lintilla::Magic::Asset;
+use Lintilla::Site::Data;
 use Path::Class;
 
 our $VERSION = '0.1';
