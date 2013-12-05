@@ -11,9 +11,9 @@ use Data::Dumper;
 use Digest::SHA1;
 use Path::Class;
 
-use constant SRC  => dir('/data/newstream/elvis');
-use constant DST  => dir('/data/newstream/lintilla/app/public/asset');
-use constant WORK => dir('/data/newstream/elvis.tmp');
+use constant SRC  => dir('app/public/asset');
+use constant DST  => dir( SRC, 'rehash' );
+use constant WORK => dir( SRC, 'work' );
 use constant HOST => 'localhost';
 use constant USER => 'root';
 use constant PASS => '';
@@ -36,28 +36,25 @@ WORK->rmtree;
 sub hash {
   my ( $dbh, $root ) = @_;
 
-  my $sel
-   = $dbh->prepare( "SELECT k.name AS kind, i.acno "
-     . "FROM elvis_image AS i, elvis_kind AS k "
-     . "WHERE i.kind_id = k.id AND i.hash IS NULL" );
+  my $sel = $dbh->prepare("SELECT DISTINCT(hash) FROM elvis_image");
 
   my $upd
-   = $dbh->prepare("UPDATE elvis_image SET hash = ? WHERE acno = ?");
+   = $dbh->prepare("UPDATE elvis_image SET hash = ? WHERE hash = ?");
 
   $sel->execute;
   while ( my $row = $sel->fetchrow_hashref ) {
-    my $src = mk_src_name( SRC, $row->{kind}, $row->{acno} );
-    say "cleanup $src";
+    my $src = mk_name( SRC, $row->{hash} );
     die "$src not found" unless -f $src;
     my $tmp = cleanup($src);
     my $sum = hash_file($tmp);
-    my $dst = mk_dst_name( DST, $sum );
-    say "$src -> $dst";
+    my $dst = mk_name( DST, $sum );
+
+    print "$src -> $dst\n";
 
     transaction(
       $dbh,
       sub {
-        $upd->execute( $sum, $row->{acno} );
+        $upd->execute( $sum, $row->{hash} );
         $dst->parent->mkpath;
         rename $tmp, $dst unless -e $dst;
       }
@@ -73,12 +70,7 @@ sub cleanup {
   return $dst;
 }
 
-sub mk_src_name {
-  my ( $root, $kind, $id ) = @_;
-  return file( $root, $kind, "$id.jpg" );
-}
-
-sub mk_dst_name {
+sub mk_name {
   my ( $root, $hash ) = @_;
   my @path = $hash =~ /^(...)(...)(.+)$/;
   $path[-1] .= '.jpg';
