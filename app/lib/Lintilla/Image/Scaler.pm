@@ -1,9 +1,9 @@
 package Lintilla::Image::Scaler;
 
 use Moose;
-#use Dancer ':syntax';
+use Dancer ':syntax';
 
-use GD;
+use Image::Size;
 use LWP::UserAgent;
 use List::Util qw( min max );
 use Path::Class;
@@ -25,39 +25,20 @@ sub _fit {
   return ( int( $iw * $sc ), int( $ih * $sc ) );
 }
 
-sub _load_source {
+sub _find_source {
   my $self = shift;
-  if ( defined( my $in_file = $self->in_file ) ) {
-    #    debug("loading $in_file");
-    my $img = GD::Image->new("$in_file");
-    defined $img or die "Can't load $in_file";
-    return $img;
-  }
 
-  if ( defined( my $in_url = $self->in_url ) ) {
-    #    debug("fetching $in_url");
-    my $resp = LWP::UserAgent->new->get($in_url);
-    die $resp->status_line if $resp->is_error;
-    my $img = GD::Image->new( $resp->content );
-    defined $img or die "Can't load $in_url";
-    return $img;
-  }
+  return ( file( $self->in_file ), 0 ) if defined $self->in_file;
 
-  die "No source provided (in_file or in_url)";
-}
+  my $in_url = $self->in_url;
+  die "No source specified" unless defined $in_url;
 
-sub _save {
-  my ( $self, $fn, $img, $quality ) = @_;
-  $quality ||= 90;
-  my $tmp = file("$fn.tmp");
-  die "$tmp exists" if -e "$tmp";
-  $tmp->parent->mkpath;
-  my $of = $tmp->openw;
-  $of->binmode;
-  print $of $img->jpeg($quality);
+  my $tmp = file( Path::Class::tempdir, 'tmp.jpg' );
 
-  rename "$tmp", "$fn"
-   or die "Can't link $tmp to $fn: $!\n";
+  my $rs = LWP::UserAgent->new->get( $in_url, ':content_file' => "$tmp" );
+  die $rs->status_line if $rs->is_error;
+
+  return ( $tmp, 1 );
 }
 
 sub fit {
@@ -71,18 +52,14 @@ sub fit {
 sub create {
   my $self     = shift;
   my $out_file = $self->out_file;
-  my $img      = $self->_load_source;
+  my ( $src, $is_tmp ) = $self->_find_source;
 
-  my ( $iw, $ih ) = $img->getBounds;
+  my ( $iw, $ih ) = imgsize("$src");
   my ( $ow, $oh ) = $self->fit( $iw, $ih );
-  if ( $iw != $ow || $ih != $oh ) {
-    my $thb = GD::Image->new( $ow, $oh, 1 );
-    $thb->copyResampled( $img, 0, 0, 0, 0, $ow, $oh, $iw, $ih );
-    $self->_save( $out_file, $thb );
-  }
-  else {
-    $self->_save( $out_file, $img );
-  }
+
+  my @cmd = ( 'convert', $src, -resize => "${ow}x${oh}", $out_file );
+  system @cmd and die "convert failed: $?";
+  $src->parent->rmtree;
 }
 
 1;
