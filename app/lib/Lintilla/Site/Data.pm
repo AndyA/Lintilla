@@ -34,7 +34,7 @@ sub page {
   my ( $start, $size ) = @_;
   $size = MAX_PAGE if $size > MAX_PAGE;
   database->selectall_arrayref(
-    "SELECT * FROM elvis_image ORDER BY acno ASC LIMIT ?, ?",
+    "SELECT * FROM elvis_image ORDER BY seq ASC LIMIT ?, ?",
     { Slice => {} },
     $start, $size
   );
