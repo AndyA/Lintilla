@@ -73,8 +73,6 @@ sub create {
   my $out_file = $self->out_file;
   my $img      = $self->_load_source;
 
-  my $spec = $self->spec;
-
   my ( $iw, $ih ) = $img->getBounds;
   my ( $ow, $oh ) = $self->fit( $iw, $ih );
   if ( $iw != $ow || $ih != $oh ) {

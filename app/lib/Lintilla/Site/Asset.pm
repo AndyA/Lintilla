@@ -45,22 +45,25 @@ sub our_uri_for {
   return $uri;
 }
 
-get '/asset/**/var/*/*.jpg' => sub {
-  my ( $path, $recipe, $id ) = splat;
+get '/asset/var/*/**.jpg' => sub {
+  my ( $recipe, $id ) = splat;
+
+  debug "recipe: $recipe, id: @$id";
 
   die "Bad recipe" unless $recipe =~ /^\w+$/;
   my $spec = $RECIPE{$recipe};
   die "Unknown recipe $recipe" unless defined $spec;
 
-  my $name = "$id.jpg";
+  my @name = @$id;
+  $name[-1] .= '.jpg';
 
-  my @p = ( asset => @$path );
-  my @v = ( var   => $recipe );
+  my @p = ('asset');
+  my @v = ( var => $recipe );
 
   my $in_url = our_uri_for( @p,
-    ( defined $spec->{base} ? ( var => $spec->{base} ) : () ), $name );
+    ( defined $spec->{base} ? ( var => $spec->{base} ) : () ), @name );
 
-  my $out_file = file( DOCROOT, @p, @v, $name );
+  my $out_file = file( DOCROOT, @p, @v, @name );
 
   debug "in_url: $in_url";
   debug "out_file: $out_file";
@@ -79,7 +82,7 @@ get '/asset/**/var/*/*.jpg' => sub {
 
   $magic->render or die "Can't render";
 
-  my $self = our_uri_for( @p, @v, $name );
+  my $self = our_uri_for( @p, @v, @name );
 
   return redirect $self, 307;
 };

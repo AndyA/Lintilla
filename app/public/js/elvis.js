@@ -1,8 +1,8 @@
 $(function() {
   var here = new URLParser(window.location.href);
 
-  var img_path = '/asset/elvis';
-  var kinds, recipe;
+  var img_path = '/asset';
+  var recipe;
   var state = "idle";
   var margin = 300;
   var page = 50;
@@ -26,9 +26,8 @@ $(function() {
   }
 
   function imageURL(img, variant) {
-    var kind = kinds[img.kind_id];
-    if (!variant || variant == 'full') return img_path + '/' + kind + '/' + img.acno + '.jpg';
-    return img_path + '/' + kind + '/var/' + variant + '/' + img.acno + '.jpg';
+    if (!variant || variant == 'full') return img_path + '/' + img.hash + '.jpg';
+    return img_path + '/var/' + variant + '/' + img.hash + '.jpg';
   }
 
   function addImages(imgs) {
@@ -66,10 +65,7 @@ $(function() {
 
   getJson('/data/recipe', function(r) {
     recipe = r;
-    getJson('/data/ref/kind', function(k) {
-      kinds = k;
-      loadNext();
-    });
+    loadNext();
   });
 
 });
