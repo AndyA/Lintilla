@@ -14,7 +14,7 @@ use Time::Local qw( timegm );
 use XML::LibXML::XPathContext;
 use XML::LibXML;
 
-use constant ELVIS => 'fail/app/public/asset/elvis';
+use constant ELVIS => 'app/public/asset/elvis';
 use constant HOST  => 'localhost';
 use constant USER  => 'root';
 use constant PASS  => '';
