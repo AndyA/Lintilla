@@ -11,13 +11,14 @@ use Data::Dumper;
 use Digest::SHA1;
 use Path::Class;
 
-use constant SRC  => dir('/data/newstream/elvis');
-use constant DST  => dir('/data/newstream/lintilla/app/public/asset');
-use constant WORK => dir('/data/newstream/elvis.tmp');
-use constant HOST => 'localhost';
-use constant USER => 'root';
-use constant PASS => '';
-use constant DB   => 'elvis';
+use constant SRC     => dir('/data/newstream/elvis');
+use constant DST     => dir('/data/newstream/lintilla/app/public/asset');
+use constant WORK    => dir('/data/newstream/elvis.tmp');
+use constant HOST    => 'localhost';
+use constant USER    => 'root';
+use constant PASS    => '';
+use constant DB      => 'elvis';
+use constant CLEANUP => 0;
 
 $| = 1;
 
@@ -47,9 +48,8 @@ sub hash {
   $sel->execute;
   while ( my $row = $sel->fetchrow_hashref ) {
     my $src = mk_src_name( SRC, $row->{kind}, $row->{acno} );
-    say "cleanup $src";
     die "$src not found" unless -f $src;
-    my $tmp = cleanup($src);
+    my $tmp = CLEANUP ? cleanup($src) : $src;
     my $sum = hash_file($tmp);
     my $dst = mk_dst_name( DST, $sum );
     say "$src -> $dst";
@@ -59,7 +59,7 @@ sub hash {
       sub {
         $upd->execute( $sum, $row->{acno} );
         $dst->parent->mkpath;
-        rename $tmp, $dst unless -e $dst;
+        ( CLEANUP ? rename $tmp, $dst : link $tmp, $dst ) unless -e $dst;
       }
     );
   }
@@ -68,6 +68,7 @@ sub hash {
 sub cleanup {
   state $seq = 1;
   my $src = shift;
+  say "cleanup $src";
   my $dst = file( WORK, sprintf '%08d.jpg', $seq++ );
   system 'convert', $src, $dst;
   return $dst;
