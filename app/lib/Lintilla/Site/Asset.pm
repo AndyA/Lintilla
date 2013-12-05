@@ -60,13 +60,13 @@ filter assets => sub {
   my $data = shift;
   for my $asset (@$data) {
     $asset->{var}{full} = {
-      width  => $asset->{width},
-      height => $asset->{height},
+      width  => $asset->{width} * 1,
+      height => $asset->{height} * 1,
       url    => url_for_asset($asset),
     };
     for my $recipe ( keys %RECIPE ) {
       my $sc = Lintilla::Image::Scaler->new( spec => $RECIPE{$recipe} );
-      my ( $vw, $vh ) = $sc->fit( $asset->{width}, $asset->{height} );
+      my ( $vw, $vh ) = $sc->fit( $asset->{width} * 1, $asset->{height} * 1 );
       $asset->{var}{$recipe} = {
         width  => $vw,
         height => $vh,
