@@ -134,8 +134,10 @@ CREATE TABLE `elvis_image` (
   `height` int(5) unsigned DEFAULT NULL,
   `annotation` text,
   `headline` text,
+  `seq` double DEFAULT NULL,
   PRIMARY KEY (`acno`),
-  KEY `elvis_image_hash` (`hash`)
+  KEY `elvis_image_hash` (`hash`),
+  KEY `elvis_image_seq` (`seq`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
