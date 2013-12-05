@@ -20,24 +20,15 @@ $(function() {
     });
   }
 
-  function boxFit(iw, ih, maxw, maxh) {
-    var scale = Math.min(maxw / iw, maxh / ih);
-    var sz = [Math.floor(iw * scale), Math.floor(ih * scale)];
-    return sz;
-  }
-
-  function imageURL(img, variant) {
-    if (!variant || variant == 'full') return img_path + '/' + img.hash + '.jpg';
-    return img_path + '/var/' + variant + '/' + img.hash + '.jpg';
-  }
-
   function addImages(imgs) {
     var $c = $('#content');
     for (var i = 0; i < imgs.length; i++) {
-      var iurl = imageURL(imgs[i], 'slice');
+      var info = imgs[i]['var']['slice'];
       $c.append($('<img></img>').attr({
         class: 'slice',
-        src: iurl
+        src: info.url,
+        width: info.width,
+        height: info.height
       }));
     }
   }

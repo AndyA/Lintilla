@@ -5,6 +5,8 @@ use Moose;
 use Dancer ':syntax';
 use Dancer::Plugin::Database;
 
+use Lintilla::Filter qw( cook );
+
 =head1 NAME
 
 Lintilla::Data - Data handlers
@@ -39,11 +41,14 @@ sub page {
 }
 
 prefix '/data' => sub {
+  get '/ref/index' => sub {
+    return [sort keys %REF];
+  };
   get '/ref/:name' => sub {
     return refdata( param('name') );
   };
   get '/page/:size/:start' => sub {
-    return page( param('start'), param('size') );
+    return cook assets => page( param('start'), param('size') );
   };
 };
 

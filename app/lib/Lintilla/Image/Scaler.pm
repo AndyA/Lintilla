@@ -15,7 +15,7 @@ Lintilla::Image::Scaler - Scale / crop / pad an image
 =cut
 
 has ['in_file', 'in_url'] => ( is => 'ro' );
-has out_file => ( is => 'ro', required => 1 );
+has out_file => ( is => 'ro' );
 has spec => ( is => 'ro', isa => 'HashRef', required => 1 );
 
 sub _fit {

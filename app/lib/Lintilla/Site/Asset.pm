@@ -1,6 +1,7 @@
 package Lintilla::Site::Asset;
 
 use Dancer ':syntax';
+use Lintilla::Filter qw( filter );
 use Lintilla::Image::Scaler;
 use Lintilla::Magic::Asset;
 use Moose;
@@ -44,6 +45,37 @@ sub our_uri_for {
   $uri =~ s@/dispatch\.f?cgi/@/@;    # hack
   return $uri;
 }
+
+sub url_for_asset {
+  my ( $asset, $variant ) = @_;
+
+  my @p = $asset->{hash} =~ /^(.{3})(.{3})(.+)$/;
+  my $name = join( '/', @p ) . '.jpg';
+
+  return "/asset/$name" unless defined $variant && $variant ne 'full';
+  return "/asset/var/$variant/$name";
+}
+
+filter assets => sub {
+  my $data = shift;
+  for my $asset (@$data) {
+    $asset->{var}{full} = {
+      width  => $asset->{width},
+      height => $asset->{height},
+      url    => url_for_asset($asset),
+    };
+    for my $recipe ( keys %RECIPE ) {
+      my $sc = Lintilla::Image::Scaler->new( spec => $RECIPE{$recipe} );
+      my ( $vw, $vh ) = $sc->fit( $asset->{width}, $asset->{height} );
+      $asset->{var}{$recipe} = {
+        width  => $vw,
+        height => $vh,
+        url    => url_for_asset( $asset, $recipe ),
+      };
+    }
+  }
+  return $data;
+};
 
 get '/asset/var/*/**.jpg' => sub {
   my ( $recipe, $id ) = splat;
