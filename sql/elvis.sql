@@ -117,6 +117,7 @@ DROP TABLE IF EXISTS `elvis_image`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `elvis_image` (
+  `hash` char(64) DEFAULT NULL COMMENT 'SHA1 hash',
   `acno` int(10) unsigned NOT NULL COMMENT 'Asset id',
   `kind_id` int(10) unsigned DEFAULT NULL,
   `collection_id` int(10) unsigned DEFAULT NULL,
@@ -133,7 +134,8 @@ CREATE TABLE `elvis_image` (
   `height` int(5) unsigned DEFAULT NULL,
   `annotation` text,
   `headline` text,
-  PRIMARY KEY (`acno`)
+  PRIMARY KEY (`acno`),
+  KEY `elvis_image_hash` (`hash`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
