@@ -5,7 +5,7 @@ $(function() {
   var recipe;
   var state = "idle";
   var margin = 300;
-  var page = 50;
+  var page = 100;
   var current = 0;
   var ref = {};
 
