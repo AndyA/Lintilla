@@ -14,7 +14,7 @@ img {
 }
 
 img.slice {
-  border: 1px solid #444;
-  margin: 4px 10px;
-  padding: 4px;
+  margin: 6px;
+  padding: 0;
+  background-color: #333;
 }
