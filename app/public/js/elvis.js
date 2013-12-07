@@ -9,6 +9,39 @@ $(function() {
   var current = 0;
   var ref = {};
 
+  function traverseUntil(elt, move, test) {
+    var ofs = elt.offset();
+    for (;;) {
+      var prev = move(elt);
+      if (!prev.length) break;
+      var pofs = prev.offset();
+      if (test(pofs, ofs)) break;
+      elt = prev;
+      ofs = pofs;
+    }
+
+    return elt;
+
+  }
+
+  function searchLeft(elt) {
+    return traverseUntil(elt, function(e) {
+      return e.prev()
+    },
+    function(p, o) {
+      return p.left >= o.left
+    });
+  }
+
+  function searchRight(elt) {
+    return traverseUntil(elt, function(e) {
+      return e.next()
+    },
+    function(p, o) {
+      return p.left <= o.left
+    });
+  }
+
   function getJson(url, cb) {
     console.log("getJson(" + url + ")");
     $.ajax({
@@ -20,16 +53,26 @@ $(function() {
     });
   }
 
+  function addImage($c, info) {
+    $c.append($('<img></img>').attr({
+      class: 'slice',
+      src: info.url,
+      width: info.width,
+      height: info.height
+    }).click(function(ev) {
+      // Image clicked
+      console.log("clicked, this=", this, ", ev=", ev);
+      var $this = $(this);
+      $('.outline').removeClass('outline');
+      searchLeft($this).addClass('outline');
+      searchRight($this).addClass('outline');
+    }));
+  }
+
   function addImages(imgs) {
     var $c = $('#content');
     for (var i = 0; i < imgs.length; i++) {
-      var info = imgs[i]['var']['slice'];
-      $c.append($('<img></img>').attr({
-        class: 'slice',
-        src: info.url,
-        width: info.width,
-        height: info.height
-      }));
+      addImage($c, imgs[i]['var']['slice']);
     }
   }
 
@@ -69,5 +112,4 @@ $(function() {
       })(idx[i]);
     }
   });
-
 });

@@ -18,3 +18,7 @@ img.slice {
   margin: 6px;
   background-color: #333;
 }
+
+.outline {
+  border: 2px dotted red;
+}
