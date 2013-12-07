@@ -19,6 +19,8 @@ img.slice {
   background-color: #333;
 }
 
-.outline {
-  border: 2px dotted red;
+div.detail {
+  height: 300px;
+  width: 100%;
+  background-color: white;
 }

@@ -63,9 +63,11 @@ $(function() {
       // Image clicked
       console.log("clicked, this=", this, ", ev=", ev);
       var $this = $(this);
-      $('.outline').removeClass('outline');
-      searchLeft($this).addClass('outline');
-      searchRight($this).addClass('outline');
+      var $eol = searchRight($this);
+      $('.detail').remove();
+      $eol.after($('<div>Boo!</div>').attr({
+        class: 'detail'
+      }));
     }));
   }
 
