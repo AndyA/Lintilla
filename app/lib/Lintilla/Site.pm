@@ -11,4 +11,8 @@ get '/' => sub {
   template 'index';
 };
 
+get '/search' => sub {
+  template 'index';
+};
+
 true;

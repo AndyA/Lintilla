@@ -4,6 +4,7 @@ use Moose;
 
 use Dancer ':syntax';
 use Dancer::Plugin::Database;
+use Sphinx::Search;
 
 use Lintilla::Filter qw( cook );
 
@@ -39,6 +40,26 @@ sub page {
   );
 }
 
+sub search {
+  my ( $start, $size, $query ) = @_;
+  $size = MAX_PAGE if $size > MAX_PAGE;
+
+  my $sph = Sphinx::Search->new();
+  $sph->SetMatchMode(SPH_MATCH_ALL);
+  $sph->SetSortMode(SPH_SORT_RELEVANCE);
+  $sph->SetLimits( $start, $size );
+  my $results = $sph->Query( $query, 'elvis_idx' );
+
+  my $ids = join ', ', map { $_->{doc} } @{ $results->{matches} };
+  my $sql
+   = "SELECT * FROM elvis_image "
+   . "WHERE acno IN ($ids) "
+   . "ORDER BY FIELD(acno, $ids) "
+   . "LIMIT ?, ?";
+
+  database->selectall_arrayref( $sql, { Slice => {} }, $start, $size );
+}
+
 prefix '/data' => sub {
   get '/ref/index' => sub {
     return [sort keys %REF];
@@ -48,6 +69,10 @@ prefix '/data' => sub {
   };
   get '/page/:size/:start' => sub {
     return cook assets => page( param('start'), param('size') );
+  };
+  get '/search/:size/:start' => sub {
+    return cook assets =>
+     search( param('start'), param('size'), param('q') );
   };
 };
 
