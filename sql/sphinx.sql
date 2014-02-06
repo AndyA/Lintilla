@@ -34,5 +34,3 @@ ON (
   AND i.photographer_id = ph.id
   AND i.subject_id = s.id
 )
-LIMIT 3
-\G
