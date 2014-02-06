@@ -25,3 +25,15 @@ div.detail {
   background-color: white;
   color: black;
 }
+
+div#popup {
+  position: fixed;
+  height: 5em;
+  left: 4em;
+  right: 4em;
+  top: 4em;
+  z-index: 1000;
+  background-color: rgba(255,255,255,0.5);
+  color: black;
+  padding: 1em;
+}
