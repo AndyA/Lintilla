@@ -11,6 +11,9 @@
     <script src="js/join.js"></script>
     <script src="js/elvis.js"></script>
     <link rel="stylesheet" href="css/style.css" />
+    <script>
+      ds = "<%= ds %>";
+    </script>
   </head>
   <body>
     <div id="container">

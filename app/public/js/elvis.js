@@ -9,6 +9,20 @@ $(function() {
   var current = 0;
   var ref = {};
 
+  function setURLArgs(url, parms) {
+    var u = new URLParser(url);
+    var p = u.part('path').split('/');
+    for (var i = 0; i < p.length; i++) {
+      var pp = p[i];
+      if (pp.substr(0, 1) == ':') {
+        var v = parms[pp.substr(1)];
+        if (v !== null) p[i] = v;
+      }
+    }
+    u.part('path', p.join('/'));
+    return u.toString();
+  }
+
   function traverseUntil(elt, move, test) {
     var ofs = elt.offset();
     for (;;) {
@@ -82,7 +96,12 @@ $(function() {
 
   function loadNext() {
     state = 'loading';
-    getJson('/data/page/' + page + '/' + current, function(imgs) {
+    var dsu = setURLArgs(ds, {
+      size: page,
+      start: current
+    });
+    console.log(dsu);
+    getJson(dsu, function(imgs) {
       if (imgs.length) {
         addImages(imgs);
         current += page;
