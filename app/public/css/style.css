@@ -28,7 +28,6 @@ div.detail {
 
 div#popup {
   position: fixed;
-  height: 5em;
   left: 4em;
   right: 4em;
   top: 4em;
