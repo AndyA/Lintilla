@@ -67,6 +67,8 @@ $(function() {
       $('.detail').remove();
       $eol.after($('<div>Boo!</div>').attr({
         class: 'detail'
+      }).animate({
+        height: '400px'
       }));
     }));
   }
