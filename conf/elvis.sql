@@ -1,10 +1,11 @@
 SELECT
   i.acno,
   i.annotation,
-  i.hash,
   i.headline,
   i.width,
   i.height,
+  i.width / i.height AS aspect,
+  i.width * i.height AS area,
   TO_DAYS(i.origin_date) * 86400 + TIME_TO_SEC(i.origin_date) AS `origin_date`,
   i.collection_id,
   i.copyright_class_id,
