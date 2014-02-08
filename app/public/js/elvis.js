@@ -3,8 +3,8 @@ $(function() {
 
   var img_path = '/asset';
   var state = "idle";
-  var margin = 2000;
-  var page = 200;
+  var margin = 1000;
+  var page = 100;
   var current = 0;
   var ref = {};
 
