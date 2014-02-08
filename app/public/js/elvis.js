@@ -2,7 +2,6 @@ $(function() {
   var here = new URLParser(window.location.href);
 
   var img_path = '/asset';
-  var recipe;
   var state = "idle";
   var margin = 2000;
   var page = 200;
@@ -121,10 +120,7 @@ $(function() {
     }
   });
 
-  getJson('/data/recipe', function(r) {
-    recipe = r;
-    loadNext();
-  });
+  loadNext();
 
   getJson('/data/ref/index', function(idx) {
     for (var i = 0; i < idx.length; i++) {
