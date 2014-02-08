@@ -8,13 +8,16 @@ use Lintilla::Site::Data;
 our $VERSION = '0.1';
 
 get '/' => sub {
-  template 'index', { ds => request->uri_for('/data/page/:size/:start') };
+  template 'index',
+   { q => '', ds => request->uri_for('/data/page/:size/:start') };
 };
 
 get '/search' => sub {
+  my $q = param('q');
   template 'index',
-   { ds =>
-     request->uri_for( '/data/search/:size/:start', { q => param('q') } ) };
+   {q  => $q,
+    ds => request->uri_for( '/data/search/:size/:start', { q => $q } ),
+   };
 };
 
 true;
