@@ -46,3 +46,8 @@ plugins:
       - "SET NAMES 'utf8'"
       - "SET CHARACTER SET 'utf8'"
     log_queries: 1
+
+engines:
+  JSON:
+    pretty: 0
+
