@@ -54,10 +54,9 @@ sub search {
   my $sql
    = "SELECT * FROM elvis_image "
    . "WHERE acno IN ($ids) "
-   . "ORDER BY FIELD(acno, $ids) "
-   . "LIMIT ?, ?";
+   . "ORDER BY FIELD(acno, $ids) ";
 
-  database->selectall_arrayref( $sql, { Slice => {} }, $start, $size );
+  database->selectall_arrayref( $sql, { Slice => {} } );
 }
 
 prefix '/data' => sub {
