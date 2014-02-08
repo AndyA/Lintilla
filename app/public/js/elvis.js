@@ -4,8 +4,8 @@ $(function() {
   var img_path = '/asset';
   var recipe;
   var state = "idle";
-  var margin = 300;
-  var page = 100;
+  var margin = 2000;
+  var page = 200;
   var current = 0;
   var ref = {};
 
