@@ -18,23 +18,27 @@ use constant DOCROOT => '/opt/lintilla/app/public';    # FIXME
 # TODO move this into a config file.
 my %RECIPE = (
   display => {
-    width  => 1024,
-    height => 576,
+    width   => 1024,
+    height  => 576,
+    quality => 95,
   },
   thumb => {
-    width  => 80,
-    height => 80,
-    base   => 'display',
+    width   => 80,
+    height  => 80,
+    quality => 75,
+    base    => 'display',
   },
   small => {
-    width  => 200,
-    height => 200,
-    base   => 'display',
+    width   => 200,
+    height  => 200,
+    quality => 75,
+    base    => 'display',
   },
   slice => {
-    width  => 800,
-    height => 150,
-    base   => 'display',
+    width   => 800,
+    height  => 150,
+    quality => 85,
+    base    => 'display',
   },
 );
 

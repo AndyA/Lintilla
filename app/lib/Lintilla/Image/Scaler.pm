@@ -57,7 +57,11 @@ sub create {
   my ( $iw, $ih ) = imgsize("$src");
   my ( $ow, $oh ) = $self->fit( $iw, $ih );
 
-  my @cmd = ( 'convert', $src, -resize => "${ow}x${oh}", $out_file );
+  my @cmd = (
+    'convert', $src, -strip => -resize => "${ow}x${oh}",
+    -quality => $self->spec->{quality},
+    $out_file
+  );
   system @cmd and die "convert failed: $?";
   $src->parent->rmtree;
 }
