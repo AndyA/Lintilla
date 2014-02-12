@@ -28,7 +28,7 @@ sub _fit {
 sub _find_source {
   my $self = shift;
 
-  return ( file( $self->in_file ), 0 ) if defined $self->in_file;
+  return ( file( $self->in_file ), sub { } ) if defined $self->in_file;
 
   my $in_url = $self->in_url;
   die "No source specified" unless defined $in_url;
@@ -38,7 +38,7 @@ sub _find_source {
   my $rs = LWP::UserAgent->new->get( $in_url, ':content_file' => "$tmp" );
   die $rs->status_line if $rs->is_error;
 
-  return ( $tmp, 1 );
+  return ( $tmp, sub { $tmp->parent->rmtree } );
 }
 
 sub fit {
@@ -52,7 +52,8 @@ sub fit {
 sub create {
   my $self     = shift;
   my $out_file = $self->out_file;
-  my ( $src, $is_tmp ) = $self->_find_source;
+  ( my $tmp_file = $out_file ) =~ s/\.([^.]+)$/.tmp.$1/;
+  my ( $src, $cleanup ) = $self->_find_source;
 
   my ( $iw, $ih ) = imgsize("$src");
   my ( $ow, $oh ) = $self->fit( $iw, $ih );
@@ -60,12 +61,15 @@ sub create {
   my @cmd = (
     'convert', $src, -strip => -resize => "${ow}x${oh}",
     -quality => $self->spec->{quality},
-    $out_file
+    $tmp_file
   );
+
   system @cmd and die "convert failed: $?";
-  $src->parent->rmtree if $is_tmp;
+  rename $tmp_file, $out_file or die $!;
+  $cleanup->();
 }
 
 1;
 
 # vim:ts=2:sw=2:sts=2:et:ft=perl
+## Please see file perltidy.ERR
