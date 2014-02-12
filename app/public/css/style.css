@@ -19,6 +19,10 @@ img.slice {
   background-color: #333;
 }
 
+/*img:-moz-loading {
+  visibility: hidden;
+}*/
+
 div.detail {
   height: 10px;
   width: 100%;
