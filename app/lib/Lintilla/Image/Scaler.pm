@@ -63,7 +63,7 @@ sub create {
     $out_file
   );
   system @cmd and die "convert failed: $?";
-  $src->parent->rmtree;
+  $src->parent->rmtree if $is_tmp;
 }
 
 1;
