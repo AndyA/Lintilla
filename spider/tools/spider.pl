@@ -14,11 +14,12 @@ use LWP::UserAgent;
 use Sys::Hostname;
 use URI;
 
-use constant HOST  => 'localhost';
-use constant USER  => 'root';
-use constant PASS  => '';
-use constant DB    => 'spider';
-use constant PROXY => 'http://andy:froonbat1127@spider.hexten.net:3128/';
+use constant HOST => 'localhost';
+use constant USER => 'root';
+use constant PASS => '';
+use constant DB   => 'spider';
+#use constant PROXY => 'http://andy:froonbat1127@spider.hexten.net:3128/';
+use constant PROXY => 'http://spider.vpn.hexten.net:3128/';
 
 my @ROOT = qw(
  http://explore.gateway.bbc.co.uk/ResearchGateway/researchgateway/music1.aspx
@@ -33,12 +34,15 @@ my @ROOT = qw(
 
 $| = 1;
 
+my %INSERT = ();    # defer_insert cache
+
 GetOptions() or die;
 
 my $verb = shift // 'help';
 
 if ( $verb eq 'init' ) {
   my $dbh = dbh(DB);
+  reap($dbh);
   for my $root (@ROOT) {
     schedule( $dbh, $root, 0 );
   }
@@ -84,9 +88,7 @@ sub start_work {
   my $dbh = shift;
   my @work;
   return @work if @work = got_url($dbh);
-  claim_url( $dbh, { worker_id => undef, last_visit => undef } );
-  return @work if @work = got_url($dbh);
-  claim_url( $dbh, { worker_id => undef }, ['last_visit'] );
+  claim_url( $dbh, { worker_id => undef }, ['last_visit', 'rank'] );
   return got_url($dbh);
 }
 
@@ -97,7 +99,13 @@ sub fill_in {
 
 sub end_work {
   my ( $dbh, $rec ) = @_;
-  my $frec = fill_in( { %$rec, last_visit => time, worker_id => undef } );
+  my $frec = fill_in(
+    { %$rec,
+      last_visit => time,
+      worker_id  => undef,
+      visits     => ( $rec->{visits} || 0 ) + 1
+    }
+  );
   update( $dbh, 'spider_page', $frec, { url_hash => $frec->{url_hash} } );
 }
 
@@ -105,7 +113,8 @@ sub spider {
   my $dbh   = shift;
   my @queue = @_;
 
-  my $ua   = LWP::UserAgent->new;
+  my $ua = LWP::UserAgent->new;
+  $ua->timeout(20);
   my $json = JSON->new->canonical->utf8;
   $ua->proxy( ['http', 'https'], PROXY );
 
@@ -124,8 +133,10 @@ sub spider {
         next;
       }
 
-      print "Fetching $url\n";
-      my $resp = $ua->get($url);
+      print "Fetching $url (rank: $job->{rank})\n";
+      my $now     = time;
+      my $resp    = $ua->get($url);
+      my $elapsed = time - $now;
 
       my $got = {
         url     => $job->{url},
@@ -134,19 +145,22 @@ sub spider {
         header  => $json->encode( headers($resp) ),
         body    => $resp->content,
         mime    => scalar( $resp->content_type ),
+        elapsed => $elapsed,
       };
 
       if ( $got->{mime} eq 'text/html' ) {
+        print "Links: ";
         for my $link ( find_links($resp) ) {
-          next unless should_visit($link);
+          print ".";
           via( $dbh, $link, $job->{url} );
           schedule( $dbh, $link, $job->{rank} + 1 );
         }
+        print "\n";
       }
 
       end_work( $dbh, $got );
 
-      print sprintf "%s\n", $resp->status_line;
+      print sprintf "%s (elapsed: %d)\n", $resp->status_line, $elapsed;
     }
   }
 }
@@ -187,6 +201,9 @@ sub should_visit {
   my $url = shift;
   return unless $url->host =~ /\.bbc\.co\.uk$/;
   return if $url->host eq 'www.bbc.co.uk';
+  return if $url->host eq 'news.bbc.co.uk';
+  return if $url->host eq 'm.bbc.co.uk';
+  return if $url->host eq 'genome.ch.bbc.co.uk';
   return if $url->host eq 'ssl.bbc.co.uk';
   return if $url->host eq 'iplayerhelp.external.bbc.co.uk';
   return if $url->host =~ /\bbetsie\b/;
@@ -252,16 +269,51 @@ sub transaction {
   $dbh->do('COMMIT');
 }
 
+sub extended_insert {
+  my ( $dbh, $ins ) = @_;
+  for my $tbl ( keys %$ins ) {
+    for my $flds ( keys $ins->{$tbl} ) {
+      my @k = split /:/, $flds;
+      my @sql
+       = ( "INSERT INTO `$tbl` (", join( ', ', map "`$_`", @k ), ") VALUES " );
+      my $vc = '(' . join( ', ', map '?', @k ) . ')';
+      my @data = @{ $ins->{$tbl}{$flds} };
+      push @sql, join ', ', ($vc) x @data;
+      my $sql = join '', @sql;
+      my @bind = map @$_, @data;
+      dump_sql( $sql, @bind );
+      my $sth = $dbh->prepare($sql);
+      $sth->execute(@bind);
+    }
+  }
+}
+
 sub insert {
   my ( $dbh, $tbl, $rec ) = @_;
   my @k = sort keys %$rec;
-  my $sql
-   = "INSERT INTO `$tbl` ("
-   . join( ', ', map "`$_`", @k )
-   . ") VALUES ("
-   . join( ', ', map '?', @k ) . ")";
-  my $sth = $dbh->prepare($sql);
-  $sth->execute( @{$rec}{@k} );
+  my $ins = { $tbl => { join( ':', @k ) => [[@{$rec}{@k}]] } };
+  extended_insert( $dbh, $ins );
+}
+
+sub flush_pending {
+  my $dbh = shift;
+  my $ins = {%INSERT};
+  %INSERT = ();
+  $dbh->do('START TRANSACTION');
+  eval { extended_insert( $dbh, $ins ) };
+  if ( my $err = $@ ) {
+    $dbh->do('ROLLBACK');
+    die $err;
+  }
+  $dbh->do('COMMIT');
+}
+
+sub defer_insert {
+  my ( $dbh, $tbl, $rec ) = @_;
+
+  my @k = sort keys %$rec;
+  my $k = join ':', @k;
+  push @{ $INSERT{$tbl}{$k} }, [@{$rec}{@k}];
 }
 
 sub make_where {

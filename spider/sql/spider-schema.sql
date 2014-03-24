@@ -29,6 +29,8 @@ CREATE TABLE `spider_page` (
   `url_hash` varchar(64) NOT NULL,
   `mime` varchar(255) DEFAULT NULL,
   `rank` int(10) DEFAULT NULL,
+  `visits` int(10) unsigned DEFAULT NULL,
+  `elapsed` int(10) unsigned DEFAULT NULL,
   `body` longtext,
   `header` mediumtext,
   `code` int(3) DEFAULT NULL,
@@ -73,4 +75,4 @@ CREATE TABLE `spider_via` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2014-03-24 15:52:20
+-- Dump completed on 2014-03-24 20:37:01
