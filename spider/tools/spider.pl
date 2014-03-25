@@ -12,13 +12,15 @@ use HTML::LinkExtor;
 use JSON;
 use LWP::UserAgent;
 use Sys::Hostname;
+use Time::HiRes;
 use URI;
 
-use constant HOST => 'localhost';
-use constant USER => 'root';
-use constant PASS => '';
-use constant DB   => 'spider';
+use constant HOST  => 'localhost';
+use constant USER  => 'root';
+use constant PASS  => '';
+use constant DB    => 'spider';
 use constant PROXY => 'http://spider.vpn.hexten.net:3128/';
+use constant BITE  => 100;
 
 my @ROOT = qw(
  http://explore.gateway.bbc.co.uk/ResearchGateway/researchgateway/music1.aspx
@@ -118,7 +120,7 @@ sub spider {
   my $json = JSON->new->canonical->utf8;
   $ua->proxy( ['http', 'https'], PROXY );
 
-  while ( my @work = start_work( $dbh, 10 ) ) {
+  while ( my @work = start_work( $dbh, BITE ) ) {
     for my $job (@work) {
       my $url = URI->new( $job->{url} );
       unless ( should_visit($url) ) {
@@ -225,6 +227,11 @@ sub reap {
   }
 }
 
+sub uniq {
+  my %seen = ();
+  return grep { !$seen{$_}++ } @_;
+}
+
 sub record_links {
   my ( $dbh, $job, @links ) = @_;
 
@@ -242,22 +249,27 @@ sub record_links {
       '(?, ?, ?, ?)',
       [@$_, $rank, 0],
     ]
-  } map { [$_, md5_hex($_)] } @links;
+  } map { [$_, md5_hex($_)] } uniq(@links);
 
-  my $via_sql
-   = 'INSERT INTO `spider_via` (`url_hash`, `via_hash`, `last_visit`) VALUES '
-   . join( ', ', map { $_->[0] } @parts )
-   . ' ON DUPLICATE KEY UPDATE `last_visit` = ?';
-  my @via_bind = ( ( map { @{ $_->[1] } } @parts ), $now );
+  retry(
+    $dbh,
+    sub {
+      $dbh->prepare('DELETE FROM `spider_via` WHERE `via_hash` = ?')
+       ->execute($url_hash);
 
-  my $page_sql
-   = 'INSERT INTO `spider_page` (`url`, `url_hash`, `rank`, `last_visit`) VALUES '
-   . join( ', ', map { $_->[2] } @parts )
-   . 'ON DUPLICATE KEY UPDATE `rank`=IF(`rank` > ?, ?, `rank`)';
-  my @page_bind = ( ( map { @{ $_->[3] } } @parts ), $rank, $rank );
+      $dbh->prepare(
+        'INSERT INTO `spider_via` (`url_hash`, `via_hash`, `last_visit`) VALUES '
+         . join( ', ', map { $_->[0] } @parts ) )
+       ->execute( map { @{ $_->[1] } } @parts );
 
-  $dbh->prepare($via_sql)->execute(@via_bind);
-  $dbh->prepare($page_sql)->execute(@page_bind);
+      $dbh->prepare(
+        'INSERT INTO `spider_page` (`url`, `url_hash`, `rank`, `last_visit`) VALUES '
+         . join( ', ', map { $_->[2] } @parts )
+         . 'ON DUPLICATE KEY UPDATE `rank`=IF(`rank` > ?, ?, `rank`)' )
+       ->execute( ( map { @{ $_->[3] } } @parts ), $rank, $rank );
+    },
+    10
+  );
 }
 
 sub schedule {
@@ -276,6 +288,20 @@ sub trim {
   my $s = shift;
   s/^\s+//, s/\s+$// for $s;
   return $s;
+}
+
+sub retry {
+  my ( $dbh, $cb, $tries ) = @_;
+  my $sleep = 1;
+  while () {
+    die "No more retries\n" if $tries-- <= 0;
+    eval { transaction( $dbh, $cb ) };
+    last unless $@;
+    warn "$@";
+    Time::HiRes::sleep($sleep);
+    $sleep *= 1.414;
+    print "Retrying...\n";
+  }
 }
 
 sub transaction {
