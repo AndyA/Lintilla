@@ -17,8 +17,7 @@ use URI;
 use constant HOST => 'localhost';
 use constant USER => 'root';
 use constant PASS => '';
-use constant DB   => 'spider2';
-#use constant PROXY => 'http://andy:froonbat1127@spider.hexten.net:3128/';
+use constant DB   => 'spider';
 use constant PROXY => 'http://spider.vpn.hexten.net:3128/';
 
 my @ROOT = qw(
@@ -228,20 +227,37 @@ sub reap {
 
 sub record_links {
   my ( $dbh, $job, @links ) = @_;
-  for my $link (@links) {
-    via( $dbh, $link, $job->{url} );
-    schedule( $dbh, $link, $job->{rank} + 1 );
-  }
-}
 
-sub via {
-  my ( $dbh, $url, $via ) = @_;
-  my $now = time;
-  my $sql
-   = 'INSERT INTO `spider_via` (`url_hash`, `via_hash`, `last_visit`) '
-   . 'VALUES (?, ?, ?) '
-   . 'ON DUPLICATE KEY UPDATE `last_visit` = ?';
-  $dbh->prepare($sql)->execute( md5_hex($url), md5_hex($via), $now, $now );
+  return unless @links;
+
+  print "Recording ", scalar(@links), " links\n";
+
+  my $now      = time;
+  my $url_hash = md5_hex( $job->{url} );
+  my $rank     = $job->{rank} + 1;
+
+  my @parts = map {
+    [ '(?, ?, ?)',
+      [$_->[1], $url_hash, $now],
+      '(?, ?, ?, ?)',
+      [@$_, $rank, 0],
+    ]
+  } map { [$_, md5_hex($_)] } @links;
+
+  my $via_sql
+   = 'INSERT INTO `spider_via` (`url_hash`, `via_hash`, `last_visit`) VALUES '
+   . join( ', ', map { $_->[0] } @parts )
+   . ' ON DUPLICATE KEY UPDATE `last_visit` = ?';
+  my @via_bind = ( ( map { @{ $_->[1] } } @parts ), $now );
+
+  my $page_sql
+   = 'INSERT INTO `spider_page` (`url`, `url_hash`, `rank`, `last_visit`) VALUES '
+   . join( ', ', map { $_->[2] } @parts )
+   . 'ON DUPLICATE KEY UPDATE `rank`=IF(`rank` > ?, ?, `rank`)';
+  my @page_bind = ( ( map { @{ $_->[3] } } @parts ), $rank, $rank );
+
+  $dbh->prepare($via_sql)->execute(@via_bind);
+  $dbh->prepare($page_sql)->execute(@page_bind);
 }
 
 sub schedule {
