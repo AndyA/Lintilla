@@ -20,7 +20,7 @@ use constant USER  => 'root';
 use constant PASS  => '';
 use constant DB    => 'spider';
 use constant PROXY => 'http://spider.vpn.hexten.net:3128/';
-use constant BITE  => 100;
+use constant BITE  => 500;
 
 my @ROOT = qw(
  http://explore.gateway.bbc.co.uk/ResearchGateway/researchgateway/music1.aspx
