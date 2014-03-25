@@ -40,8 +40,8 @@ CREATE TABLE `spider_page` (
   `worker_id` varchar(80) DEFAULT NULL,
   PRIMARY KEY (`url_hash`),
   KEY `worker_id` (`worker_id`),
-  KEY `worker_start` (`worker_start`),
-  KEY `last_visit` (`last_visit`)
+  KEY `last_visit` (`last_visit`),
+  KEY `rank` (`rank`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -75,4 +75,4 @@ CREATE TABLE `spider_via` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2014-03-24 20:37:01
+-- Dump completed on 2014-03-25  8:27:55

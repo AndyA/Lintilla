@@ -62,14 +62,14 @@ else {
 }
 
 sub claim_url {
-  my ( $dbh, $sel, $ord ) = @_;
+  my ( $dbh, $count, $sel, $ord ) = @_;
   update(
     $dbh,
     'spider_page',
     { worker_id    => worker_id(),
       worker_start => time,
     },
-    { LIMIT => 1, %$sel },
+    { LIMIT => $count, %$sel },
     $ord
   );
 }
@@ -85,10 +85,11 @@ sub got_url {
 }
 
 sub start_work {
-  my $dbh = shift;
+  my ( $dbh, $count ) = @_;
   my @work;
   return @work if @work = got_url($dbh);
-  claim_url( $dbh, { worker_id => undef }, ['last_visit', 'rank'] );
+  claim_url( $dbh, $count, { worker_id => undef },
+    ['last_visit', 'rank'] );
   return got_url($dbh);
 }
 
@@ -118,7 +119,7 @@ sub spider {
   my $json = JSON->new->canonical->utf8;
   $ua->proxy( ['http', 'https'], PROXY );
 
-  while ( my @work = start_work($dbh) ) {
+  while ( my @work = start_work( $dbh, 10 ) ) {
     for my $job (@work) {
       my $url = URI->new( $job->{url} );
       unless ( should_visit($url) ) {
@@ -160,7 +161,8 @@ sub spider {
 
       end_work( $dbh, $got );
 
-      print sprintf "%s (elapsed: %d)\n", $resp->status_line, $elapsed;
+      print sprintf "%s (elapsed: %d, type: %s)\n", $resp->status_line,
+       $elapsed, $got->{mime};
     }
   }
 }
