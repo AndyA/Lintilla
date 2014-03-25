@@ -17,7 +17,7 @@ use URI;
 use constant HOST => 'localhost';
 use constant USER => 'root';
 use constant PASS => '';
-use constant DB   => 'spider';
+use constant DB   => 'spider2';
 #use constant PROXY => 'http://andy:froonbat1127@spider.hexten.net:3128/';
 use constant PROXY => 'http://spider.vpn.hexten.net:3128/';
 
@@ -150,13 +150,7 @@ sub spider {
       };
 
       if ( $got->{mime} eq 'text/html' ) {
-        print "Links: ";
-        for my $link ( find_links($resp) ) {
-          print ".";
-          via( $dbh, $link, $job->{url} );
-          schedule( $dbh, $link, $job->{rank} + 1 );
-        }
-        print "\n";
+        record_links( $dbh, $job, find_links($resp) );
       }
 
       end_work( $dbh, $got );
@@ -229,6 +223,14 @@ sub reap {
       { worker_start => undef, worker_id => undef },
       { worker_id    => $worker }
     );
+  }
+}
+
+sub record_links {
+  my ( $dbh, $job, @links ) = @_;
+  for my $link (@links) {
+    via( $dbh, $link, $job->{url} );
+    schedule( $dbh, $link, $job->{rank} + 1 );
   }
 }
 
