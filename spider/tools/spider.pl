@@ -20,7 +20,7 @@ use constant USER  => 'root';
 use constant PASS  => '';
 use constant DB    => 'spider';
 use constant PROXY => 'http://spider.vpn.hexten.net:80/';
-use constant BITE  => 500;
+use constant BITE  => 10;
 
 my @ROOT = qw(
  http://explore.gateway.bbc.co.uk/ResearchGateway/researchgateway/music1.aspx
@@ -62,36 +62,31 @@ else {
   die "Unknown command: $verb\n";
 }
 
-sub claim_url {
-  my ( $dbh, $count, $sel, $ord ) = @_;
+sub start_work {
+  my ( $dbh, $count ) = @_;
+
+  my @ids = @{
+    $dbh->selectcol_arrayref(
+         "SELECT url_hash FROM spider_page "
+       . "WHERE worker_id IS NULL "
+       . "ORDER BY last_visit, rank LIMIT $count"
+    ) };
+
   update(
     $dbh,
     'spider_page',
     { worker_id    => worker_id(),
       worker_start => time,
     },
-    { LIMIT => $count, %$sel },
-    $ord
+    { url_hash => ['IN', \@ids] }
   );
-}
 
-sub got_url {
-  my $dbh = shift;
   return @{
     $dbh->selectall_arrayref(
       "SELECT * FROM spider_page WHERE worker_id=?",
       { Slice => {} },
       worker_id()
     ) };
-}
-
-sub start_work {
-  my ( $dbh, $count ) = @_;
-  my @work;
-  return @work if @work = got_url($dbh);
-  claim_url( $dbh, $count, { worker_id => undef },
-    ['last_visit', 'rank'] );
-  return got_url($dbh);
 }
 
 sub fill_in {
@@ -121,6 +116,7 @@ sub spider {
   $ua->proxy( ['http', 'https'], PROXY );
 
   while ( my @work = start_work( $dbh, BITE ) ) {
+    print "Got ", scalar(@work), " jobs\n";
     for my $job (@work) {
       my $url = URI->new( $job->{url} );
       unless ( should_visit($url) ) {
