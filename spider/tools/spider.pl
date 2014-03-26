@@ -19,7 +19,7 @@ use constant HOST  => 'localhost';
 use constant USER  => 'root';
 use constant PASS  => '';
 use constant DB    => 'spider';
-use constant PROXY => 'http://spider.vpn.hexten.net:3128/';
+use constant PROXY => 'http://spider.vpn.hexten.net:80/';
 use constant BITE  => 500;
 
 my @ROOT = qw(
