@@ -199,6 +199,7 @@ sub should_visit {
   return if $url->host eq 'genome.ch.bbc.co.uk';
   return if $url->host eq 'ssl.bbc.co.uk';
   return if $url->host eq 'iplayerhelp.external.bbc.co.uk';
+  return if $url->host eq 'elvis.nca.bbc.co.uk';
   return if $url->host =~ /\bbetsie\b/;
   return 1;
 }

@@ -7,14 +7,14 @@ use warnings;
 
 use DBI;
 use JSON;
-use Time::HiRes qw( time );
+use Time::HiRes qw( sleep time );
 
 use constant HOST => 'localhost';
 use constant USER => 'root';
 use constant PASS => '';
 use constant DB   => 'spider';
 
-my $sleep = shift // 10;
+my $quant = shift // 10;
 
 {
   my $dbh = dbh(DB);
@@ -24,10 +24,14 @@ my $sleep = shift // 10;
     my $info = get_progress($dbh);
     my $now  = time;
     my $data = $prev ? diff( $prev, $info, $now - $prev_time ) : $info;
+    print scalar(localtime), "\n";
     print table( report($data) );
     print "\n";
     ( $prev, $prev_time ) = ( $info, $now );
-    sleep $sleep;
+
+    my $next = int( $now / $quant ) * $quant;
+    $next += $quant if $next <= $now;
+    sleep $next - $now;
   }
 
   $dbh->disconnect;
