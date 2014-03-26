@@ -45,7 +45,7 @@ if ( $verb eq 'init' ) {
   my $dbh = dbh(DB);
   reap($dbh);
   for my $root (@ROOT) {
-    schedule( $dbh, $root, 0 );
+    record_links( $dbh, undef, $root );
   }
   $dbh->disconnect;
 }
@@ -239,9 +239,10 @@ sub record_links {
 
   print "Recording ", scalar(@links), " links\n";
 
-  my $now      = time;
-  my $url_hash = md5_hex( $job->{url} );
-  my $rank     = $job->{rank} + 1;
+  my $now = time;
+
+  my ( $url_hash, $rank )
+   = $job ? ( md5_hex( $job->{url} ), $job->{rank} + 1 ) : ( undef, 0 );
 
   my @parts = map {
     [ '(?, ?, ?)',
@@ -254,13 +255,15 @@ sub record_links {
   retry(
     $dbh,
     sub {
-      $dbh->prepare('DELETE FROM `spider_via` WHERE `via_hash` = ?')
-       ->execute($url_hash);
+      if ($job) {
+        $dbh->prepare('DELETE FROM `spider_via` WHERE `via_hash` = ?')
+         ->execute($url_hash);
 
-      $dbh->prepare(
-        'INSERT INTO `spider_via` (`url_hash`, `via_hash`, `last_visit`) VALUES '
-         . join( ', ', map { $_->[0] } @parts ) )
-       ->execute( map { @{ $_->[1] } } @parts );
+        $dbh->prepare(
+          'INSERT INTO `spider_via` (`url_hash`, `via_hash`, `last_visit`) VALUES '
+           . join( ', ', map { $_->[0] } @parts ) )
+         ->execute( map { @{ $_->[1] } } @parts );
+      }
 
       $dbh->prepare(
         'INSERT INTO `spider_page` (`url`, `url_hash`, `rank`, `last_visit`) VALUES '
@@ -270,18 +273,6 @@ sub record_links {
     },
     10
   );
-}
-
-sub schedule {
-  my ( $dbh, $url, $rank ) = @_;
-
-  my $sql
-   = 'INSERT INTO `spider_page` (`url`, `url_hash`, `rank`, `last_visit`) '
-   . 'VALUES (?, ?, ?, ?) '
-   . 'ON DUPLICATE KEY UPDATE `rank`=IF(`rank` > ?, ?, `rank`)';
-
-  $dbh->prepare($sql)
-   ->execute( $url, md5_hex($url), $rank, 0, $rank, $rank );
 }
 
 sub trim {
