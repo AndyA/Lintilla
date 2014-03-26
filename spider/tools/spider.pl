@@ -192,15 +192,20 @@ sub worker_id { join '.', hostname, $$ }
 
 sub should_visit {
   my $url = shift;
-  return unless $url->host =~ /\.bbc\.co\.uk$/;
-  return if $url->host eq 'www.bbc.co.uk';
-  return if $url->host eq 'news.bbc.co.uk';
-  return if $url->host eq 'm.bbc.co.uk';
-  return if $url->host eq 'genome.ch.bbc.co.uk';
-  return if $url->host eq 'ssl.bbc.co.uk';
-  return if $url->host eq 'iplayerhelp.external.bbc.co.uk';
-  return if $url->host eq 'elvis.nca.bbc.co.uk';
-  return if $url->host =~ /\bbetsie\b/;
+  my $host = eval { $url->host };
+  if ($@) {
+    warn "$@";
+    return;
+  }
+  return unless $host =~ /\.bbc\.co\.uk$/;
+  return if $host eq 'www.bbc.co.uk';
+  return if $host eq 'news.bbc.co.uk';
+  return if $host eq 'm.bbc.co.uk';
+  return if $host eq 'genome.ch.bbc.co.uk';
+  return if $host eq 'ssl.bbc.co.uk';
+  return if $host eq 'iplayerhelp.external.bbc.co.uk';
+  return if $host eq 'elvis.nca.bbc.co.uk';
+  return if $host =~ /\bbetsie\b/;
   return 1;
 }
 
