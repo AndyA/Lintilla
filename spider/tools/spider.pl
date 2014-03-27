@@ -42,18 +42,12 @@ GetOptions() or die;
 my $verb = shift // 'help';
 
 if ( $verb eq 'init' ) {
-  my $dbh = dbh(DB);
-  reap($dbh);
-  for my $root (@ROOT) {
-    record_links( $dbh, undef, $root );
-  }
-  $dbh->disconnect;
+  reap();
+  record_links( undef, @ROOT );
 }
 elsif ( $verb eq 'spider' ) {
-  my $dbh = dbh(DB);
-  reap($dbh);
-  spider($dbh);
-  $dbh->disconnect;
+  reap();
+  spider();
 }
 elsif ( $verb eq 'help' ) {
   print "spider.pl init|spider|help\n";
@@ -63,7 +57,8 @@ else {
 }
 
 sub start_work {
-  my ( $dbh, $count ) = @_;
+  my $count = shift;
+  my $dbh   = dbh();
 
   my @ids = @{
     $dbh->selectcol_arrayref(
@@ -81,12 +76,15 @@ sub start_work {
     { url_hash => ['IN', \@ids] }
   );
 
-  return @{
+  my @got = @{
     $dbh->selectall_arrayref(
       "SELECT * FROM spider_page WHERE worker_id=?",
       { Slice => {} },
       worker_id()
     ) };
+
+  $dbh->disconnect;
+  return @got;
 }
 
 sub fill_in {
@@ -95,7 +93,8 @@ sub fill_in {
 }
 
 sub end_work {
-  my ( $dbh, $rec ) = @_;
+  my $rec  = shift;
+  my $dbh  = dbh();
   my $frec = fill_in(
     { %$rec,
       last_visit => time,
@@ -104,25 +103,24 @@ sub end_work {
     }
   );
   update( $dbh, 'spider_page', $frec, { url_hash => $frec->{url_hash} } );
+  $dbh->disconnect;
 }
 
 sub spider {
-  my $dbh   = shift;
   my @queue = @_;
 
   my $ua = LWP::UserAgent->new( keep_alive => 10 );
   $ua->timeout(20);
   my $json = JSON->new->canonical->utf8;
   $ua->proxy( ['http', 'https'], PROXY );
-
-  while ( my @work = start_work( $dbh, BITE ) ) {
+  while () {
+    my @work = start_work(BITE);
     print "Got ", scalar(@work), " jobs\n";
     for my $job (@work) {
       my $url = URI->new( $job->{url} );
       unless ( should_visit($url) ) {
         print "Skipping $url\n";
         end_work(
-          $dbh,
           { url     => $job->{url},
             message => 'Skipped by URL based rule',
             code    => 0,
@@ -147,10 +145,10 @@ sub spider {
       };
 
       if ( $got->{mime} eq 'text/html' ) {
-        record_links( $dbh, $job, find_links($resp) );
+        record_links( $job, find_links($resp) );
       }
 
-      end_work( $dbh, $got );
+      end_work($got);
 
       print sprintf "%s (elapsed: %d, type: %s)\n", $resp->status_line,
        $elapsed, $got->{mime};
@@ -210,7 +208,7 @@ sub should_visit {
 }
 
 sub reap {
-  my $dbh     = shift;
+  my $dbh     = dbh();
   my $hn      = hostname;
   my @workers = @{
     $dbh->selectcol_arrayref(
@@ -227,6 +225,7 @@ sub reap {
       { worker_id    => $worker }
     );
   }
+  $dbh->disconnect;
 }
 
 sub uniq {
@@ -235,11 +234,13 @@ sub uniq {
 }
 
 sub record_links {
-  my ( $dbh, $job, @links ) = @_;
+  my ( $job, @links ) = @_;
 
   return unless @links;
 
   print "Recording ", scalar(@links), " links\n";
+
+  my $dbh = dbh();
 
   my $now = time;
 
@@ -275,6 +276,7 @@ sub record_links {
     },
     10
   );
+  $dbh->disconnect();
 }
 
 sub trim {
@@ -452,9 +454,8 @@ sub show_sql {
 }
 
 sub dbh {
-  my $db = shift;
   return DBI->connect(
-    sprintf( 'DBI:mysql:database=%s;host=%s', $db, HOST ),
+    sprintf( 'DBI:mysql:database=%s;host=%s', DB, HOST ),
     USER, PASS, { RaiseError => 1, mysql_auto_reconnect => 1 } );
 }
 
