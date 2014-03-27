@@ -197,6 +197,7 @@ sub should_visit {
   }
   return unless $host =~ /\.bbc\.co\.uk$/;
   return if $url =~ /\.mp4$/;                            # NASTY
+  return if $url =~ /\.eps$/;                            # NASTY
   return if $host eq 'www.bbc.co.uk';
   return if $host eq 'news.bbc.co.uk';
   return if $host eq 'm.bbc.co.uk';
