@@ -94,7 +94,6 @@ sub fill_in {
 
 sub end_work {
   my $rec  = shift;
-  my $dbh  = dbh();
   my $frec = fill_in(
     { %$rec,
       last_visit => time,
@@ -102,6 +101,7 @@ sub end_work {
       visits     => ( $rec->{visits} || 0 ) + 1
     }
   );
+  my $dbh = dbh();
   update( $dbh, 'spider_page', $frec, { url_hash => $frec->{url_hash} } );
   $dbh->disconnect;
 }
@@ -196,6 +196,7 @@ sub should_visit {
     return;
   }
   return unless $host =~ /\.bbc\.co\.uk$/;
+  return if $url =~ /\.mp4$/;                            # NASTY
   return if $host eq 'www.bbc.co.uk';
   return if $host eq 'news.bbc.co.uk';
   return if $host eq 'm.bbc.co.uk';
@@ -240,8 +241,6 @@ sub record_links {
 
   print "Recording ", scalar(@links), " links\n";
 
-  my $dbh = dbh();
-
   my $now = time;
 
   my ( $url_hash, $rank )
@@ -254,6 +253,8 @@ sub record_links {
       [@$_, $rank, 0],
     ]
   } map { [$_, md5_hex($_)] } uniq(@links);
+
+  my $dbh = dbh();
 
   retry(
     $dbh,
