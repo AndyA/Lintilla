@@ -110,7 +110,7 @@ sub spider {
   my $dbh   = shift;
   my @queue = @_;
 
-  my $ua = LWP::UserAgent->new;
+  my $ua = LWP::UserAgent->new( keep_alive => 10 );
   $ua->timeout(20);
   my $json = JSON->new->canonical->utf8;
   $ua->proxy( ['http', 'https'], PROXY );
@@ -455,7 +455,7 @@ sub dbh {
   my $db = shift;
   return DBI->connect(
     sprintf( 'DBI:mysql:database=%s;host=%s', $db, HOST ),
-    USER, PASS, { RaiseError => 1 } );
+    USER, PASS, { RaiseError => 1, mysql_auto_reconnect => 1 } );
 }
 
 # vim:ts=2:sw=2:sts=2:et:ft=perl
