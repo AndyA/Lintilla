@@ -63,7 +63,7 @@ sub rdiff {
   my $old = $nd->[0] // 0;
   my $new = $nd->[1] // 0;
   my $rate = ( $new - $old ) / $dt;
-  return sprintf "%8d (%9.3f/s)", $new, $rate;
+  return sprintf "%8d (%8.2f/s)", $new, $rate;
 }
 
 sub overlay {
