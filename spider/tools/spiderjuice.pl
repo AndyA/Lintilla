@@ -31,10 +31,7 @@ sub juice {
   while ( my $rec = $sth->fetchrow_hashref ) {
     my $url = URI->new( $rec->{url} );
     my $file = file DIR, split /\//, $url->path;
-    if ( -f $file ) {
-      print "$url is already detached to $file\n";
-      next;
-    }
+    next if -f $file;
     print "$url -> $file\n";
     {
       my @body
