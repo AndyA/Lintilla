@@ -186,7 +186,7 @@ sub find_links {
   )->parse( $resp->content );
 
   my $base = $resp->base;
-  return map { clean_url( URI->new_abs( $_, $base ) ) } @links;
+  return uniq( map { clean_url( URI->new_abs( $_, $base ) ) } @links );
 }
 
 sub headers {
