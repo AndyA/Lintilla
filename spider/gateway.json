@@ -1,0 +1,45 @@
+{
+   "bite" : 10,
+   "db" : {
+      "db" : "spider",
+      "host" : "localhost",
+      "pass" : "",
+      "user" : "root"
+   },
+   "job" : {
+      "exclude" : [
+         "http://news.gateway.bbc.co.uk/newsfestival/video/mirror.wmv",
+         "*.mp4",
+         "*.eps*"
+      ],
+      "exclude_host" : [
+         "elvis.nca.bbc.co.uk",
+         "genome.ch.bbc.co.uk",
+         "iplayerhelp.external.bbc.co.uk",
+         "m.bbc.co.uk",
+         "news.bbc.co.uk",
+         "ssl.bbc.co.uk",
+         "www.bbc.co.uk",
+         "*betsie*"
+      ],
+      "limit" : [
+         "*.bbc.co.uk"
+      ],
+      "root" : [
+         "http://explore.gateway.bbc.co.uk/ResearchGateway/researchgateway/music1.aspx",
+         "http://explore.gateway.bbc.co.uk/ResearchGateway/researchgateway/tv_and_radio1.aspx",
+         "http://explore.gateway.bbc.co.uk/ResearchGateway/researchgateway/stills_and_photos.aspx",
+         "http://explore.gateway.bbc.co.uk/ResearchGateway/research_gateway_2012/reference.aspx",
+         "http://explore.gateway.bbc.co.uk/ResearchGateway/researchgateway/people.aspx",
+         "http://www.audiencesportal.com/default.aspx",
+         "http://bbcapps2498.national.core.bbc.co.uk/home.aspx",
+         "http://fgbw1wsrot1202.national.core.bbc.co.uk/autorot/"
+      ]
+   },
+   "per_host" : {
+      "emit" : {
+         "proxy" : "http://spider.vpn.hexten.net:80/"
+      },
+      "spider" : {}
+   }
+}

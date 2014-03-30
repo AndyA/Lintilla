@@ -11,49 +11,53 @@ use Getopt::Long;
 use HTML::LinkExtor;
 use JSON;
 use LWP::UserAgent;
+use Path::Class;
 use Sys::Hostname;
 use Time::HiRes;
 use URI;
 
-use constant HOST  => 'localhost';
-use constant USER  => 'root';
-use constant PASS  => '';
-use constant DB    => 'spider';
-use constant PROXY => 'http://spider.vpn.hexten.net:80/';
-use constant BITE  => 10;
-
-my @ROOT = qw(
- http://explore.gateway.bbc.co.uk/ResearchGateway/researchgateway/music1.aspx
- http://explore.gateway.bbc.co.uk/ResearchGateway/researchgateway/tv_and_radio1.aspx
- http://explore.gateway.bbc.co.uk/ResearchGateway/researchgateway/stills_and_photos.aspx
- http://explore.gateway.bbc.co.uk/ResearchGateway/research_gateway_2012/reference.aspx
- http://explore.gateway.bbc.co.uk/ResearchGateway/researchgateway/people.aspx
- http://www.audiencesportal.com/default.aspx
- http://bbcapps2498.national.core.bbc.co.uk/home.aspx
- http://fgbw1wsrot1202.national.core.bbc.co.uk/autorot/
-);
-
 $| = 1;
 
+my %O      = ();
 my %INSERT = ();    # defer_insert cache
 
-GetOptions() or die;
+GetOptions() or die syntax();
 
-my $verb = shift // 'help';
+die syntax() unless @ARGV >= 2;
 
-if ( $verb eq 'init' ) {
-  reap();
-  record_links( undef, @ROOT );
+my ( $verb, $config ) = ( shift, shift );
+
+my $Config
+ = localise( JSON->new->decode( scalar file($config)->slurp ) );
+my @Watch = ( $0, $config );
+
+my %action = (
+  help => sub { print syntax() },
+  init => sub {
+    reap();
+    record_links( undef, @{ $Config->{job}{root} } );
+  },
+  spider => sub {
+    reap();
+    spider();
+  },
+);
+
+die "Unknown verb: $verb\n" unless $action{$verb};
+
+$action{$verb}->();
+
+exit;
+
+sub file_changed {
+  for (@_) {
+    return 1 if -M $_ < 0;
+  }
+  return;
 }
-elsif ( $verb eq 'spider' ) {
-  reap();
-  spider();
-}
-elsif ( $verb eq 'help' ) {
-  print "spider.pl init|spider|help\n";
-}
-else {
-  die "Unknown command: $verb\n";
+
+sub should_stop {
+  return file_changed(@Watch);
 }
 
 sub start_work {
@@ -111,14 +115,17 @@ sub spider {
 
   my $ua = LWP::UserAgent->new( keep_alive => 10 );
   $ua->timeout(20);
+  my $should_visit = mk_should_visit( $Config->{job} );
+
   my $json = JSON->new->canonical->utf8;
-  $ua->proxy( ['http', 'https'], PROXY );
-  while () {
-    my @work = start_work(BITE);
+  $ua->proxy( ['http', 'https'], $Config->{proxy} )
+   if defined $Config->{proxy};
+  until ( should_stop() ) {
+    my @work = start_work( $Config->{bite} );
     print "Got ", scalar(@work), " jobs\n";
     for my $job (@work) {
       my $url = URI->new( $job->{url} );
-      unless ( should_visit($url) ) {
+      unless ( $should_visit->($url) ) {
         print "Skipping $url\n";
         end_work(
           { url     => $job->{url},
@@ -154,6 +161,7 @@ sub spider {
        $elapsed, $got->{mime};
     }
   }
+  print "Stopping...\n\n";
 }
 
 sub clean_url {
@@ -188,25 +196,36 @@ sub headers {
 
 sub worker_id { join '.', hostname, $$ }
 
-sub should_visit {
-  my $url = shift;
-  my $host = eval { $url->host };
-  if ($@) {
-    warn "$@";
+sub glob2re {
+  my $re = join '',
+   map { $_ eq '*' ? '.*' : $_ eq '?' ? '.' : quotemeta($_) }
+   split //, shift;
+  return qr/^$re$/;
+}
+
+sub mk_in_list {
+  my @re = map { glob2re($_) } @_;
+  return sub {
+    for (@re) { return 1 if $_[0] =~ $_ }
     return;
-  }
-  return unless $host =~ /\.bbc\.co\.uk$/;
-  return if $url =~ /\.mp4$/;                            # NASTY
-  return if $url =~ /\.eps$/;                            # NASTY
-  return if $host eq 'www.bbc.co.uk';
-  return if $host eq 'news.bbc.co.uk';
-  return if $host eq 'm.bbc.co.uk';
-  return if $host eq 'genome.ch.bbc.co.uk';
-  return if $host eq 'ssl.bbc.co.uk';
-  return if $host eq 'iplayerhelp.external.bbc.co.uk';
-  return if $host eq 'elvis.nca.bbc.co.uk';
-  return if $host =~ /\bbetsie\b/;
-  return 1;
+  };
+}
+
+sub mk_should_visit {
+  my $job          = shift;
+  my $exclude      = mk_in_list( @{ $job->{exclude} } );
+  my $exclude_host = mk_in_list( @{ $job->{exclude_host} } );
+  return sub {
+    my $url = shift;
+    return if $exclude->($url);
+    my $host = eval { $url->host };
+    if ($@) {
+      warn "$@";
+      return;
+    }
+    return if $exclude_host->($host);
+    return 1;
+  };
 }
 
 sub reap {
@@ -440,6 +459,11 @@ sub make_select {
   return ( join( ' ', @sql ), @bind );
 }
 
+sub localise {
+  my $cfg = shift;
+  return { %$cfg, %{ $cfg->{per_host}{ hostname() } || {} } };
+}
+
 sub show_sql {
   my ( $sql, @bind ) = @_;
   my $next = sub {
@@ -456,9 +480,21 @@ sub show_sql {
 }
 
 sub dbh {
+  my $cfg = $Config->{db};
   return DBI->connect(
-    sprintf( 'DBI:mysql:database=%s;host=%s', DB, HOST ),
-    USER, PASS, { RaiseError => 1, mysql_auto_reconnect => 1 } );
+    sprintf( 'DBI:mysql:database=%s;host=%s', $cfg->{db}, $cfg->{host} ),
+    $cfg->{user},
+    $cfg->{pass},
+    { RaiseError => 1, mysql_auto_reconnect => 1 }
+  );
+}
+
+sub syntax {
+  return <<EOT
+Syntax: spider <verb> <config.json>
+
+Verbs: init spider help
+EOT
 }
 
 # vim:ts=2:sw=2:sts=2:et:ft=perl
