@@ -167,6 +167,8 @@ sub spider {
 sub clean_url {
   my $url = shift;
   $url->fragment(undef);
+  ( my $path = $url->path ) =~ s/;jsessionid=[0-9a-fA-F]+$//g;
+  $url->path($path);
   return $url;
 }
 
