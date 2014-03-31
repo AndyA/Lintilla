@@ -215,6 +215,7 @@ sub mk_in_list {
 
 sub mk_should_visit {
   my $job          = shift;
+  my $limit        = mk_in_list( @{ $job->{limit} } );
   my $exclude      = mk_in_list( @{ $job->{exclude} } );
   my $exclude_host = mk_in_list( @{ $job->{exclude_host} } );
   return sub {
@@ -225,6 +226,7 @@ sub mk_should_visit {
       warn "$@";
       return;
     }
+    return unless $limit->($host);
     return if $exclude_host->($host);
     return 1;
   };
