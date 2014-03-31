@@ -14,27 +14,68 @@ use constant USER => 'root';
 use constant PASS => '';
 use constant DB   => 'spider';
 
-my $quant = shift // 10;
+if ( @ARGV == 1 && $ARGV[0] eq 'tail' ) {
+  tail();
+}
+else {
+  my $quant = shift // 10;
+  my $sleeper = mk_sleeper($quant);
 
-{
-  my $dbh = dbh(DB);
+  progress($sleeper);
+}
+
+sub progress {
+  my $sleeper = shift;
+  my $dbh     = dbh(DB);
 
   my ( $prev, $prev_time );
   while () {
-    my $info = get_progress($dbh);
     my $now  = time;
+    my $info = get_progress($dbh);
     my $data = $prev ? diff( $prev, $info, $now - $prev_time ) : $info;
     print scalar(localtime), "\n";
     print table( report($data) );
     print "\n";
     ( $prev, $prev_time ) = ( $info, $now );
 
-    my $next = int( $now / $quant ) * $quant;
-    $next += $quant if $next <= $now;
-    sleep $next - $now;
+    $sleeper->();
   }
 
   $dbh->disconnect;
+}
+
+sub tail {
+  my $dbh = dbh(DB);
+
+  my $prev = time;
+  my %seen = ();
+  while () {
+    my $now = time;
+    my @rep = @{
+      $dbh->selectall_arrayref(
+        "SELECT url_hash, code, url FROM spider_page WHERE last_visit > ? ORDER BY last_visit",
+        { Slice => {} },
+        $prev - 10
+      ) };
+    for my $itm (@rep) {
+      next if $seen{ $itm->{url_hash} }++;
+      printf "%3d %s\n", $itm->{code}, $itm->{url};
+    }
+    $prev = $now;
+    sleep 0.5;
+  }
+
+  $dbh->disconnect;
+}
+
+sub mk_sleeper {
+  my $quant = shift;
+  return sub {
+    my $now  = time;
+    my $next = int( $now / $quant ) * $quant;
+    $next += $quant if $next <= $now;
+    sleep $next - $now;
+  };
 }
 
 sub num_first {
