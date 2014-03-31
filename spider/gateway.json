@@ -9,8 +9,11 @@
    "job" : {
       "exclude" : [
          "http://news.gateway.bbc.co.uk/newsfestival/video/mirror.wmv",
+         "http://manet.mon.bbc.co.uk/test_newintranet/future_focus/video/Finance_Brief(L).wmv",
+         "http://wikilearn.bbc.co.uk/media/kahuna/Kahuna_User_Manual.pdf",
+         "http://edpol.gateway.bbc.co.uk/edpolmeetings/april2008/consent.wmv",
          "*.mp4",
-         "*.eps*"
+         "*.eps"
       ],
       "exclude_host" : [
          "elvis.nca.bbc.co.uk",
