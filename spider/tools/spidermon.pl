@@ -53,7 +53,8 @@ sub tail {
     my $now = time;
     my @rep = @{
       $dbh->selectall_arrayref(
-        "SELECT url_hash, code, url FROM spider_page WHERE last_visit > ? ORDER BY last_visit",
+        "SELECT url_hash, code, url FROM spider_page "
+         . "WHERE last_visit > ? ORDER BY last_visit",
         { Slice => {} },
         $prev - 10
       ) };
@@ -184,24 +185,3 @@ sub dbh {
 }
 
 # vim:ts=2:sw=2:sts=2:et:ft=perl
-
-## Please see file perltidy.ERR
-## Please see file perltidy.ERR
-## Please see file perltidy.ERR
-## Please see file perltidy.ERR
-## Please see file perltidy.ERR
-## Please see file perltidy.ERR
-## Please see file perltidy.ERR
-## Please see file perltidy.ERR
-## Please see file perltidy.ERR
-## Please see file perltidy.ERR
-## Please see file perltidy.ERR
-## Please see file perltidy.ERR
-## Please see file perltidy.ERR
-## Please see file perltidy.ERR
-## Please see file perltidy.ERR
-## Please see file perltidy.ERR
-## Please see file perltidy.ERR
-## Please see file perltidy.ERR
-## Please see file perltidy.ERR
-## Please see file perltidy.ERR

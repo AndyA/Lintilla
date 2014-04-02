@@ -8,14 +8,19 @@
    },
    "job" : {
       "exclude" : [
-         "http://news.gateway.bbc.co.uk/newsfestival/video/mirror.wmv",
-         "http://manet.mon.bbc.co.uk/test_newintranet/future_focus/video/Finance_Brief(L).wmv",
-         "http://wikilearn.bbc.co.uk/media/kahuna/Kahuna_User_Manual.pdf",
          "http://edpol.gateway.bbc.co.uk/edpolmeetings/april2008/consent.wmv",
+         "http://home.gateway.bbc.co.uk/radio/progrev/*.wav",
+         "http://manet.mon.bbc.co.uk/test_newintranet/future_focus/video/Finance_Brief(L).wmv",
+         "http://news.gateway.bbc.co.uk/newsfestival/video/*.wmv",
+         "http://techops.fmt.bbc.co.uk/services/sfx/fx/*.wav",
+         "http://wikilearn.bbc.co.uk/media/kahuna/Kahuna_User_Manual.pdf",
+         "*.mov",
+         "*.zip",
          "*.mp4",
          "*.eps"
       ],
       "exclude_host" : [
+         "cdndownloads.bbc.co.uk",
          "elvis.nca.bbc.co.uk",
          "genome.ch.bbc.co.uk",
          "iplayerhelp.external.bbc.co.uk",
