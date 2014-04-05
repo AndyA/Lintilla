@@ -200,7 +200,7 @@ sub worker_id { join '.', hostname, $$ }
 
 sub glob2re {
   my $re = join '',
-   map { $_ eq '*' ? '.*' : $_ eq '?' ? '.' : quotemeta($_) }
+   map { $_ eq '*' ? '.*?' : $_ eq '?' ? '.' : quotemeta($_) }
    split //, shift;
   return qr/^$re$/;
 }
