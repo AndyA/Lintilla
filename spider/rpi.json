@@ -1,0 +1,22 @@
+{
+   "bite" : 10,
+   "db" : {
+      "db" : "spider",
+      "host" : "localhost",
+      "pass" : "",
+      "user" : "root"
+   },
+   "job" : {
+      "exclude" : [
+         "*.mov",
+         "*.zip"
+      ],
+      "exclude_host" : [],
+      "limit" : [
+         "*.raspberrypi.org"
+      ],
+      "root" : [
+         "http://www.raspberrypi.org"
+      ]
+   }
+}
