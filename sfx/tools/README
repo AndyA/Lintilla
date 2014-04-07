@@ -1,0 +1,5 @@
+You probably only need hawaii.pl.
+
+elvis.pl    Parse ELVIS XML into a single JSON document.
+hawaii.pl   Load ELVIS XML into the database. 
+vegas.pl    Analyse data shape

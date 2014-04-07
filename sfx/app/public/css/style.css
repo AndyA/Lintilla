@@ -1,0 +1,42 @@
+body, #container {
+  color: white;
+  background-color: black;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+/*  overflow: hidden;*/
+  font-family: "Helvetica Neue Light", "HelveticaNeue-Light", "Helvetica Neue", 
+    Calibri, Helvetica, Arial, sans-serif;
+}
+
+img {
+  padding: 0;
+  margin: 0;
+}
+
+img.slice {
+  margin: 6px;
+  background-color: #333;
+}
+
+/*img:-moz-loading {
+  visibility: hidden;
+}*/
+
+div.detail {
+  height: 10px;
+  width: 100%;
+  background-color: white;
+  color: black;
+}
+
+div#popup {
+  position: fixed;
+  left: 4em;
+  right: 4em;
+  top: 4em;
+  z-index: 1000;
+  background-color: rgba(255,255,255,0.5);
+  color: black;
+  padding: 1em;
+}
