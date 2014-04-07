@@ -22,12 +22,12 @@ SELECT
   ph.name AS photographer,
   s.name AS subject
 FROM
-  elvis_image AS i
+  sfx_image AS i
 LEFT JOIN (
-  elvis_location AS l,
-  elvis_personality AS pe,
-  elvis_photographer AS ph,
-  elvis_subject AS s
+  sfx_location AS l,
+  sfx_personality AS pe,
+  sfx_photographer AS ph,
+  sfx_subject AS s
 )
 ON (
       i.location_id = l.id

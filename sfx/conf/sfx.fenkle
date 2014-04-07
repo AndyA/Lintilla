@@ -1,19 +1,19 @@
-# lintilla.fenkle
+# sfx.fenkle
 
 ProxyRequests Off
 
 <VirtualHost *:80>
-  ServerName lintilla.fenkle
-  ServerAlias lintilla
+  ServerName sfx.fenkle
+  ServerAlias sfx
 
-  DocumentRoot /opt/lintilla/elvis/app/public
-  CustomLog /opt/lintilla/elvis/app/logs/apache.access_log combined
-  ErrorLog /opt/lintilla/elvis/app/logs/apache.error_log
+  DocumentRoot /opt/lintilla/sfx/app/public
+  CustomLog /opt/lintilla/sfx/app/logs/apache.access_log combined
+  ErrorLog /opt/lintilla/sfx/app/logs/apache.error_log
   LogLevel debug
 
   AddOutputFilterByType DEFLATE text/html application/json application/javascript text/css
 
-  <Directory "/opt/lintilla/elvis/app/public">
+  <Directory "/opt/lintilla/sfx/app/public">
     AllowOverride None
     Options +ExecCGI -MultiViews +SymLinksIfOwnerMatch
     Order allow,deny

@@ -34,7 +34,7 @@ plugins:
     driver: 'mysql'
     host: 'localhost'
     port: 3306
-    database: 'elvis'
+    database: 'sfx'
     username: 'root'
     password: ''
     connection_check_threshold: 10
