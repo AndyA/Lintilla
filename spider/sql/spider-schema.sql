@@ -1,10 +1,10 @@
 CREATE DATABASE /*!32312 IF NOT EXISTS*/ `spider`;
 USE `spider`;
--- MySQL dump 10.15  Distrib 10.0.9-MariaDB, for debian-linux-gnu (x86_64)
+-- MySQL dump 10.15  Distrib 10.0.10-MariaDB, for debian-linux-gnu (x86_64)
 --
 -- Host: localhost    Database: spider
 -- ------------------------------------------------------
--- Server version	10.0.9-MariaDB-1~wheezy
+-- Server version	10.0.10-MariaDB-1~wheezy
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -42,7 +42,9 @@ CREATE TABLE `spider_page` (
   KEY `worker_id` (`worker_id`),
   KEY `last_visit` (`last_visit`),
   KEY `rank` (`rank`),
-  KEY `last_visit_rank` (`last_visit`,`rank`)
+  KEY `last_visit_rank` (`last_visit`,`rank`),
+  KEY `mime` (`mime`),
+  KEY `code` (`code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -76,4 +78,4 @@ CREATE TABLE `spider_via` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2014-03-26 16:36:57
+-- Dump completed on 2014-04-06 12:15:10
