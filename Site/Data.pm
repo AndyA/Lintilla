@@ -6,6 +6,7 @@ use Dancer ':syntax';
 use Dancer::Plugin::Database;
 use Sphinx::Search;
 
+use Lintilla::DB::Genome;
 use Lintilla::Filter qw( cook );
 
 =head1 NAME
@@ -60,6 +61,10 @@ sub search {
 }
 
 prefix '/data' => sub {
+  get '/programme/:uuid' => sub {
+    return Lintilla::DB::Genome->new( dbh => database )
+     ->programme( param('uuid') );
+  };
   get '/ref/index' => sub {
     return [sort keys %REF];
   };
