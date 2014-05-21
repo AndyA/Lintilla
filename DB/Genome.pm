@@ -21,6 +21,13 @@ sub _format_uuid {
   die "Bad UUID";
 }
 
+sub _strip_uuid {
+  my ( $self, $uuid ) = @_;
+  # Format to validate
+  ( my $stripped = $self->_format_uuid($uuid) ) =~ s/-//g;
+  return $stripped;
+}
+
 sub programme {
   my ( $self, $uuid ) = @_;
   return $self->dbh->selectrow_hashref(
