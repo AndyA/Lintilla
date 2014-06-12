@@ -41,16 +41,29 @@ sub _group_by {
   return $hash;
 }
 
+=head2 Reference Data
+
+=cut
+
 sub services {
   my $self = shift;
   return $self->_group_by(
     $self->dbh->selectall_arrayref(
-      'SELECT title, type, _uuid AS uuid FROM genome_services ORDER BY title',
+      'SELECT title, type, REPLACE(_uuid, "-", "") AS uuid FROM genome_services ORDER BY title',
       { Slice => {} }
     ),
     'type'
   );
 }
+
+sub years {
+  shift->dbh->selectcol_arrayref(
+    'SELECT DISTINCT year FROM genome_programmes_v2 ORDER BY year');
+}
+
+=head2 Dynamic Data
+
+=cut
 
 sub programme {
   my ( $self, $uuid ) = @_;

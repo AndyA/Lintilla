@@ -11,7 +11,10 @@ our $VERSION = '0.1';
 
 get '/' => sub {
   my $db = Lintilla::DB::Genome->new( dbh => database );
-  template 'index', { services => $db->services };
+  template 'index',
+   {services => $db->services,
+    years    => $db->years,
+   };
 };
 
 get '/search' => sub {
