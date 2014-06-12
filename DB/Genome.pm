@@ -8,7 +8,14 @@ Lintilla::DB::Genome - Genome model
 
 =cut
 
+use constant YEAR_START => 1923;
+use constant YEAR_END   => 2009;
+
 has dbh => ( is => 'ro', isa => 'DBI::db' );
+
+has years    => ( is => 'ro', lazy => 1, builder => '_build_years' );
+has decades  => ( is => 'ro', lazy => 1, builder => '_build_decades' );
+has services => ( is => 'ro', lazy => 1, builder => '_build_services' );
 
 sub _format_uuid {
   my ( $self, $uuid ) = @_;
@@ -45,7 +52,7 @@ sub _group_by {
 
 =cut
 
-sub services {
+sub _build_services {
   my $self = shift;
   return $self->_group_by(
     $self->dbh->selectall_arrayref(
@@ -56,9 +63,18 @@ sub services {
   );
 }
 
-sub years {
+sub _build_years {
   shift->dbh->selectcol_arrayref(
-    'SELECT DISTINCT year FROM genome_programmes_v2 ORDER BY year');
+    'SELECT DISTINCT year FROM genome_programmes_v2 WHERE year BETWEEN ? AND ? ORDER BY year',
+    {}, YEAR_START, YEAR_END
+  );
+}
+
+sub _build_decades {
+  my $self = shift;
+  my %dec  = ();
+  $dec{ int( $_ / 10 ) * 10 }++ for @{ $self->years };
+  return [sort { $a <=> $b } keys %dec];
 }
 
 =head2 Dynamic Data

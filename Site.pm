@@ -14,6 +14,7 @@ get '/' => sub {
   template 'index',
    {services => $db->services,
     years    => $db->years,
+    decades  => $db->decades,
    };
 };
 

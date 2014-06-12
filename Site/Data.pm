@@ -67,6 +67,9 @@ prefix '/data' => sub {
   get '/years' => sub {
     Lintilla::DB::Genome->new( dbh => database )->years;
   };
+  get '/decades' => sub {
+    Lintilla::DB::Genome->new( dbh => database )->decades;
+  };
   get '/programme/:uuid' => sub {
     Lintilla::DB::Genome->new( dbh => database )->programme( param('uuid') );
   };
