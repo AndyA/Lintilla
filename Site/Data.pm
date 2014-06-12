@@ -61,9 +61,11 @@ sub search {
 }
 
 prefix '/data' => sub {
+  get '/services' => sub {
+    Lintilla::DB::Genome->new( dbh => database )->services;
+  };
   get '/programme/:uuid' => sub {
-    return Lintilla::DB::Genome->new( dbh => database )
-     ->programme( param('uuid') );
+    Lintilla::DB::Genome->new( dbh => database )->programme( param('uuid') );
   };
   get '/ref/index' => sub {
     return [sort keys %REF];

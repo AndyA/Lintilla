@@ -28,6 +28,30 @@ sub _strip_uuid {
   return $stripped;
 }
 
+sub _group_by {
+  my ( $self, $rows, @keys ) = @_;
+  my $leaf = pop @keys;
+  my $hash = {};
+  for my $row (@$rows) {
+    my $rr   = {%$row};    # clone
+    my $slot = $hash;
+    $slot = ( $slot->{ delete $rr->{$_} } ||= {} ) for @keys;
+    push @{ $slot->{ delete $rr->{$leaf} } }, $rr;
+  }
+  return $hash;
+}
+
+sub services {
+  my $self = shift;
+  return $self->_group_by(
+    $self->dbh->selectall_arrayref(
+      'SELECT title, type, _uuid AS uuid FROM genome_services ORDER BY title',
+      { Slice => {} }
+    ),
+    'type'
+  );
+}
+
 sub programme {
   my ( $self, $uuid ) = @_;
   return $self->dbh->selectrow_hashref(
