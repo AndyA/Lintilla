@@ -9,13 +9,23 @@ use Lintilla::Site::Data;
 
 our $VERSION = '0.1';
 
+use constant BOILERPLATE => qw( services years decades );
+
+sub db() { Lintilla::DB::Genome->new( dbh => database ) }
+
 get '/' => sub {
-  my $db = Lintilla::DB::Genome->new( dbh => database );
-  template 'index',
-   {services => $db->services,
-    years    => $db->years,
-    decades  => $db->decades,
-   };
+  template 'index', { db->gather(BOILERPLATE), };
+};
+
+get '/schedules/:service' => sub {
+  forward '/schedules/'
+   . param('service') . '/'
+   . db->service_start_date( param('service') );
+};
+
+get '/schedules/:service/:date' => sub {
+  my $db = db;
+  template 'schedule', { $db->gather(BOILERPLATE), };
 };
 
 get '/search' => sub {
