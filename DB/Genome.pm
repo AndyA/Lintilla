@@ -62,19 +62,19 @@ sub _group_by {
 
 sub _build_services {
   my $self = shift;
+  my $sql  = join ' ',
+   'SELECT * FROM `genome_002`.`genome_services` ',
+   'WHERE `_parent` IS NULL ',
+   'ORDER BY `order` IS NULL, `order` ASC, `title` ASC';
+
   return $self->_group_by(
-    $self->dbh->selectall_arrayref(
-      'SELECT `title`, `type`, REPLACE(`_uuid`, "-", "") AS `uuid`, `_key` AS `key` '
-       . ' FROM `genome_services` ORDER BY `title`',
-      { Slice => {} }
-    ),
-    'type'
-  );
+    $self->dbh->selectall_arrayref( $sql, { Slice => {} } ), 'type' );
 }
 
 sub _build_years {
   shift->dbh->selectcol_arrayref(
-    'SELECT DISTINCT `year` FROM `genome_programmes_v2` WHERE `year` BETWEEN ? AND ? ORDER BY `year`',
+    'SELECT DISTINCT `year` FROM `genome_programmes_v2`'
+     . ' WHERE `year` BETWEEN ? AND ? ORDER BY `year`',
     {}, YEAR_START, YEAR_END
   );
 }
@@ -110,16 +110,24 @@ sub service_start_date {
 sub listing_for_schedule {
   my ( $self, $date, $service ) = @_;
 
-  my $rows = $self->dbh->selectall_arrayref(
-    'SELECT l.*, i.*, '
-     . ' l.`_uuid` AS `_uuid`, l.`_created` AS `_created`, l.`_modified` AS `modified`, l.`_key` AS `_key`, l.`issue` AS `issue`, '
-     . ' i.`_uuid` AS `issue_uuid`, i.`_created` AS `issue_created`, i.`_modified` AS `issue_modified`, i.`_key` AS `issue_key`, '
-     . ' i.`_parent` AS `issue_parent`, i.`issue` AS `issue_issue` '
-     . ' FROM `genome_listings_v2` AS l, `genome_issues` AS i '
-     . ' WHERE l.`source` = ? AND l.`service` = ? AND l.`date` = ? AND i.`_uuid` = l.`issue` '
-     . ' ORDER BY l.`issue_key` ASC, l.`page` ASC',
-    { Slice => {} }, $self->source, $service, $date
-  );
+  my $sql = join ' ',
+   'SELECT l.*, i.*, ',
+   'l.`_uuid` AS `_uuid`, ',
+   'l.`_created` AS `_created`, ',
+   'l.`_modified` AS `modified`, ',
+   'l.`_key` AS `_key`, ', 'l.`issue` AS `issue`, ',
+   'i.`_uuid` AS `issue_uuid`, ',
+   'i.`_created` AS `issue_created`, ',
+   'i.`_modified` AS `issue_modified`, ',
+   'i.`_key` AS `issue_key`, ',
+   'i.`_parent` AS `issue_parent`, ',
+   'i.`issue` AS `issue_issue` ',
+   'FROM `genome_listings_v2` AS l, `genome_issues` AS i ',
+   'WHERE l.`source` = ? AND l.`service` = ? AND l.`date` = ? AND i.`_uuid` = l.`issue` ',
+   'ORDER BY l.`issue_key` ASC, l.`page` ASC';
+
+  my $rows = $self->dbh->selectall_arrayref( $sql, { Slice => {} },
+    $self->source, $service, $date );
 
 }
 
