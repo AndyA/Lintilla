@@ -3,7 +3,6 @@ package Lintilla::Site;
 use Dancer ':syntax';
 
 use Dancer::Plugin::Database;
-use Dancer::Plugin::AutoReload;
 use Lintilla::DB::Genome;
 use Lintilla::Site::Asset;
 use Lintilla::Site::Data;
@@ -16,7 +15,9 @@ sub db() { Lintilla::DB::Genome->new( dbh => database ) }
 
 get '/' => sub {
   my @f = stat '/bin/false';
-  template 'index', { db->gather(BOILERPLATE), };
+  template 'index', {
+    #    db->gather(BOILERPLATE),
+  };
 };
 
 get '/schedules/:service' => sub {
