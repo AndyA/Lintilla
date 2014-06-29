@@ -16,6 +16,7 @@ use constant USER => 'root';
 use constant PASS => '';
 use constant DB   => 'spider';
 use constant WORK => 'work';
+use constant PAGE => 10_000;
 
 if (1) {
   my $dbh = dbh();
@@ -40,16 +41,23 @@ sub add_plain {
   my $done  = 0;
   print "Processing $count pages\n";
 
-  my $sth = $dbh->prepare("SELECT pa.url, pa.url_hash, pa.body $from");
-  $sth->execute;
-  while ( my $rec = $sth->fetchrow_hashref ) {
-    my $plain = make_plain( $rec->{body} );
-    $dbh->do( "INSERT INTO spider_plain (url_hash, plain) VALUES (?, ?)",
-      {}, $rec->{url_hash}, $plain );
-    $done++;
-    printf "\r%10d/%10d (%6.2f)", $done, $count, $done * 100 / $count;
+  while () {
+    my $rows
+     = $dbh->selectall_arrayref(
+      "SELECT pa.url, pa.url_hash, pa.body $from LIMIT " . PAGE,
+      { Slice => {} } );
+    last unless @$rows;
+    for my $rec (@$rows) {
+      my $plain = make_plain( $rec->{body} );
+      $dbh->do( "INSERT INTO spider_plain (url_hash, plain) VALUES (?, ?)",
+        {}, $rec->{url_hash}, $plain );
+      $done++;
+      printf "\r%10d/%10d (%6.2f)", $done, $count, $done * 100 / $count;
+    }
   }
+
   print "\n";
+
 }
 
 sub make_plain {
