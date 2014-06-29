@@ -141,18 +141,22 @@ sub spider {
       my $resp    = $ua->get($url);
       my $elapsed = time - $now;
 
-      my $got = {
-        url     => $job->{url},
-        code    => $resp->code,
-        message => $resp->status_line,
-        header  => $json->encode( headers($resp) ),
-        body    => $resp->content,
-        mime    => scalar( $resp->content_type ),
-        elapsed => $elapsed,
-      };
+      my $got = fill_in(
+        { url     => $job->{url},
+          code    => $resp->code,
+          message => $resp->status_line,
+          header  => $json->encode( headers($resp) ),
+          body    => $resp->content,
+          mime    => scalar( $resp->content_type ),
+          elapsed => $elapsed,
+        }
+      );
 
       if ( $got->{mime} eq 'text/html' ) {
         record_links( $job, find_links($resp) );
+      }
+      else {
+        detach($got);
       }
 
       end_work($got);
@@ -162,6 +166,26 @@ sub spider {
     }
   }
   print "Stopping...\n\n";
+}
+
+sub detach {
+  my $rec = shift;
+  my $file = file $Config->{job}{stash}, hash2path( $rec->{url_hash} );
+  print "$rec->{url} -> $file\n";
+  my $tmp = "$file.tmp";
+  $file->parent->mkpath;
+  {
+    open my $fh, '>', $tmp;
+    print $fh $rec->{body};
+    rename $tmp, $file;
+  }
+  $rec->{body} = '';
+}
+
+sub hash2path {
+  my $hash = shift;
+  die unless $hash =~ /^(..)(..)(.+)$/;
+  return ( $1, $2, $3 );
 }
 
 sub clean_url {

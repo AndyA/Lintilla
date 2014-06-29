@@ -15,6 +15,7 @@
          "http://techops.fmt.bbc.co.uk/services/sfx/fx/*.wav",
          "http://wikilearn.bbc.co.uk/media/kahuna/Kahuna_User_Manual.pdf",
          "*.mov",
+         "*.mxf",
          "*.m4v",
          "*.flv",
          "*.zip",
@@ -29,7 +30,10 @@
          "*.live.bbc.co.uk",
          "*.stage.*.bbc.co.uk",
          "*.stage.bbc.co.uk",
+         "ariel.gateway.bbc.co.uk",
+         "beta.bbc.co.uk",
          "cdndownloads.bbc.co.uk",
+         "dev13.mh.bbc.co.uk",
          "downloads.bbc.co.uk",
          "elvis.nca.bbc.co.uk",
          "genome.ch.bbc.co.uk",
@@ -37,8 +41,13 @@
          "m.bbc.co.uk",
          "news.bbc.co.uk",
          "pal.test.bbc.co.uk",
+         "perforce.newsonline.tc.nca.bbc.co.uk:8080",
+         "perforce.newsonline.tc.nca.bbc.co.uk",
+         "scot-dev0.national.core.bbc.co.uk",
          "ssl.bbc.co.uk",
+         "www-staging.bbc.co.uk",
          "www.bbc.co.uk",
+         "www.live.cwwtf.bbc.co.uk",
          "www.test.bbc.co.uk",
          "*betsie*"
       ],
@@ -54,7 +63,8 @@
          "http://www.audiencesportal.com/default.aspx",
          "http://bbcapps2498.national.core.bbc.co.uk/home.aspx",
          "http://fgbw1wsrot1202.national.core.bbc.co.uk/autorot/"
-      ]
+      ],
+      "stash" : "/data/spider/content"
    },
    "per_host" : {
       "emit" : {
