@@ -1,4 +1,5 @@
 .*.sw?
+/MANIFEST.bak
 /MYMETA.json
 /MYMETA.yml
 /Makefile

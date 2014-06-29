@@ -1,14 +1,1 @@
 Content here.
-<ul class="menu">
-  <li>
-    <a href="#">Choose a year</a>
-    <ul class="eight-up">
-      [% FOREACH y IN years %]
-        <li><a href="/year/[% y %]">[% y %]</a></li>
-      [% END %]
-    </ul>
-  </li>
-</ul>
-[% FOREACH d IN decades %]
-  <img src="/i/year/[% d %].png" alt="[% d %]" />
-[% END %]

@@ -1,0 +1,3 @@
+[% FOREACH m IN search.matches %]
+  <a href="[% m.url | html %]">[% m.url | html %]</a><br />
+[% END %]

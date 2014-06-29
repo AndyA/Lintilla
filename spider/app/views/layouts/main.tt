@@ -2,38 +2,16 @@
 [% USE DataPrinter %]
 <html>
   <head>
-    <title>BBC Genome</title>
+    <title>BBC Gateway Search</title>
     <script src="/js/jquery-1.9.1.min.js"></script>
-    <script src="/js/jquery-ui-1.10.1.custom.min.js"></script>
-    <script src="/js/urlparser.js"></script>
     <link rel="stylesheet" href="/css/style.css" />
   </head>
   <body>
-    <div id="header">
-      <ul class="menu">
-        <li>
-          <a href="http://bbc.co.uk">TV</a>
-          <ul class="four-up">
-            [% FOREACH s IN services.tv %]
-              <li>
-                <a href="/schedules/[% s.key %]">[% s.title %]</a>
-              </li>
-            [% END %]
-          </ul>
-        </li>
-        <li>
-          <a href="http://bbc.co.uk">Radio</a>
-          <ul class="four-up">
-            [% FOREACH s IN services.radio %]
-              <li>
-                <a href="/schedules/[% s.key %]">[% s.title %]</a>
-              </li>
-            [% END %]
-          </ul>
-        </li>
-      </ul>
-      <!-- TV menu --> <!-- Radio menu --> <!-- Issues link -->
-      <!-- Search box --> <!-- Search Help link --> <!-- Advanced search link -->
+    <div id="search">
+      <form method="GET" action="/search">
+        <input type="text" name="q" />
+        <input type="submit" value="Go" />
+      </form>
     </div>
     <div id="content">
       [% content %]
