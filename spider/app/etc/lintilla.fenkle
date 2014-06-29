@@ -1,0 +1,29 @@
+# lintilla.fenkle
+
+ProxyRequests Off
+
+<VirtualHost *:80>
+  ServerName lintilla.fenkle
+  ServerAlias lintilla
+
+  DocumentRoot /opt/lintilla/app/public
+  CustomLog /opt/lintilla/app/logs/apache.access_log combined
+  ErrorLog /opt/lintilla/app/logs/apache.error_log
+  LogLevel debug
+  RewriteLog /opt/lintilla/app/logs/apache.rewrite_log
+  RewriteLogLevel 9
+
+  <Directory "/opt/lintilla/app/public">
+    AllowOverride None
+    Options +ExecCGI -MultiViews +SymLinksIfOwnerMatch
+    Order allow,deny
+    Allow from all
+
+    RewriteEngine On
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^(.*)$ /dispatch.fcgi/$1 [QSA,L]
+  </Directory>
+
+</VirtualHost>
+
+

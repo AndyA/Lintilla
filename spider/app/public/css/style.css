@@ -1,0 +1,53 @@
+body {
+  font-family: arial, sans-serif;
+}
+
+ul.menu, ul.menu ul {
+  padding: 0;
+  margin: 0;
+  width: 40em;
+}
+
+ul.menu li {
+  list-style-type: none;
+  display: inline-block;
+  position: relative;
+}
+
+ul.menu li a {
+  text-decoration: none;
+  color: black;
+  background: #ddd;
+  padding: 0.4em;
+  display: inline-block;
+}
+
+ul.menu li ul {
+  display: none;
+  position: absolute;
+  top: 28px;
+  left: 0;
+  background: #ddd;
+  z-index: 100;
+}
+
+ul.menu li:hover ul {
+  display: block;
+}
+
+ul.menu ul li:hover a {
+  background: #bbb;
+}
+
+.two-up   li { width: 50%;     }
+.three-up li { width: 33.333%; }
+.four-up  li { width: 25%;     }
+.five-up  li { width: 20%;     }
+.six-up   li { width: 16.666%; }
+.eight-up li { width: 12.5%; }
+
+#header {
+  border-bottom: 1px solid black;
+  padding-bottom: 1em;
+  margin-bottom: 1em;
+}

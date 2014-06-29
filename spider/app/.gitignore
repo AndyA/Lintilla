@@ -1,0 +1,7 @@
+.*.sw?
+/MYMETA.json
+/MYMETA.yml
+/Makefile
+/Session.vim
+/blib/
+/pm_to_blib
