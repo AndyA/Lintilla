@@ -5,6 +5,7 @@ use v5.10;
 use Dancer ':syntax';
 
 use Dancer::Plugin::Database;
+use HTML::Parser;
 use Lintilla::DB::Spider;
 use Lintilla::Site::Asset;
 use Lintilla::Site::Data;
@@ -72,11 +73,37 @@ sub pager {
   return $stash;
 }
 
+sub get_title {
+  my ($doc)   = @_;
+  my $p       = HTML::Parser->new;
+  my $intitle = 0;
+  my @title;
+  $p->handler(
+    start => sub { $intitle++ if $_[0] eq 'title' },
+    'tagname'
+  );
+  $p->handler(
+    end => sub { $p->eof if $_[0] eq 'title' && --$intitle == 0 },
+    'tagname'
+  );
+  $p->handler( text => sub { push @title, $_[0] if $intitle }, 'dtext' );
+  $p->parse($doc);
+  return join ' ', @title;
+}
+
+sub decorate {
+  my $stash = shift;
+  for my $rec ( @{ $stash->{search}{matches} } ) {
+    $rec->{title} = get_title( $rec->{body} );
+  }
+  return $stash;
+}
+
 get '/search' => sub {
   my $start = param('start') // 0;
   my $size  = param('size')  // 30;
   my $q     = param('q')     // '';
-  template 'search', pager( search( $start, $size, $q ) );
+  template 'search', decorate( pager( search( $start, $size, $q ) ) );
 };
 
 true;

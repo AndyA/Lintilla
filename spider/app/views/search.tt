@@ -20,10 +20,14 @@
   </div>
 [% END %]
 
+<div id="search-header">
+  Found [% search.results.total_found %] matches
+</div>
+
 [% PROCESS pager %]
 [% FOREACH m IN search.matches %]
   <div class="result">
-    <a href="[% m.url | html %]">[% m.url | html %]</a><br />
+    <a href="[% m.url | html %]">[% m.title | html %]</a><br />
   </div>
 [% END %]
 [% PROCESS pager %]
