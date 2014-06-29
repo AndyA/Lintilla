@@ -9,7 +9,7 @@
   <body>
     <div id="search">
       <form method="GET" action="/search">
-        <input type="text" name="q" />
+        <input type="text" name="q" value="[% page.q | html %]"/>
         <input type="submit" value="Go" />
       </form>
     </div>

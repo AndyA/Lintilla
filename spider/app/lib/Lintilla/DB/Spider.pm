@@ -22,11 +22,23 @@ use constant INDEX => 'spider_idx';
 
 =cut
 
+sub _lookup {
+  my ( $self, @matches ) = @_;
+
+  return [] unless @matches;
+
+  my $ids = join ', ', map { $_->{doc} } @matches;
+  my $sql
+   = "SELECT * FROM spider_page AS pa, spider_plain AS pl "
+   . "WHERE pl.url_hash = pa.url_hash AND pl.id IN ($ids) "
+   . "ORDER BY FIELD(id, $ids) ";
+
+  return database->selectall_arrayref( $sql, { Slice => {} } );
+}
+
 sub search {
   my ( $self, $start, $size, $query ) = @_;
   #  $size = MAX_PAGE if $size > MAX_PAGE;
-
-  debug "start: $start, size: $size, query: $query";
 
   my $sph = Sphinx::Search->new();
   $sph->SetMatchMode(SPH_MATCH_EXTENDED);
@@ -34,17 +46,9 @@ sub search {
   $sph->SetLimits( $start, $size );
   my $results = $sph->Query( $query, INDEX );
 
-  debug "results: ", $results;
-
-  my $ids = join ', ', map { $_->{doc} } @{ $results->{matches} };
-  my $sql
-   = "SELECT * FROM spider_page AS pa, spider_plain AS pl "
-   . "WHERE pl.url_hash = pa.url_hash AND pl.id IN ($ids) "
-   . "ORDER BY FIELD(id, $ids) ";
-
   return {
     results => $results,
-    matches => database->selectall_arrayref( $sql, { Slice => {} } ),
+    matches => $self->_lookup( @{ $results->{matches} } ),
   };
 }
 
