@@ -2,6 +2,40 @@ body {
   font-family: arial, sans-serif;
 }
 
+#search input {
+  font-size: 1.5em;
+}
+
+#search {
+  background: #eee;
+  padding: 1em 3em;
+}
+
 .pager {
   padding: 0.5em 2em;
+}
+
+.result h1 {
+  font-size: 1.2em;
+  padding: 0;
+  margin: 0;
+  margin-top: 1em;
+}
+
+.result h1 a {
+  text-decoration: none;
+}
+
+.result .link {
+  font-size: 0.8em;
+}
+
+.result .slug {
+  font-size: 0.8em;
+  margin-left: 1em;
+}
+
+.result .slug .hit {
+  background: yellow;
+  font-weight: bold;
 }

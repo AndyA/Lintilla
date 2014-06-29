@@ -1,23 +1,25 @@
 [% BLOCK pager %]
-  <div class="pager">
-  [% IF page.pager.prev %]
-    <a href="[% page.pager.prev | html %]">&lt;&lt;</a>
-  [% ELSE %]
-    <span class="unavailable">&lt;&lt;</span>
-  [% END %]
-  [% FOREACH p IN page.pager.pages %]
-    [% IF p.link %]
-      <a href="[% p.link | html %]">[% p.page %]</a>
+  [% IF page.pager.pages.size > 1 %]
+    <div class="pager">
+    [% IF page.pager.prev %]
+      <a href="[% page.pager.prev | html %]">&lt;&lt;</a>
     [% ELSE %]
-      <span class="current">[% p.page %]</span>
+      <span class="unavailable">&lt;&lt;</span>
     [% END %]
+    [% FOREACH p IN page.pager.pages %]
+      [% IF p.link %]
+        <a href="[% p.link | html %]">[% p.page %]</a>
+      [% ELSE %]
+        <span class="current">[% p.page %]</span>
+      [% END %]
+    [% END %]
+    [% IF page.pager.next %]
+      <a href="[% page.pager.next | html %]">&gt;&gt;</a>
+    [% ELSE %]
+      <span class="unavailable">&gt;&gt;</span>
+    [% END %]
+    </div>
   [% END %]
-  [% IF page.pager.next %]
-    <a href="[% page.pager.next | html %]">&gt;&gt;</a>
-  [% ELSE %]
-    <span class="unavailable">&gt;&gt;</span>
-  [% END %]
-  </div>
 [% END %]
 
 <div id="search-header">
@@ -27,7 +29,11 @@
 [% PROCESS pager %]
 [% FOREACH m IN search.matches %]
   <div class="result">
-    <a href="[% m.url | html %]">[% m.title | html %]</a><br />
+    <h1><a href="[% m.url | html %]">[% m.title | html %]</a></h1>
+    <div class="link">(<a href="[% m.url | html %]">[% m.url | html %]</a>)</div>
+    [% FOREACH sl IN m.slugs %]
+      <div class="slug">...[% sl %]...</div>
+    [% END %]
   </div>
 [% END %]
 [% PROCESS pager %]

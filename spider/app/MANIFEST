@@ -1,4 +1,3 @@
-.gitignore
 bin/add_image_meta.pl
 bin/app.pl
 bin/fix_shebang.pl
@@ -17,8 +16,8 @@ lib/Lintilla/Role/Gatherer.pm
 lib/Lintilla/Site.pm
 lib/Lintilla/Site/Asset.pm
 lib/Lintilla/Site/Data.pm
+lib/Lintilla/Slugger.pm
 lib/Lintilla/Util.pm
-logs/.gitignore
 logs/apache.access_log
 logs/apache.error_log
 Makefile.PL
@@ -28,7 +27,6 @@ MYMETA.json
 MYMETA.yml
 proto/public/dispatch.cgi
 proto/public/dispatch.fcgi
-public/.gitignore
 public/404.html
 public/500.html
 public/css/error.css
@@ -65,3 +63,4 @@ t/005_data.t
 views/index.tt
 views/layouts/main.tt
 views/schedule.tt
+views/search.tt

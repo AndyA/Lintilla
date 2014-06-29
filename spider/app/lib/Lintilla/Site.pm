@@ -9,12 +9,14 @@ use HTML::Parser;
 use Lintilla::DB::Spider;
 use Lintilla::Site::Asset;
 use Lintilla::Site::Data;
+use Lintilla::Slugger;
 use List::Util qw( min max );
 use URI;
 
 our $VERSION = '0.1';
 
 use constant PAGES => 20;
+use constant SLUGS => 6;
 
 sub db() { Lintilla::DB::Spider->new( dbh => database ) }
 
@@ -52,7 +54,7 @@ sub pager {
   my $pages = int( ( $total + $size - 1 ) / $size );
 
   my $first = max( 0, int( $page - PAGES / 2 ) );
-  my $last = min( $first + PAGES - 1, $pages );
+  my $last = min( $first + PAGES - 1, $pages - 1 );
   my @pages = ();
   for my $pn ( $first .. $last ) {
     push @pages,
@@ -91,10 +93,31 @@ sub get_title {
   return join ' ', @title;
 }
 
+sub word_slugs {
+  my ( $word, $text, $len ) = @_;
+  while ( $text =~ /\<\Q$word\E\>/i ) {
+  }
+}
+
+sub slugs {
+  my ( $query, $text, $len ) = @_;
+}
+
 sub decorate {
   my $stash = shift;
   for my $rec ( @{ $stash->{search}{matches} } ) {
     $rec->{title} = get_title( $rec->{body} );
+    my $iter = Lintilla::Slugger->new(
+      text  => $rec->{plain},
+      query => $stash->{page}{q}
+    )->iterator;
+    my @slugs = ();
+    for ( 1 .. SLUGS ) {
+      my $ext = $iter->();
+      last unless defined $ext;
+      push @slugs, $ext;
+    }
+    $rec->{slugs} = [@slugs];
   }
   return $stash;
 }
