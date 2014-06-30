@@ -122,15 +122,14 @@ $(function() {
 
   loadNext();
 
-  if (0) {
-    getJson('/data/ref/index', function(idx) {
-      for (var i = 0; i < idx.length; i++) {
-        (function(name) {
-          getJson('/data/ref/' + name, function(rd) {
-            ref[name] = rd;
-          });
-        })(idx[i]);
-      }
-    });
-  }
+  getJson('/data/ref/index', function(idx) {
+    for (var i = 0; i < idx.length; i++) {
+      (function(name) {
+        getJson('/data/ref/' + name, function(rd) {
+          ref[name] = rd;
+          console.log(name, ' = ', rd);
+        });
+      })(idx[i]);
+    }
+  });
 });
