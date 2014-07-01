@@ -49,6 +49,10 @@ $(function() {
   var target = window.location.hash;
   target = target.length > 1 ? target.substr(1) : null;
 
+  function removeHash() {
+    window.history.pushState("", document.title, window.location.pathname);
+  }
+
   function setURLArgs(url, parms) {
     var u = new URLParser(url);
     var p = u.part('path').split('/');
@@ -195,7 +199,7 @@ $(function() {
       },
       {
         complete: function() {
-          window.location.hash = '';
+          removeHash();
           $(this).remove()
         }
       });
