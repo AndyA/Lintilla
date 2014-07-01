@@ -139,10 +139,17 @@ $(function() {
 
     body += '</dl>';
 
-    return '<div class="image-preview"><div><a target="_blank" href="' + full.url //
-    + '"><img src="' + img.url + '" width="' //
-    + img.width + '" height="' + img.height + '"/></a></div></div>' // 
-    + '<div class="info-detail">' + body + '</div>' //
+    return '<div class="image-preview">' //
+    + '<a target="_blank" href="' + full.url + '">' //
+    + '<div class="image-wrap">' //
+    + '<span class="tag fa fa-search-plus fa-2x"></span>' //
+    + '<img src="' + img.url + '" width="' + img.width + '" height="' + img.height + '"/>' //
+    + '</div>' //
+    + '</a>' //
+    + '</div>' //
+    + '<div class="info-detail">' //
+    + body //
+    + '</div>' //
     + '<br class="clear-both" />';
   }
 

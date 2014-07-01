@@ -11,6 +11,8 @@
     <script src="js/join.js"></script>
     <script src="js/elvis.js"></script>
     <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet"
+      href="//maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css">
     <script>
       ds = "<%= ds | html %>";
     </script>

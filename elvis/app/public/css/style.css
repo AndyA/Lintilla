@@ -114,7 +114,7 @@ img.slice {
   position: absolute;
 }
 
-.info-text .image-preview div {
+.info-text .image-preview .image-wrap {
   width: 520px;
   height: 520px;
   background: black;
@@ -159,3 +159,12 @@ img.slice {
   margin-left: auto;
   margin-right: auto;
 }
+
+.tag {
+  float: left;
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  color: white;
+}
+
