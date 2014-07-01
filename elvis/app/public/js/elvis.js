@@ -166,17 +166,18 @@ $(function() {
 
     var addElt = function() {
       $('.detail').remove();
-      $eol.after($('<div class="detail">' //
+      var deet = $('<div class="detail">' //
       + '<div class="arrow top" style="left: ' + Math.floor(cx) + 'px"></div>' //
       + '<div class="info-text">' + makeInfo(info) + '</div></div>').click(function() {
         $('.detail').remove();
-      }));
+      });
+      $eol.after(deet);
       $('.detail a').click(function(e) {
         e.stopPropagation();
       });
       //.animate({ height: '400px' })
       $("html, body").animate({
-        scrollTop: scrollTo(elt) + 300 + 'px'
+        scrollTop: scrollTo(deet) + 'px'
       });
     }
 
