@@ -171,6 +171,9 @@ $(function() {
       + '<div class="info-text">' + makeInfo(info) + '</div></div>').click(function() {
         $('.detail').remove();
       }));
+      $('.detail a').click(function(e) {
+        e.stopPropagation();
+      });
       //.animate({ height: '400px' })
       $("html, body").animate({
         scrollTop: scrollTo(elt) + 300 + 'px'
