@@ -116,7 +116,8 @@ $(function() {
   function makeInfo(info) {
     console.log('info: ', info);
     console.log('ref: ', ref);
-    img = info['var']['info'];
+    var img = info['var']['info'];
+    var full = info['var']['full'];
     var body = '';
     if (info.headline) body += textDiv('headline', info.headline);
     if (info.annotation) body += textDiv('annotation', info.annotation);
@@ -135,10 +136,18 @@ $(function() {
 
     body += '</dl>';
 
-    return '<div class="image-preview"><div><img src="' + img.url + '" width="' //
-    + img.width + '" height="' + img.height + '"/></div></div>' // 
+    return '<div class="image-preview"><div><a target="_blank" href="' + full.url //
+    + '"><img src="' + img.url + '" width="' //
+    + img.width + '" height="' + img.height + '"/></a></div></div>' // 
     + '<div class="info-detail">' + body + '</div>' //
     + '<br class="clear-both" />';
+  }
+
+  function scrollTo(elt) {
+    var wh = $(window).height(),
+    eh = elt.height(),
+    eo = elt.offset();
+    return eo.top + (eh / 2) - (wh / 2);
   }
 
   function imageClick(ev) {
@@ -157,14 +166,17 @@ $(function() {
 
     var addElt = function() {
       $('.detail').remove();
-      $eol.after($('<div class="detail">' //
+      var elt = $eol.after($('<div class="detail">' //
       + '<div class="arrow top" style="left: ' + Math.floor(cx) + 'px"></div>' //
       + '<div class="info-text">' + makeInfo(info) + '</div></div>'));
       //.animate({ height: '400px' })
+      $("html, body").animate({
+        scrollTop: scrollTo(elt) + 300 + 'px'
+      });
     }
 
     var deet = $('.detail');
-    if (deet.size()) {
+    if (false && deet.size()) {
       deet.animate({
         height: 0
       },

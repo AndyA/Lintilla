@@ -22,11 +22,19 @@ div#popup {
   position: fixed;
   left: 4em;
   right: 4em;
-  top: 4em;
+  top: 1em;
   z-index: 1000;
-  background-color: rgba(255,255,255,0.5);
+  background-color: rgba(255,255,255,0.3);
   color: black;
   padding: 1em;
+}
+
+div#popup .query {
+  width: 60%;
+}
+
+#content {
+  padding-top: 5em;
 }
 
 .arrow-box {

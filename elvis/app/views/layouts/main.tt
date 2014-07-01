@@ -19,7 +19,7 @@
     <div id="container">
       <div id="popup">
         <form method="GET" action="/search">
-          <input type="text" name="q" value="<%= q | html %>" size="40" />
+          <input type="text" class="query" name="q" value="<%= q | html %>" size="40" />
           <input type="submit" value="Go" />
         </form>
       </div>
