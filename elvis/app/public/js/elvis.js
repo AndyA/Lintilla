@@ -167,35 +167,29 @@ $(function() {
     var cy = (pos.top + pos.bottom) / 2;
 
     var $eol = searchRight($this);
+    var adj = 0;
+    $('.detail').each(function() {
+      var $this = $(this);
+      var dpos = $this.offset();
+      if (dpos.top < pos.top) adj += $this.height();
+      $this.remove();
+    });
+    $(window).scrollTop($(window).scrollTop() - adj);
 
-    var addElt = function() {
+    //    $('.detail').remove();
+    var deet = $('<div class="detail">' //
+    + '<div class="arrow top" style="left: ' + Math.floor(cx) + 'px"></div>' //
+    + '<div class="info-text">' + makeInfo(info) + '</div></div>').click(function() {
       $('.detail').remove();
-      var deet = $('<div class="detail">' //
-      + '<div class="arrow top" style="left: ' + Math.floor(cx) + 'px"></div>' //
-      + '<div class="info-text">' + makeInfo(info) + '</div></div>').click(function() {
-        $('.detail').remove();
-      });
-      $eol.after(deet);
-      $('.detail a').click(function(e) {
-        e.stopPropagation();
-      });
-      //.animate({ height: '400px' })
-      $("html, body").animate({
-        scrollTop: scrollTo(deet) + 'px'
-      });
-    }
-
-    var deet = $('.detail');
-    if (false && deet.size()) {
-      deet.animate({
-        height: 0
-      },
-      {
-        complete: addElt
-      });
-    } else {
-      addElt()
-    }
+    });
+    $eol.after(deet);
+    $('.detail a').click(function(e) {
+      e.stopPropagation();
+    });
+    //.animate({ height: '400px' })
+    $("html, body").animate({
+      scrollTop: scrollTo(deet) + 'px'
+    });
   }
 
   function addImage($c, info) {
