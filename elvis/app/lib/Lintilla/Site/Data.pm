@@ -50,7 +50,9 @@ sub search {
   $sph->SetLimits( $start, $size );
   my $results = $sph->Query( $query, 'elvis_idx' );
 
-  my $ids = join ', ', map { $_->{doc} } @{ $results->{matches} };
+  my @ids = map { $_->{doc} } @{ $results->{matches} };
+  return [] unless @ids;
+  my $ids = join ', ', @ids;
   my $sql
    = "SELECT * FROM elvis_image "
    . "WHERE acno IN ($ids) "

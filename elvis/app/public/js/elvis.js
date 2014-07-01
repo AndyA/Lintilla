@@ -233,6 +233,10 @@ $(function() {
       }
       else {
         state = 'done';
+        if (current == 0) {
+          $('#content').append('<div class="notfound">' //
+          + '<img src="/images/notfound.jpg" /></div>');
+        }
       }
     });
   }
