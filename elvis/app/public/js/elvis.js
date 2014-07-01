@@ -153,6 +153,7 @@ $(function() {
     + '</a>' //
     + '</div>' //
     + '<div class="info-detail">' //
+    + '<span class="btag close fa fa-times-circle-o fa-2x"></span>' //
     + body //
     + '</div>' //
     + '<br class="clear-both" />';
@@ -192,7 +193,9 @@ $(function() {
     //    $('.detail').remove();
     var deet = $('<div class="detail">' //
     + '<div class="arrow top" style="left: ' + Math.floor(cx) + 'px"></div>' //
-    + '<div class="info-text">' + makeInfo(info) + '</div></div>').click(function() {
+    + '<div class="info-text">' + makeInfo(info) + '</div></div>');
+    $eol.after(deet);
+    $('.detail .close').click(function(e) {
       $('.detail').animate({
         height: 'toggle',
         opacity: 'toggle'
@@ -204,7 +207,6 @@ $(function() {
         }
       });
     });
-    $eol.after(deet);
     $('.detail a').click(function(e) {
       e.stopPropagation();
     });

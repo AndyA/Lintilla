@@ -159,11 +159,20 @@ img.slice {
   margin-right: auto;
 }
 
-.tag {
+.tag, .btag {
   float: left;
-  position: absolute;
+}
+
+.btag {
+  float: right;
+  margin-left: 1em;
+  color: black;
+}
+
+.tag {
+  color: white;
   right: 10px;
   bottom: 10px;
-  color: white;
+  position: absolute;
 }
 
