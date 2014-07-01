@@ -50,7 +50,8 @@ $(function() {
   target = target.length > 1 ? target.substr(1) : null;
 
   function removeHash() {
-    window.history.pushState("", document.title, window.location.pathname);
+    var path = window.location.pathname + window.location.search;
+    window.history.pushState("", document.title, path);
   }
 
   function setURLArgs(url, parms) {
@@ -277,7 +278,7 @@ $(function() {
   });
 
   $(document).keyup(function(e) {
-    switch(e.keyCode) {
+    switch (e.keyCode) {
     case 27:
       closeDetail();
       break;
