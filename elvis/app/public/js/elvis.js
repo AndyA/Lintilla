@@ -37,8 +37,6 @@ if (!Object.keys) {
 }
 
 $(function() {
-  var here = new URLParser(window.location.href);
-
   var img_path = '/asset';
   var state = "idle";
   var margin = 1000;
@@ -46,6 +44,9 @@ $(function() {
   var current = 0;
   var asset_map = {};
   var ref = {};
+
+  var target = window.location.hash;
+  target = target.length > 1 ? target.substr(1) : null;
 
   function setURLArgs(url, parms) {
     var u = new URLParser(url);
@@ -118,8 +119,6 @@ $(function() {
   }
 
   function makeInfo(info) {
-    console.log('info: ', info);
-    console.log('ref: ', ref);
     var img = info['var']['info'];
     var full = info['var']['full'];
     var body = '';
@@ -154,10 +153,12 @@ $(function() {
     return eo.top + (eh / 2) - (wh / 2);
   }
 
-  function imageClick(ev) {
+  function imageClick() {
     // Image clicked
     var $this = $(this);
-    var info = asset_map[$this.attr('src')];
+    var src = $this.attr('src');
+    var info = asset_map[src];
+    window.location.hash = src;
 
     var pos = $this.offset();
     pos.bottom = pos.top + $this.height();
@@ -186,6 +187,7 @@ $(function() {
       },
       {
         complete: function() {
+          window.location.hash = '';
           $(this).remove()
         }
       });
@@ -194,7 +196,6 @@ $(function() {
     $('.detail a').click(function(e) {
       e.stopPropagation();
     });
-    //.animate({ height: '400px' })
     $("html, body").animate({
       scrollTop: scrollTo(deet) + 'px'
     });
@@ -224,12 +225,18 @@ $(function() {
       size: page,
       start: current
     });
-    //    console.log(dsu);
+
     getJson(dsu, function(imgs) {
       if (imgs.length) {
         addImages(imgs);
         current += page;
         state = 'idle';
+        if (target && asset_map[target]) {
+          var img = $("img[src='" + target + "']")[0];
+          console.log(img);
+          imageClick.apply(img);
+          target = null;
+        }
       }
       else {
         state = 'done';
