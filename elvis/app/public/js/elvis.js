@@ -166,6 +166,19 @@ $(function() {
     return eo.top + (eh / 2) - (wh / 2);
   }
 
+  function closeDetail() {
+    $('.detail').animate({
+      height: 'toggle',
+      opacity: 'toggle'
+    },
+    {
+      complete: function() {
+        removeHash();
+        $(this).remove()
+      }
+    });
+  }
+
   function imageClick() {
     // Image clicked
     var $this = $(this);
@@ -195,18 +208,7 @@ $(function() {
     + '<div class="arrow top" style="left: ' + Math.floor(cx) + 'px"></div>' //
     + '<div class="info-text">' + makeInfo(info) + '</div></div>');
     $eol.after(deet);
-    $('.detail .close').click(function(e) {
-      $('.detail').animate({
-        height: 'toggle',
-        opacity: 'toggle'
-      },
-      {
-        complete: function() {
-          removeHash();
-          $(this).remove()
-        }
-      });
-    });
+    $('.detail .close').click(closeDetail);
     $('.detail a').click(function(e) {
       e.stopPropagation();
     });
@@ -271,6 +273,14 @@ $(function() {
       if (state == 'idle') {
         loadNext();
       }
+    }
+  });
+
+  $(document).keyup(function(e) {
+    switch(e.keyCode) {
+    case 27:
+      closeDetail();
+      break;
     }
   });
 
