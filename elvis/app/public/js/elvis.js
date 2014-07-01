@@ -44,6 +44,7 @@ $(function() {
   var current = 0;
   var asset_map = {};
   var ref = {};
+  var ref_loaded = false;
 
   var target = window.location.hash;
   target = target.length > 1 ? target.substr(1) : null;
@@ -97,7 +98,7 @@ $(function() {
 
   function getJson(url, cb) {
     //    console.log("getJson(" + url + ")");
-    $.ajax({
+    return $.ajax({
       url: url,
       context: this,
       dataType: 'json',
@@ -226,6 +227,15 @@ $(function() {
     }
   }
 
+  function tryTarget() {
+    if (ref_loaded && target && asset_map[target]) {
+      var img = $("img[src='" + target + "']")[0];
+      console.log(img);
+      imageClick.apply(img);
+      target = null;
+    }
+  }
+
   function loadNext() {
     state = 'loading';
     var dsu = setURLArgs(ds, {
@@ -238,12 +248,7 @@ $(function() {
         addImages(imgs);
         current += page;
         state = 'idle';
-        if (target && asset_map[target]) {
-          var img = $("img[src='" + target + "']")[0];
-          console.log(img);
-          imageClick.apply(img);
-          target = null;
-        }
+        tryTarget();
       }
       else {
         state = 'done';
@@ -266,12 +271,17 @@ $(function() {
   loadNext();
 
   getJson('/data/ref/index', function(idx) {
+    var defer = [];
     for (var i = 0; i < idx.length; i++) {
-      (function(name) {
-        getJson('/data/ref/' + name, function(rd) {
+      defer.push((function(name) {
+        return getJson('/data/ref/' + name, function(rd) {
           ref[name] = rd;
         });
-      })(idx[i]);
+      })(idx[i]));
     }
+    $.when.apply($, defer).done(function() {
+      ref_loaded = true;
+      tryTarget();
+    });
   });
 });
