@@ -166,9 +166,11 @@ $(function() {
 
     var addElt = function() {
       $('.detail').remove();
-      var elt = $eol.after($('<div class="detail">' //
+      $eol.after($('<div class="detail">' //
       + '<div class="arrow top" style="left: ' + Math.floor(cx) + 'px"></div>' //
-      + '<div class="info-text">' + makeInfo(info) + '</div></div>'));
+      + '<div class="info-text">' + makeInfo(info) + '</div></div>').click(function() {
+        $('.detail').remove();
+      }));
       //.animate({ height: '400px' })
       $("html, body").animate({
         scrollTop: scrollTo(elt) + 300 + 'px'
