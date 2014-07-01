@@ -109,6 +109,10 @@ $(function() {
     return $('<div/>').text(value).html();
   }
 
+  function rawDiv(cl, text) {
+    return '<div class="' + cl + '">' + text + '</div>';
+  }
+
   function textDiv(cl, text) {
     return '<div class="' + cl + '">' + htmlEncode(text) + '</div>';
   }
@@ -120,7 +124,7 @@ $(function() {
     var full = info['var']['full'];
     var body = '';
     if (info.headline) body += textDiv('headline', info.headline);
-    if (info.annotation) body += textDiv('annotation', info.annotation);
+    if (info.annotation) body += rawDiv('annotation', info.annotation);
     if (info.origin_date) body += textDiv('origin-date', info.origin_date);
     body += '<dl>';
 
