@@ -107,7 +107,7 @@ img.slice {
   background: white;
   color: black;
   padding: 0.6em 2em;
-  height: 560px;
+  min-height: 560px;
 }
 
 .info-text .image-preview {
@@ -130,8 +130,7 @@ img.slice {
 }
 
 .info-text .info-detail {
-  position: absolute;
-  left: 570px;
+  margin-left: 570px;
 }
 
 .info-text .info-detail .headline {
