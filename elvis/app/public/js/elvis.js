@@ -180,7 +180,15 @@ $(function() {
     var deet = $('<div class="detail">' //
     + '<div class="arrow top" style="left: ' + Math.floor(cx) + 'px"></div>' //
     + '<div class="info-text">' + makeInfo(info) + '</div></div>').click(function() {
-      $('.detail').remove();
+      $('.detail').animate({
+        height: 'toggle',
+        opacity: 'toggle'
+      },
+      {
+        complete: function() {
+          $(this).remove()
+        }
+      });
     });
     $eol.after(deet);
     $('.detail a').click(function(e) {
