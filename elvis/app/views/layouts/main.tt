@@ -18,6 +18,7 @@
   <body>
     <div id="container">
       <div id="popup">
+        <span class="ident"><a href="/">ELVIS Image Search</a></span>
         <form method="GET" action="/search">
           <input type="text" class="query" name="q" value="<%= q | html %>" size="40" />
           <input type="submit" value="Go" />

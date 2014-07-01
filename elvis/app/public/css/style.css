@@ -18,7 +18,7 @@ img.slice {
   background-color: #333;
 }
 
-div#popup {
+#popup {
   position: fixed;
   left: 4em;
   right: 4em;
@@ -29,8 +29,27 @@ div#popup {
   padding: 1em;
 }
 
-div#popup .query {
+#popup .ident {
+  float: left;
+  color: white;
+  font-weight: bold;
+  font-size: 1.2em;
+  margin-right: 2em;
+}
+
+#popup .ident a {
+  text-decoration: none;
+  color: white;
+}
+
+#popup .form {
+  float: left;
+}
+
+#popup .query {
   width: 60%;
+  background-color: rgba(255,255,255,0.7);
+  font-weight: bold;
 }
 
 #content {
