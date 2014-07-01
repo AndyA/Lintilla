@@ -13,13 +13,18 @@ Lintilla::Site::Asset - Asset handling
 
 =cut
 
-use constant DOCROOT => '/opt/lintilla/app/public';    # FIXME
+use constant DOCROOT => '/opt/lintilla/elvis/app/public';    # FIXME
 
 # TODO move this into a config file.
 my %RECIPE = (
   display => {
     width   => 1024,
     height  => 576,
+    quality => 95,
+  },
+  info => {
+    width   => 512,
+    height  => 512,
     quality => 95,
   },
   thumb => {

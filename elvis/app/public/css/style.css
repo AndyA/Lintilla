@@ -9,21 +9,13 @@ body, #container {
     Calibri, Helvetica, Arial, sans-serif;
 }
 
-img {
-  padding: 0;
-  margin: 0;
+.clear-both { 
+  clear: both; 
 }
 
 img.slice {
   margin: 6px;
   background-color: #333;
-}
-
-div.detail {
-  height: 10px;
-  width: 100%;
-  background-color: white;
-  color: black;
 }
 
 div#popup {
@@ -49,8 +41,8 @@ div#popup {
   width: 0;
   pointer-events: none;
   border-color: rgba(255, 255, 255, 0);
-  border-width: 20px;
-  margin-left: -20px;
+  border-width: 12px;
+  margin-left: -12px;
 }
 
 .arrow {
@@ -74,8 +66,61 @@ div#popup {
   border-top-color: #ffffff;
 }
 
+.detail {
+  width: 100%;
+  margin-top: -14px;
+}
+
+.info {
+  margin: 0.5em;
+}
+
 .info-text {
   background: white;
   color: black;
-  padding: 1em 3em;
+  padding: 0.6em 2em;
+  height: 560px;
+}
+
+.info-text .image-preview {
+  position: absolute;
+}
+
+.info-text .image-preview div {
+  width: 520px;
+  height: 520px;
+  background: black;
+  display: table-cell;
+  vertical-align: middle;
+  position: relative;
+}
+
+.info-text .image-preview img {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.info-text .info-detail {
+  position: absolute;
+  left: 570px;
+}
+
+.info-text .info-detail .headline {
+  font-size: 1.4em;
+  font-weight: bold;
+}
+
+.info-text .info-detail .annotation {
+  font-size: 1.2em;
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+}
+
+.info-text .info-detail .origin-date {
+}
+
+.info-text .info-detail dt {
+  padding-top: 0.2em;
+  font-weight: bold;
 }
