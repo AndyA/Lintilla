@@ -125,7 +125,7 @@ $(function() {
   }
 
   function makeInfo(info) {
-    var img = info['var']['info'];
+    var img = info['var']['display'];
     var full = info['var']['full'];
     var body = '';
     if (info.headline) body += textDiv('headline', info.headline);
@@ -145,23 +145,22 @@ $(function() {
 
     body += '</dl>';
 
-    return '<div class="image-preview">' //
+    return '<div class="picture">' //
     + '<a target="_blank" href="' + full.url + '">' //
-    + '<div class="image-wrap">' //
-    + '<span class="tag fa fa-search-plus fa-2x"></span>' //
-    + '<img src="' + img.url + '" width="' + img.width + '" height="' + img.height + '"/>' //
+    + '<div class="picture-wrapper">' //
+    + '<img src="' + img.url + '"/>' //
+    + '<span class="wtag fa fa-search-plus fa-2x"></span>' //
     + '</div>' //
     + '</a>' //
     + '</div>' //
-    + '<div class="info-detail">' //
+    + '<div class="text">' //
     + '<span class="btag">' //
     + '<span class="left fa fa-arrow-circle-o-left fa-2x"></span>' //
     + '<span class="right fa fa-arrow-circle-o-right fa-2x"></span>' //
     + '<span class="close fa fa-times-circle-o fa-2x"></span>' //
     + '</span>' //
     + body //
-    + '</div>' //
-    + '<br class="clear-both" />';
+    + '</div>';
   }
 
   function scrollTo(elt) {
@@ -240,7 +239,7 @@ $(function() {
 
     var deet = $('<div class="detail">' //
     + '<div class="arrow top" style="left: ' + Math.floor(cx) + 'px"></div>' //
-    + '<div class="info-text">' + makeInfo(info) + '</div></div>');
+    + '<div class="floater clearfix">' + makeInfo(info) + '</div></div>');
     $eol.after(deet);
     $('.detail .close').click(closeDetail);
     $('.detail .left').click(goLeft);

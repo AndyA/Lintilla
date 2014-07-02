@@ -9,10 +9,6 @@ body, #container {
     Calibri, Helvetica, Arial, sans-serif;
 }
 
-.clear-both { 
-  clear: both; 
-}
-
 .clearfix:after {
   clear: both;
   content: ".";
@@ -101,67 +97,6 @@ img.slice {
   border-top-color: #ffffff;
 }
 
-.detail {
-  width: 100%;
-  margin-top: -14px;
-  margin-bottom: 20px;
-}
-
-.info {
-  margin: 0.5em;
-}
-
-.info-text {
-  background: white;
-  color: black;
-  padding: 0.6em 2em;
-  min-height: 560px;
-}
-
-.info-text .image-preview {
-  position: absolute;
-}
-
-.info-text .image-preview .image-wrap {
-  width: 60%;
-  height: 520px;
-  background: black;
-  display: table-cell;
-  vertical-align: middle;
-  position: relative;
-}
-
-.info-text .image-preview img {
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
-  max-width: 100%;
-  height: auto;
-}
-
-.info-text .info-detail {
-  margin-left: 65%;
-}
-
-.info-text .info-detail .headline {
-  font-size: 1.4em;
-  font-weight: bold;
-}
-
-.info-text .info-detail .annotation {
-  font-size: 1.2em;
-  padding-top: 0.5em;
-  padding-bottom: 0.5em;
-}
-
-.info-text .info-detail .origin-date {
-}
-
-.info-text .info-detail dt {
-  padding-top: 0.2em;
-  font-weight: bold;
-}
-
 .notfound img {
   display: block;
   margin-top: 3em;
@@ -183,13 +118,6 @@ img.slice {
   margin: 0 0.2em;
 }
 
-.tag {
-  color: white;
-  right: 10px;
-  bottom: 10px;
-  position: absolute;
-}
-
 /* ------------------------------------- */
 
 .wtag {
@@ -199,9 +127,7 @@ img.slice {
   bottom: 0.5em;
 }
 
-.foldout {
-  background: white;
-  color: black;
+.detail {
   white-space: nowrap;
   width: 100%;
 }
@@ -209,6 +135,8 @@ img.slice {
 .floater {
   margin-left: auto;
   margin-right: auto;
+  color: black;
+  background: white;
 }
 
 .picture, .text {
@@ -225,6 +153,25 @@ img.slice {
 
 .text {
   width: 40%;
+}
+
+.detail .headline {
+  font-size: 1.4em;
+  font-weight: bold;
+}
+
+.detail .annotation {
+  font-size: 1.2em;
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+}
+
+.detail .origin-date {
+}
+
+.detail dt {
+  padding-top: 0.2em;
+  font-weight: bold;
 }
 
 .picture-wrapper {
