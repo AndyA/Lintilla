@@ -115,10 +115,9 @@ img.slice {
 }
 
 .btag span {
+  cursor: pointer;
   margin: 0 0.2em;
 }
-
-/* ------------------------------------- */
 
 .wtag {
   color: white;
