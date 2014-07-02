@@ -178,6 +178,10 @@ $(function() {
       }
       if ($next.length) imageClick.apply($next[0]);
     }
+    else {
+      var $next = $('.slice:first');
+      if ($next.length) imageClick.apply($next[0]);
+    }
   }
 
   function goLeft() {
