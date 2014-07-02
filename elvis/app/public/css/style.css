@@ -233,7 +233,6 @@ img.slice {
 
 .picture-wrapper {
 /*  border: 1em solid black;*/
-  display: table;
   margin-left: auto;
   margin-right: auto;
 }
