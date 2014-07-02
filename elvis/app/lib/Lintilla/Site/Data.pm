@@ -8,6 +8,8 @@ use Sphinx::Search;
 
 use Lintilla::Filter qw( cook );
 
+use List::Util qw( shuffle );
+
 =head1 NAME
 
 Lintilla::Data - Data handlers
@@ -40,6 +42,27 @@ sub page {
   );
 }
 
+sub jumble {
+  my ( $seed, @list ) = @_;
+  srand $seed;    # TODO are we depending on ranomness elsewhere?
+  return shuffle @list;
+}
+
+sub random {
+  my ( $start, $size, $seed ) = @_;
+  $size = MAX_PAGE if $size > MAX_PAGE;
+  my $ord = join ', ', jumble( $seed, map { "r.r$_" } 0 .. 7 );
+  my $sql = join ' ',
+   "SELECT i.* FROM elvis_image AS i, elvis_random AS r ",
+   "WHERE i.hash IS NOT NULL AND i.acno=r.acno ORDER BY", $ord,
+   "LIMIT ?, ?";
+
+  my $rs
+   = database->selectall_arrayref( $sql, { Slice => {} }, $start, $size );
+  $rs->[0]{format_id} = $sql;
+  return $rs;
+}
+
 sub search {
   my ( $start, $size, $query ) = @_;
   $size = MAX_PAGE if $size > MAX_PAGE;
@@ -70,6 +93,10 @@ prefix '/data' => sub {
   };
   get '/page/:size/:start' => sub {
     return cook assets => page( param('start'), param('size') );
+  };
+  get '/random/:size/:start/:seed' => sub {
+    return cook assets =>
+     random( param('start'), param('size'), param('seed') );
   };
   get '/search/:size/:start' => sub {
     return cook assets =>
