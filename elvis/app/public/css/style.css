@@ -169,6 +169,10 @@ img.slice {
   color: black;
 }
 
+.btag span {
+  margin: 0 0.2em;
+}
+
 .tag {
   color: white;
   right: 10px;

@@ -154,7 +154,11 @@ $(function() {
     + '</a>' //
     + '</div>' //
     + '<div class="info-detail">' //
-    + '<span class="btag close fa fa-times-circle-o fa-2x"></span>' //
+    + '<span class="btag">' //
+    + '<span class="left fa fa-arrow-circle-o-left fa-2x"></span>' //
+    + '<span class="right fa fa-arrow-circle-o-right fa-2x"></span>' //
+    + '<span class="close fa fa-times-circle-o fa-2x"></span>' //
+    + '</span>' //
     + body //
     + '</div>' //
     + '<br class="clear-both" />';
@@ -165,6 +169,29 @@ $(function() {
     eh = elt.height(),
     eo = elt.offset();
     return eo.top + (eh / 2) - (wh / 2);
+  }
+
+  function stepUsing(f) {
+    var $curr = $('.selected');
+    if ($curr.length) {
+      var $next = f($curr);
+      while ($next.hasClass('detail')) {
+        $next = f($next);
+      }
+      if ($next.length) imageClick.apply($next[0]);
+    }
+  }
+
+  function goLeft() {
+    stepUsing(function(e) {
+      return e.prev()
+    });
+  }
+
+  function goRight() {
+    stepUsing(function(e) {
+      return e.next()
+    });
   }
 
   function closeDetail() {
@@ -180,12 +207,26 @@ $(function() {
     });
   }
 
+  function killDetail(pos) {
+    var adj = 0;
+    $('.detail').each(function() {
+      var $this = $(this);
+      var dpos = $this.offset();
+      if (dpos.top < pos.top) adj += $this.height();
+      $this.remove();
+    });
+    $(window).scrollTop($(window).scrollTop() - adj);
+  }
+
   function imageClick() {
     // Image clicked
     var $this = $(this);
     var src = $this.attr('src');
     var info = asset_map[src];
     window.location.hash = src;
+
+    $('.selected').removeClass('selected');
+    $this.addClass('selected');
 
     var pos = $this.offset();
     pos.bottom = pos.top + $this.height();
@@ -195,21 +236,15 @@ $(function() {
     var cy = (pos.top + pos.bottom) / 2;
 
     var $eol = searchRight($this);
-    var adj = 0;
-    $('.detail').each(function() {
-      var $this = $(this);
-      var dpos = $this.offset();
-      if (dpos.top < pos.top) adj += $this.height();
-      $this.remove();
-    });
-    $(window).scrollTop($(window).scrollTop() - adj);
+    killDetail(pos);
 
-    //    $('.detail').remove();
     var deet = $('<div class="detail">' //
     + '<div class="arrow top" style="left: ' + Math.floor(cx) + 'px"></div>' //
     + '<div class="info-text">' + makeInfo(info) + '</div></div>');
     $eol.after(deet);
     $('.detail .close').click(closeDetail);
+    $('.detail .left').click(goLeft);
+    $('.detail .right').click(goRight);
     $('.detail a').click(function(e) {
       e.stopPropagation();
     });
@@ -281,6 +316,12 @@ $(function() {
     switch (e.keyCode) {
     case 27:
       closeDetail();
+      break;
+    case 37:
+      goLeft();
+      break;
+    case 39:
+      goRight();
       break;
     }
   });
