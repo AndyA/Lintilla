@@ -102,7 +102,6 @@ $(function() {
   }
 
   function getJson(url, cb) {
-    //    console.log("getJson(" + url + ")");
     return $.ajax({
       url: url,
       context: this,
@@ -215,7 +214,7 @@ $(function() {
       if (dpos.top < pos.top) adj += $this.height();
       $this.remove();
     });
-    $(window).scrollTop($(window).scrollTop() - adj);
+    if (adj) $(window).scrollTop($(window).scrollTop() - adj);
   }
 
   function imageClick() {
@@ -278,7 +277,6 @@ $(function() {
   function tryTarget() {
     if (ref_loaded && target && asset_map[target]) {
       var img = $("img[src='" + target + "']")[0];
-      console.log(img);
       imageClick.apply(img);
       target = null;
     }
@@ -308,6 +306,34 @@ $(function() {
     });
   }
 
+  function resizeHandler() {
+    var rtime = null;
+    var timeout = false;
+    var delta = 500;
+
+    $(window).resize(function() {
+      $('.detail').remove();
+      rtime = new Date();
+      if (!timeout) {
+        setTimeout(resizeend, delta);
+        timeout = true;
+      }
+    });
+
+    function resizeend() {
+      if (new Date() - rtime < delta) {
+        setTimeout(resizeend, delta);
+      } else {
+        timeout = false;
+        var sel = $('.selected');
+        if (sel.length) {
+          sel.removeClass('selected');
+          imageClick.apply(sel[0]);
+        }
+      }
+    }
+  }
+
   $(window).scroll(function(ev) {
     if (window.innerHeight + window.scrollY + margin >= document.body.offsetHeight) {
       if (state == 'idle') {
@@ -330,6 +356,7 @@ $(function() {
     }
   });
 
+  resizeHandler();
   loadNext();
 
   getJson('/data/ref/index', function(idx) {
