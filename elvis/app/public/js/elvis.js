@@ -147,7 +147,7 @@ $(function() {
     return '<div class="picture">' //
     + '<a target="_blank" href="' + full.url + '">' //
     + '<div class="picture-wrapper">' //
-    + '<img src="' + img.url + '"/>' //
+    + '<img src="' + img.url + '" width="' + img.width + '" height="' + img.height + '"/>' //
     + '<span class="wtag fa fa-search-plus fa-2x"></span>' //
     + '</div>' //
     + '</a>' //

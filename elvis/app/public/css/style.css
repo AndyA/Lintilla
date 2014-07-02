@@ -185,4 +185,5 @@ img.slice {
   display: block;
   margin-left: auto;
   margin-right: auto;
+  min-height: 5em;
 }
