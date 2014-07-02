@@ -194,6 +194,7 @@ $(function() {
   }
 
   function closeDetail() {
+    $('.selected').removeClass('selected');
     $('.detail').animate({
       height: 'toggle',
       opacity: 'toggle'
@@ -208,6 +209,7 @@ $(function() {
 
   function killDetail(pos) {
     var adj = 0;
+    $('.selected').removeClass('selected');
     $('.detail').each(function() {
       var $this = $(this);
       var dpos = $this.offset();
@@ -220,6 +222,10 @@ $(function() {
   function imageClick() {
     // Image clicked
     var $this = $(this);
+    if ($this.hasClass('selected')) {
+      closeDetail();
+      return;
+    }
     var src = $this.attr('src');
     var info = asset_map[src];
     window.location.hash = src;
