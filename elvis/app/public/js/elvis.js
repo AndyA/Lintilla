@@ -209,7 +209,6 @@ $(function() {
 
   function killDetail(pos) {
     var adj = 0;
-    $('.selected').removeClass('selected');
     $('.detail').each(function() {
       var $this = $(this);
       var dpos = $this.offset();
