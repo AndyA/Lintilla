@@ -187,3 +187,11 @@ img.slice {
   margin-right: auto;
   min-height: 5em;
 }
+
+.icon-search {
+  border: none;
+  cursor: pointer;
+  color: white;
+  position: relative;
+  background: none;
+}
