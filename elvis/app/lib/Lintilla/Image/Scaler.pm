@@ -32,8 +32,6 @@ sub _find_source {
 
   my $in_url = $self->in_url;
   die "No source specified" unless defined $in_url;
-  # TODO nasty
-  $in_url =~ s/^https:/http:/;
 
   my $tmp = file( Path::Class::tempdir, 'tmp.jpg' );
 
