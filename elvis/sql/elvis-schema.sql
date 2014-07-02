@@ -1,10 +1,10 @@
 CREATE DATABASE /*!32312 IF NOT EXISTS*/ `elvis`;
 USE `elvis`;
--- MySQL dump 10.14  Distrib 10.0.6-MariaDB, for debian-linux-gnu (x86_64)
+-- MySQL dump 10.15  Distrib 10.0.12-MariaDB, for debian-linux-gnu (x86_64)
 --
 -- Host: localhost    Database: elvis
 -- ------------------------------------------------------
--- Server version	10.0.6-MariaDB-1~wheezy
+-- Server version	10.0.12-MariaDB-1~wheezy
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -176,6 +176,35 @@ CREATE TABLE `elvis_photographer` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `elvis_random`
+--
+
+DROP TABLE IF EXISTS `elvis_random`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `elvis_random` (
+  `acno` int(10) unsigned NOT NULL COMMENT 'Asset id',
+  `r0` tinyint(3) unsigned DEFAULT NULL,
+  `r1` tinyint(3) unsigned DEFAULT NULL,
+  `r2` tinyint(3) unsigned DEFAULT NULL,
+  `r3` tinyint(3) unsigned DEFAULT NULL,
+  `r4` tinyint(3) unsigned DEFAULT NULL,
+  `r5` tinyint(3) unsigned DEFAULT NULL,
+  `r6` tinyint(3) unsigned DEFAULT NULL,
+  `r7` tinyint(3) unsigned DEFAULT NULL,
+  PRIMARY KEY (`acno`),
+  KEY `elvis_random_r0` (`r0`),
+  KEY `elvis_random_r1` (`r1`),
+  KEY `elvis_random_r2` (`r2`),
+  KEY `elvis_random_r3` (`r3`),
+  KEY `elvis_random_r4` (`r4`),
+  KEY `elvis_random_r5` (`r5`),
+  KEY `elvis_random_r6` (`r6`),
+  KEY `elvis_random_r7` (`r7`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `elvis_subject`
 --
 
@@ -202,4 +231,4 @@ CREATE TABLE `elvis_subject` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2013-12-07  2:46:10
+-- Dump completed on 2014-07-02 18:46:36
