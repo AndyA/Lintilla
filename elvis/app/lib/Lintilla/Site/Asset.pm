@@ -22,6 +22,16 @@ my %RECIPE = (
     height  => 576,
     quality => 95,
   },
+  display_high => {
+    width   => 1280,
+    height  => 720,
+    quality => 95,
+  },
+  display_hd => {
+    width   => 1920,
+    height  => 1080,
+    quality => 95,
+  },
   info => {
     width   => 512,
     height  => 512,

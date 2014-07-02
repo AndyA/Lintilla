@@ -125,7 +125,7 @@ $(function() {
   }
 
   function makeInfo(info) {
-    var img = info['var']['display'];
+    var img = info['var']['display_high'];
     var full = info['var']['full'];
     var body = '';
     if (info.headline) body += textDiv('headline', info.headline);
