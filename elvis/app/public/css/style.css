@@ -232,13 +232,15 @@ img.slice {
 }
 
 .picture-wrapper {
-/*  border: 1em solid black;*/
+  border: 1em solid black;
   margin-left: auto;
   margin-right: auto;
 }
 
 .picture-wrapper img {
   max-width: 100%;
+  display: inline-block;
   height: auto;
   display: block;
+  margin: 0 auto;
 }
