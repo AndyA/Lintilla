@@ -13,6 +13,14 @@ body, #container {
   clear: both; 
 }
 
+.clearfix:after {
+  clear: both;
+  content: ".";
+  display: block;
+  height: 0;
+  visibility: hidden;
+}
+
 img.slice {
   margin: 6px;
   background-color: #333;
@@ -115,7 +123,7 @@ img.slice {
 }
 
 .info-text .image-preview .image-wrap {
-  width: 520px;
+  width: 60%;
   height: 520px;
   background: black;
   display: table-cell;
@@ -127,10 +135,12 @@ img.slice {
   display: block;
   margin-left: auto;
   margin-right: auto;
+  max-width: 100%;
+  height: auto;
 }
 
 .info-text .info-detail {
-  margin-left: 570px;
+  margin-left: 65%;
 }
 
 .info-text .info-detail .headline {
@@ -180,3 +190,56 @@ img.slice {
   position: absolute;
 }
 
+/* ------------------------------------- */
+
+.wtag {
+  color: white;
+/*  right: 10px;*/
+/*  bottom: 10px;*/
+/*  top: 1em;*/
+/*  left: 1em;*/
+}
+
+.foldout {
+  background: white;
+  color: black;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.floater {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.picture, .text {
+/*  float: left;*/
+  white-space: normal;
+  display: inline-block;
+  vertical-align: top;
+  border: 1px dotted red;
+  padding: 1em;
+}
+
+.picture {
+  width: 53%;
+  background: #ddd;
+/*  height: 100%;*/
+}
+
+.text {
+  width: 40%;
+}
+
+.picture-wrapper {
+/*  border: 1em solid black;*/
+  display: table;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.picture-wrapper img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
