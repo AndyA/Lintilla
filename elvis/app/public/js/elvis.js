@@ -231,7 +231,7 @@ $(function() {
     }
     var src = $this.attr('src');
     var info = asset_map[src];
-    window.location.hash = src;
+    window.history.pushState("", document.title, '#' + src);
 
     $('.selected').removeClass('selected');
     $this.addClass('selected');
