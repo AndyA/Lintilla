@@ -57,10 +57,7 @@ sub random {
    "WHERE i.hash IS NOT NULL AND i.acno=r.acno ORDER BY", $ord,
    "LIMIT ?, ?";
 
-  my $rs
-   = database->selectall_arrayref( $sql, { Slice => {} }, $start, $size );
-  $rs->[0]{format_id} = $sql;
-  return $rs;
+  database->selectall_arrayref( $sql, { Slice => {} }, $start, $size );
 }
 
 sub search {
