@@ -178,6 +178,10 @@ img.slice {
   color: black;
 }
 
+.detail dd a:hover {
+  text-decoration: underline;
+}
+
 .picture-wrapper {
   border: 1em solid black;
   background: black;
