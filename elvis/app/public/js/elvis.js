@@ -1,4 +1,5 @@
-// From https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/keys
+// From https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/ \
+//                   Global_Objects/Object/keys
 if (!Object.keys) {
   Object.keys = (function() {
     'use strict';
@@ -6,7 +7,8 @@ if (!Object.keys) {
     hasDontEnumBug = !({
       toString: null
     }).propertyIsEnumerable('toString'),
-    dontEnums = ['toString', 'toLocaleString', 'valueOf', 'hasOwnProperty', 'isPrototypeOf', 'propertyIsEnumerable', 'constructor'],
+    dontEnums = ['toString', 'toLocaleString', 'valueOf', 'hasOwnProperty', //
+    'isPrototypeOf', 'propertyIsEnumerable', 'constructor'],
     dontEnumsLength = dontEnums.length;
 
     return function(obj) {
