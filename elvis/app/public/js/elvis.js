@@ -15,17 +15,14 @@ if (!Object.keys) {
       if (typeof obj !== 'object' && (typeof obj !== 'function' || obj === null)) {
         throw new TypeError('Object.keys called on non-object');
       }
-
       var result = [],
       prop,
       i;
-
       for (prop in obj) {
         if (hasOwnProperty.call(obj, prop)) {
           result.push(prop);
         }
       }
-
       if (hasDontEnumBug) {
         for (i = 0; i < dontEnumsLength; i++) {
           if (hasOwnProperty.call(obj, dontEnums[i])) {
