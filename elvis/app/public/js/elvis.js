@@ -137,8 +137,9 @@ $(function() {
       var rkey = refs[i];
       var ikey = rkey + '_id';
       if (info[ikey]) {
+        var link = '/by/' + rkey + '/' + info[ikey];
         body += '<dt>' + htmlEncode(rkey.replace('_', ' ')) + '</dt>';
-        body += '<dd>' + htmlEncode(ref[rkey][info[ikey]]) + '</dd>';
+        body += '<dd><a href="' + link + '">' + htmlEncode(ref[rkey][info[ikey]]) + '</a></dd>';
       }
     }
 

@@ -173,6 +173,11 @@ img.slice {
   font-weight: bold;
 }
 
+.detail dd a {
+  text-decoration: none;
+  color: black;
+}
+
 .picture-wrapper {
   border: 1em solid black;
   background: black;

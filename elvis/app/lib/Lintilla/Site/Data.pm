@@ -42,6 +42,16 @@ sub page {
   );
 }
 
+sub by {
+  my ( $size, $start, $field, $value ) = @_;
+  $size = MAX_PAGE if $size > MAX_PAGE;
+  return [] unless $field =~ /^\w+$/ && $REF{$field};
+  database->selectall_arrayref(
+    "SELECT * FROM elvis_image WHERE hash IS NOT NULL AND `${field}_id` = ? LIMIT ?, ?",
+    { Slice => {} }, $value, $start, $size
+  );
+}
+
 sub jumble {
   my ( $seed, @list ) = @_;
   srand $seed;    # TODO are we depending on ranomness elsewhere?
@@ -98,6 +108,10 @@ prefix '/data' => sub {
   get '/search/:size/:start' => sub {
     return cook assets =>
      search( param('size'), param('start'), param('q') );
+  };
+  get '/by/:size/:start/:field/:value' => sub {
+    return cook assets =>
+     by( param('size'), param('start'), param('field'), param('value') );
   };
 };
 

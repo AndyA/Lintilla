@@ -20,4 +20,15 @@ get '/search' => sub {
    };
 };
 
+get '/by/:field/:value' => sub {
+  my $field = param('field');
+  my $value = param('value');
+  die unless $field =~ /^\w+$/;
+  die unless $value =~ /^\d+$/;
+  template 'index',
+   {q  => '',
+    ds => request->uri_for("/data/by/:size/:start/$field/$value"),
+   };
+};
+
 true;
