@@ -34,7 +34,7 @@ sub refdata {
 }
 
 sub page {
-  my ( $start, $size ) = @_;
+  my ( $size, $start ) = @_;
   $size = MAX_PAGE if $size > MAX_PAGE;
   database->selectall_arrayref(
     "SELECT * FROM elvis_image WHERE hash IS NOT NULL ORDER BY seq ASC LIMIT ?, ?",
@@ -49,7 +49,7 @@ sub jumble {
 }
 
 sub random {
-  my ( $start, $size, $seed ) = @_;
+  my ( $size, $start, $seed ) = @_;
   $size = MAX_PAGE if $size > MAX_PAGE;
   my $ord = join ', ', jumble( $seed, map { "r.r$_" } 0 .. 7 );
   my $sql = join ' ',
@@ -61,7 +61,7 @@ sub random {
 }
 
 sub search {
-  my ( $start, $size, $query ) = @_;
+  my ( $size, $start, $query ) = @_;
   $size = MAX_PAGE if $size > MAX_PAGE;
 
   my $sph = Sphinx::Search->new();
@@ -89,15 +89,15 @@ prefix '/data' => sub {
     return refdata( param('name') );
   };
   get '/page/:size/:start' => sub {
-    return cook assets => page( param('start'), param('size') );
+    return cook assets => page( param('size'), param('start') );
   };
   get '/random/:size/:start/:seed' => sub {
     return cook assets =>
-     random( param('start'), param('size'), param('seed') );
+     random( param('size'), param('start'), param('seed') );
   };
   get '/search/:size/:start' => sub {
     return cook assets =>
-     search( param('start'), param('size'), param('q') );
+     search( param('size'), param('start'), param('q') );
   };
 };
 
