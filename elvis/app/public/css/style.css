@@ -44,6 +44,8 @@ img.slice {
 #popup .ident a {
   text-decoration: none;
   color: white;
+  margin-left: 1em;
+  margin-right: 1em;
 }
 
 #popup .form {
@@ -51,7 +53,7 @@ img.slice {
 }
 
 #popup .query {
-  width: 60%;
+  width: 50%;
   background-color: rgba(255,255,255,0.7);
   font-weight: bold;
 }
