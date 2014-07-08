@@ -1,0 +1,39 @@
+# lintilla.hexten.net
+
+ProxyRequests Off
+
+<VirtualHost *:80>
+  ServerName lintilla.hexten.net
+
+  DocumentRoot /opt/lintilla/elvis/app/public
+  CustomLog /opt/lintilla/elvis/app/logs/apache.access_log combined
+  ErrorLog /opt/lintilla/elvis/app/logs/apache.error_log
+  RewriteLog /opt/lintilla/elvis/app/logs/apache.rewrite_log
+  RewriteLogLevel 9
+
+  AddOutputFilterByType DEFLATE text/html application/json application/javascript text/css
+
+  <Location />
+    AuthName "Elvis Image Search"
+    AuthType Basic
+    AuthUserFile "/etc/apache2/passwd/lintilla"
+    Require valid-user
+  </Location>
+
+  <Directory "/opt/lintilla/elvis/app/public">
+    AllowOverride None
+    Options +ExecCGI -MultiViews +SymLinksIfOwnerMatch
+    Order allow,deny
+    Allow from all
+
+    RewriteEngine On
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^asset/([0-9a-f]{3})([0-9a-f]{3})([0-9a-f]{34})\.(\w+)$ asset/$1/$2/$3.$4 [QSA]
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^(.*)$ /dispatch.fcgi/$1 [QSA,L]
+
+  </Directory>
+
+</VirtualHost>
+
+
