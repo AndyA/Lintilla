@@ -24,7 +24,8 @@
       <div id="popup">
         <span class="ident"><a href="/">ELVIS Image Search</a></span>
         <form method="GET" action="/search">
-          <input type="text" class="query" name="q" value="<%= q | html %>" size="40" />
+          <input type="text" class="query" name="q" 
+                 value="<%= q | html %>" size="40" autofocus />
           <button type="submit" class="icon-search fa fa-search fa-lg"></button>
         </form>
       </div>
