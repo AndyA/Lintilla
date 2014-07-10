@@ -223,6 +223,7 @@ $(function() {
   function imageClick() {
     // Image clicked
     var $this = $(this);
+    target = null;
     if ($this.hasClass('selected')) {
       closeDetail();
       return;
