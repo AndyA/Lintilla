@@ -91,6 +91,21 @@ sub search {
   database->selectall_arrayref( $sql, { Slice => {} } );
 }
 
+sub region {
+  my ( $size, $start, @bbox ) = @_;
+
+  $size = MAX_PAGE if $size > MAX_PAGE;
+  my $sql = join ' ',
+   "SELECT i.*, l.latitude, l.longitude FROM elvis_image AS i, elvis_location AS l",
+   "WHERE i.acno=l.acno",
+   "AND l.latitude BETWEEN ? AND ?",
+   "AND l.longitude BETWEEN ? AND ?",
+   "LIMIT ?, ?";
+
+  database->selectall_arrayref( $sql, { Slice => {} },
+    $bbox[0], $bbox[2], $bbox[1], $bbox[3], $start, $size );
+}
+
 prefix '/data' => sub {
   get '/ref/index' => sub {
     return [sort keys %REF];
@@ -112,6 +127,10 @@ prefix '/data' => sub {
   get '/by/:size/:start/:field/:value' => sub {
     return cook assets =>
      by( param('size'), param('start'), param('field'), param('value') );
+  };
+  get '/region/:size/:start/:bbox' => sub {
+    return cook assets =>
+     region( param('size'), param('start'), split /,/, param('bbox') );
   };
 };
 
