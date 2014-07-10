@@ -46,21 +46,28 @@ my %RECIPE = (
     height  => 80,
     quality => 75,
     rotate  => 0,
-    base    => 'display',
+    base    => 'display_high',
+  },
+  icon => {
+    width   => 40,
+    height  => 40,
+    quality => 75,
+    rotate  => 0,
+    base    => 'display_high',
   },
   small => {
     width   => 200,
     height  => 200,
     quality => 75,
     rotate  => 0,
-    base    => 'display',
+    base    => 'display_high',
   },
   slice => {
     width   => 800,
     height  => 150,
     quality => 85,
     rotate  => 0,
-    base    => 'display',
+    base    => 'display_high',
   },
 );
 
