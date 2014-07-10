@@ -32,6 +32,23 @@ CREATE TABLE `elvis_collection` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `elvis_coordinates`
+--
+
+DROP TABLE IF EXISTS `elvis_coordinates`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `elvis_coordinates` (
+  `acno` int(10) unsigned NOT NULL COMMENT 'Asset id',
+  `latitude` double NOT NULL,
+  `longitude` double NOT NULL,
+  PRIMARY KEY (`acno`),
+  KEY `elvis_coordinates_latitude` (`latitude`),
+  KEY `elvis_coordinates_longitude` (`longitude`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `elvis_copyright_class`
 --
 
@@ -140,13 +157,10 @@ DROP TABLE IF EXISTS `elvis_location`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `elvis_location` (
-  `acno` int(10) unsigned NOT NULL COMMENT 'Asset id',
-  `latitude` double NOT NULL,
-  `longitude` double NOT NULL,
-  PRIMARY KEY (`acno`),
-  KEY `elvis_location_latitude` (`latitude`),
-  KEY `elvis_location_longitude` (`longitude`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'Location id',
+  `name` varchar(100) NOT NULL COMMENT 'Location name',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=229 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -247,4 +261,4 @@ CREATE TABLE `elvis_subject` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2014-07-10 15:10:29
+-- Dump completed on 2014-07-10 17:41:21
