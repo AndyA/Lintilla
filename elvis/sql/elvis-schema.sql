@@ -98,10 +98,27 @@ CREATE TABLE `elvis_image` (
   `height` int(5) unsigned DEFAULT NULL,
   `annotation` text,
   `headline` text,
+  `latitude` double DEFAULT NULL,
+  `longitude` double DEFAULT NULL,
   `seq` double DEFAULT NULL,
   PRIMARY KEY (`acno`),
   KEY `elvis_image_hash` (`hash`),
-  KEY `elvis_image_seq` (`seq`)
+  KEY `elvis_image_seq` (`seq`),
+  KEY `elvis_image_latitude` (`latitude`),
+  KEY `elvis_image_longitude` (`longitude`),
+  KEY `elvis_image_kind_id` (`kind_id`),
+  KEY `elvis_image_collection_id` (`collection_id`),
+  KEY `elvis_image_copyright_class_id` (`copyright_class_id`),
+  KEY `elvis_image_copyright_holder_id` (`copyright_holder_id`),
+  KEY `elvis_image_format_id` (`format_id`),
+  KEY `elvis_image_location_id` (`location_id`),
+  KEY `elvis_image_news_restriction_id` (`news_restriction_id`),
+  KEY `elvis_image_personality_id` (`personality_id`),
+  KEY `elvis_image_origin_date` (`origin_date`),
+  KEY `elvis_image_photographer_id` (`photographer_id`),
+  KEY `elvis_image_subject_id` (`subject_id`),
+  KEY `elvis_image_width` (`width`),
+  KEY `elvis_image_height` (`height`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -231,4 +248,4 @@ CREATE TABLE `elvis_subject` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2014-07-02 18:46:36
+-- Dump completed on 2014-07-10 14:15:45
