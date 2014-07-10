@@ -216,8 +216,7 @@ $(function() {
       var $this = $(this);
       var dpos = $this.offset();
       if (dpos.top < pos.top) adj += $this.height();
-      $this.remove();
-    });
+    }).remove();
     if (adj) $(window).scrollTop($(window).scrollTop() - adj);
   }
 
