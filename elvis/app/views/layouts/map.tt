@@ -1,32 +1,22 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>ELVIS Image Search</title>
+    <title>ELVIS Map Search</title>
     <script src="/js/jquery-1.9.1.min.js"></script>
     <script src="/js/urlparser.js"></script>
     <script src="/js/util.js"></script>
-    <script src="/js/elvis.js"></script>
+    <script src="/js/map.js"></script>
     <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="/css/style.css" />
-    <link rel="stylesheet" href="/css/elvis.css" />
+    <link rel="stylesheet" href="/css/map.css" />
     <link rel="stylesheet"
       href="//maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css">
-    <script>
-      ds = "<%= ds | html %>";
-    </script>
   </head>
   <body>
     <div id="container">
-      <div id="popup">
-        <span class="ident"><a href="/">ELVIS Image Search</a></span>
-        <form method="GET" action="/search">
-          <input type="text" class="query" name="q" 
-                 value="<%= q | html %>" size="40" autofocus />
-          <button type="submit" class="icon-search fa fa-search fa-lg"></button>
-        </form>
-      </div>
       <% content %>
     </div>
   </body>
 </html>
+

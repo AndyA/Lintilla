@@ -1,0 +1,193 @@
+
+img.slice {
+  margin: 0.25em;
+  background-color: #333;
+}
+
+#popup {
+  position: fixed;
+  left: 4em;
+  right: 4em;
+  top: 1em;
+  z-index: 1000;
+  background-color: rgba(255,255,255,0.3);
+  color: black;
+  padding: 1em;
+}
+
+#popup .ident {
+  float: left;
+  color: white;
+  font-weight: bold;
+  font-size: 1.2em;
+  margin-right: 2em;
+}
+
+#popup .ident a {
+  text-decoration: none;
+  color: white;
+  margin-left: 1em;
+  margin-right: 1em;
+}
+
+#popup .form {
+  float: left;
+}
+
+#popup .query {
+  width: 50%;
+  background-color: rgba(255,255,255,0.7);
+  font-weight: bold;
+}
+
+#content {
+  padding-top: 5em;
+}
+
+.arrow-box {
+  color: black;
+  position: relative;
+  background: #ffffff;
+}
+
+.arrow, .arrow-box:after {
+  border: solid transparent;
+  height: 0;
+  width: 0;
+  pointer-events: none;
+  border-color: rgba(255, 255, 255, 0);
+  border-width: 1em;
+  margin-left: -1em;
+}
+
+.arrow {
+  position: relative;
+}
+
+.arrow-box:after {
+  content: " ";
+  position: absolute;
+}
+
+.arrow.top, .arrow-box.top:after {
+  bottom: 100%;
+  left: 50%;
+  border-bottom-color: #ffffff;
+}
+
+.arrow.bottom, .arrow-box.bottom:after {
+  top: 100%;
+  left: 50%;
+  border-top-color: #ffffff;
+}
+
+.notfound img {
+  display: block;
+  margin-top: 3em;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.tag, .btag {
+  float: left;
+}
+
+.btag {
+  float: right;
+  margin-left: 1em;
+  color: black;
+}
+
+.btag span {
+  cursor: pointer;
+  margin: 0 0.2em;
+}
+
+.wtag {
+  color: white;
+  position: absolute;
+  right: 0.5em;
+  bottom: 0.5em;
+}
+
+.detail {
+  white-space: nowrap;
+  width: 100%;
+  padding-bottom: 1em;
+  margin-top: -1em;
+}
+
+.floater {
+  margin-left: auto;
+  margin-right: auto;
+  color: black;
+  background: white;
+}
+
+.picture, .text {
+  white-space: normal;
+  display: inline-block;
+  vertical-align: top;
+  padding: 1em;
+}
+
+.picture {
+  width: 53%;
+  text-align: center;
+}
+
+.text {
+  width: 40%;
+}
+
+.detail .headline {
+  font-size: 1.4em;
+  font-weight: bold;
+}
+
+.detail .annotation {
+  font-size: 1.2em;
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+}
+
+.detail .origin-date {
+}
+
+.detail dt {
+  padding-top: 0.2em;
+  font-weight: bold;
+}
+
+.detail dd a {
+  text-decoration: none;
+  color: black;
+}
+
+.detail dd a:hover {
+  text-decoration: underline;
+}
+
+.picture-wrapper {
+  border: 1em solid black;
+  background: black;
+  position: relative;
+}
+
+.picture-wrapper img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  min-height: 5em;
+}
+
+.icon-search {
+  border: none;
+  cursor: pointer;
+  color: white;
+  position: relative;
+  background: none;
+}
+

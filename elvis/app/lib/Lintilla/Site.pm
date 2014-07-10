@@ -12,6 +12,10 @@ get '/' => sub {
    { q => '', ds => request->uri_for('/data/page/:size/:start') };
 };
 
+get '/map/**' => sub {
+  template 'map', {}, { layout => 'map' };
+};
+
 get '/search' => sub {
   my $q = param('q');
   template 'index',

@@ -96,10 +96,10 @@ sub region {
 
   $size = MAX_PAGE if $size > MAX_PAGE;
   my $sql = join ' ',
-   "SELECT i.*, l.latitude, l.longitude FROM elvis_image AS i, elvis_location AS l",
-   "WHERE i.acno=l.acno",
-   "AND l.latitude BETWEEN ? AND ?",
-   "AND l.longitude BETWEEN ? AND ?",
+   "SELECT i.*, c.latitude, c.longitude FROM elvis_image AS i, elvis_coordinates AS c",
+   "WHERE i.acno=c.acno",
+   "AND c.latitude BETWEEN ? AND ?",
+   "AND c.longitude BETWEEN ? AND ?",
    "LIMIT ?, ?";
 
   database->selectall_arrayref( $sql, { Slice => {} },
