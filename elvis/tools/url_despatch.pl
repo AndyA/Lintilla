@@ -18,11 +18,13 @@ $| = 1;
 {
   my $dbh = dbh(DB);
 
+  $dbh->do('TRUNCATE elvis_location');
+
   my $sel
    = $dbh->prepare( 'SELECT acno, annotation '
      . 'FROM elvis_image '
-     . 'WHERE annotation LIKE "%http://%"' );
-
+     . 'WHERE annotation LIKE "%http://%" '
+     . 'ORDER BY acno' );
   $sel->execute;
   while ( my $row = $sel->fetchrow_hashref ) {
     print $row->{acno}, "\n";
@@ -32,23 +34,16 @@ $| = 1;
       if ( $url
         =~ m{\Qhttp://maps.google.com/maps?q=\E(-?\d+(?:\.\d+)),(-?\d+(?:\.\d+))}
        ) {
-        @upd{ 'latitude', 'longitude' } = ( $1, $2 );
+        my ( $lat, $lon ) = ( $1, $2 );
+        print "  latitude: $lat, longitude: $lon\n";
+        eval {
+          $dbh->do(
+            'INSERT INTO elvis_location (acno, latitude, longitude) VALUES (?, ?, ?)',
+            {}, $row->{acno}, $lat, $lon
+          );
+        };
+        print "*** $@\n" if $@;
       }
-    }
-    if ( keys %upd ) {
-      my @k = sort keys %upd;
-      for my $k (@k) {
-        printf "  %-10s = %s\n", $k, $upd{$k};
-      }
-      $dbh->do(
-        join( ' ',
-          "UPDATE elvis_image SET",
-          join( ', ', map { "`$_`=?" } @k ),
-          "WHERE acno=?" ),
-        {},
-        @upd{@k},
-        $row->{acno}
-      );
     }
   }
 
