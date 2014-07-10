@@ -25,6 +25,14 @@ sub _fit {
   return ( int( $iw * $sc ), int( $ih * $sc ) );
 }
 
+sub _rotate {
+  my $self = shift;
+  my ( $ow, $oh, $rot ) = @_;
+  my $angle = max( 0, min( 90 * int( $rot / 90 ), 270 ) );
+  return ( $oh, $ow, $angle ) if $angle == 90 || $angle == 270;
+  return ( $ow, $oh, $angle );
+}
+
 sub _find_source {
   my $self = shift;
 
@@ -44,9 +52,13 @@ sub _find_source {
 sub fit {
   my ( $self, $iw, $ih ) = @_;
   my $spec = $self->spec;
-  return $self->_fit( $iw, $ih, $spec->{width}, $spec->{height} )
-   if $iw > $spec->{width} || $ih > $spec->{height};
-  return ( $iw, $ih );
+
+  my ( $ow, $oh )
+   = ( $iw > $spec->{width} || $ih > $spec->{height} )
+   ? $self->_fit( $iw, $ih, $spec->{width}, $spec->{height} )
+   : ( $iw, $ih );
+
+  return $self->_rotate( $ow, $oh, $spec->{rotate} );
 }
 
 sub create {
@@ -56,10 +68,11 @@ sub create {
   my ( $src, $cleanup ) = $self->_find_source;
 
   my ( $iw, $ih ) = imgsize("$src");
-  my ( $ow, $oh ) = $self->fit( $iw, $ih );
+  my ( $ow, $oh, $rot ) = $self->fit( $iw, $ih );
 
   my @cmd = (
     'convert', $src, -strip => -resize => "${ow}x${oh}",
+    -rotate  => $rot,
     -quality => $self->spec->{quality},
     $tmp_file
   );

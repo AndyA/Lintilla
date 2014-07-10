@@ -8,7 +8,7 @@ use Test::More;
 use Lintilla::Site;
 use Dancer::Test;
 
-route_exists [GET => '/asset/foo/var/high/123.jpg'];
+#route_exists [GET => '/asset/foo/var/high/123.jpg'];
 #response_status_is ['GET' => '/'], 200;
 
 done_testing;

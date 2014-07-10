@@ -21,38 +21,45 @@ my %RECIPE = (
     width   => 1024,
     height  => 576,
     quality => 95,
+    rotate  => 0,
   },
   display_high => {
     width   => 1280,
     height  => 720,
     quality => 95,
+    rotate  => 0,
   },
   display_hd => {
     width   => 1920,
     height  => 1080,
     quality => 95,
+    rotate  => 0,
   },
   info => {
     width   => 512,
     height  => 512,
     quality => 95,
+    rotate  => 0,
   },
   thumb => {
     width   => 80,
     height  => 80,
     quality => 75,
+    rotate  => 0,
     base    => 'display',
   },
   small => {
     width   => 200,
     height  => 200,
     quality => 75,
+    rotate  => 0,
     base    => 'display',
   },
   slice => {
     width   => 800,
     height  => 150,
     quality => 85,
+    rotate  => 0,
     base    => 'display',
   },
 );
@@ -86,11 +93,13 @@ filter assets => sub {
     };
     for my $recipe ( keys %RECIPE ) {
       my $sc = Lintilla::Image::Scaler->new( spec => $RECIPE{$recipe} );
-      my ( $vw, $vh ) = $sc->fit( $asset->{width} * 1, $asset->{height} * 1 );
+      my ( $vw, $vh, $rot )
+       = $sc->fit( $asset->{width} * 1, $asset->{height} * 1 );
       $asset->{var}{$recipe} = {
-        width  => $vw,
-        height => $vh,
-        url    => url_for_asset( $asset, $recipe ),
+        width    => $vw,
+        height   => $vh,
+        rotation => $rot,
+        url      => url_for_asset( $asset, $recipe ),
       };
     }
   }
