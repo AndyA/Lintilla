@@ -107,13 +107,18 @@ sub region {
 
   $size = MAX_PAGE if $size > MAX_PAGE;
   my $sql = join ' ',
-   "SELECT i.*, c.latitude, c.longitude FROM elvis_image AS i, elvis_coordinates AS c",
+   "SELECT i.*, AsText(c.location) AS location FROM elvis_image AS i, elvis_coordinates AS c",
    "WHERE i.acno=c.acno",
    "AND Contains(GeomFromText(?), c.location)",
    "LIMIT ?, ?";
 
-  database->selectall_arrayref( $sql, { Slice => {} },
+  my $rs = database->selectall_arrayref( $sql, { Slice => {} },
     bbox_to_polygon(@bbox), $start, $size );
+  for my $rec (@$rs) {
+    @{$rec}{ 'latitude', 'longitude' }
+     = parse_wkt_point( delete $rec->{location} )->latlong;
+  }
+  return $rs;
 }
 
 prefix '/data' => sub {
