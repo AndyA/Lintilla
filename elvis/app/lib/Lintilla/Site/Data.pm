@@ -4,6 +4,7 @@ use Moose;
 
 use Dancer ':syntax';
 use Dancer::Plugin::Database;
+use Geo::WKT;
 use Sphinx::Search;
 
 use Lintilla::Filter qw( cook );
@@ -91,6 +92,16 @@ sub search {
   database->selectall_arrayref( $sql, { Slice => {} } );
 }
 
+sub bbox_to_polygon {
+  wkt_polygon(
+    [$_[0], $_[1]],
+    [$_[2], $_[1]],
+    [$_[2], $_[3]],
+    [$_[0], $_[3]],
+    [$_[0], $_[1]]
+  );
+}
+
 sub region {
   my ( $size, $start, @bbox ) = @_;
 
@@ -98,12 +109,11 @@ sub region {
   my $sql = join ' ',
    "SELECT i.*, c.latitude, c.longitude FROM elvis_image AS i, elvis_coordinates AS c",
    "WHERE i.acno=c.acno",
-   "AND c.latitude BETWEEN ? AND ?",
-   "AND c.longitude BETWEEN ? AND ?",
+   "AND Contains(GeomFromText(?), c.location)",
    "LIMIT ?, ?";
 
   database->selectall_arrayref( $sql, { Slice => {} },
-    $bbox[0], $bbox[2], $bbox[1], $bbox[3], $start, $size );
+    bbox_to_polygon(@bbox), $start, $size );
 }
 
 prefix '/data' => sub {
