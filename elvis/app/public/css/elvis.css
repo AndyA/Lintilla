@@ -152,6 +152,11 @@ img.slice {
 }
 
 .detail .origin-date {
+  float: left;
+}
+
+.detail dl {
+  padding-top: 1em;
 }
 
 .detail dt {
@@ -191,3 +196,15 @@ img.slice {
   background: none;
 }
 
+.map-link:before {
+  content: '(';
+}
+
+.map-link:after {
+  content: ')';
+}
+
+.map-link {
+  float: left;
+  margin-left: 1em;
+}

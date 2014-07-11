@@ -158,7 +158,7 @@ CREATE TABLE `elvis_location` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'Location id',
   `name` varchar(100) NOT NULL COMMENT 'Location name',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=229 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -259,4 +259,4 @@ CREATE TABLE `elvis_subject` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2014-07-11 17:40:40
+-- Dump completed on 2014-07-11 19:12:24

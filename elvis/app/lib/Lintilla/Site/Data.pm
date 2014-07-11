@@ -24,6 +24,18 @@ my %REF = map { $_ => 1 } qw(
  news_restriction personality photographer subject
 );
 
+sub fix_lat_long {
+  my $rs = shift;
+  for my $rec (@$rs) {
+    my $loc = delete $rec->{location};
+    next unless $loc;
+    my $pt = parse_wkt_point($loc);
+    next unless $pt;
+    @{$rec}{ 'latitude', 'longitude' } = $pt->latlong;
+  }
+  return $rs;
+}
+
 sub refdata {
   my $name = shift;
   die "Bad refdata name $name" unless $REF{$name};
@@ -37,9 +49,16 @@ sub refdata {
 sub page {
   my ( $size, $start ) = @_;
   $size = MAX_PAGE if $size > MAX_PAGE;
-  database->selectall_arrayref(
-    "SELECT * FROM elvis_image WHERE hash IS NOT NULL ORDER BY seq ASC LIMIT ?, ?",
-    { Slice => {} }, $start, $size
+  fix_lat_long(
+    database->selectall_arrayref(
+      "SELECT i.*, AsText(c.location) AS location FROM elvis_image AS i "
+       . "LEFT JOIN elvis_coordinates AS c ON i.acno=c.acno "
+       . "WHERE hash IS NOT NULL "
+       . "ORDER BY seq ASC LIMIT ?, ?",
+      { Slice => {} },
+      $start,
+      $size
+    )
   );
 }
 
@@ -47,28 +66,17 @@ sub by {
   my ( $size, $start, $field, $value ) = @_;
   $size = MAX_PAGE if $size > MAX_PAGE;
   return [] unless $field =~ /^\w+$/ && $REF{$field};
-  database->selectall_arrayref(
-    "SELECT * FROM elvis_image WHERE hash IS NOT NULL AND `${field}_id` = ? LIMIT ?, ?",
-    { Slice => {} }, $value, $start, $size
+  fix_lat_long(
+    database->selectall_arrayref(
+      "SELECT i.*, AsText(c.location) AS location FROM elvis_image AS i "
+       . "LEFT JOIN elvis_coordinates AS c ON i.acno=c.acno "
+       . "WHERE hash IS NOT NULL AND `${field}_id` = ? LIMIT ?, ?",
+      { Slice => {} },
+      $value,
+      $start,
+      $size
+    )
   );
-}
-
-sub jumble {
-  my ( $seed, @list ) = @_;
-  srand $seed;    # TODO are we depending on ranomness elsewhere?
-  return shuffle @list;
-}
-
-sub random {
-  my ( $size, $start, $seed ) = @_;
-  $size = MAX_PAGE if $size > MAX_PAGE;
-  my $ord = join ', ', jumble( $seed, map { "r.r$_" } 0 .. 7 );
-  my $sql = join ' ',
-   "SELECT i.* FROM elvis_image AS i, elvis_random AS r ",
-   "WHERE i.hash IS NOT NULL AND i.acno=r.acno ORDER BY", $ord,
-   "LIMIT ?, ?";
-
-  database->selectall_arrayref( $sql, { Slice => {} }, $start, $size );
 }
 
 sub search {
@@ -85,20 +93,21 @@ sub search {
   return [] unless @ids;
   my $ids = join ', ', @ids;
   my $sql
-   = "SELECT * FROM elvis_image "
-   . "WHERE acno IN ($ids) "
-   . "ORDER BY FIELD(acno, $ids) ";
+   = "SELECT i.*, AsText(c.location) AS location FROM elvis_image AS i "
+   . "LEFT JOIN elvis_coordinates AS c ON i.acno=c.acno "
+   . "WHERE i.acno IN ($ids) "
+   . "ORDER BY FIELD(i.acno, $ids) ";
 
-  database->selectall_arrayref( $sql, { Slice => {} } );
+  fix_lat_long( database->selectall_arrayref( $sql, { Slice => {} } ) );
 }
 
 sub bbox_to_polygon {
   wkt_polygon(
-    [$_[0], $_[1]],
-    [$_[2], $_[1]],
-    [$_[2], $_[3]],
-    [$_[0], $_[3]],
-    [$_[0], $_[1]]
+    [$_[1], $_[0]],
+    [$_[3], $_[0]],
+    [$_[3], $_[2]],
+    [$_[1], $_[2]],
+    [$_[1], $_[0]]
   );
 }
 
@@ -112,13 +121,12 @@ sub region {
    "AND Contains(GeomFromText(?), c.location)",
    "LIMIT ?, ?";
 
-  my $rs = database->selectall_arrayref( $sql, { Slice => {} },
-    bbox_to_polygon(@bbox), $start, $size );
-  for my $rec (@$rs) {
-    @{$rec}{ 'latitude', 'longitude' }
-     = parse_wkt_point( delete $rec->{location} )->latlong;
-  }
-  return $rs;
+  return fix_lat_long(
+    database->selectall_arrayref(
+      $sql, { Slice => {} },
+      bbox_to_polygon(@bbox), $start, $size
+    )
+  );
 }
 
 prefix '/data' => sub {
@@ -130,10 +138,6 @@ prefix '/data' => sub {
   };
   get '/page/:size/:start' => sub {
     return cook assets => page( param('size'), param('start') );
-  };
-  get '/random/:size/:start/:seed' => sub {
-    return cook assets =>
-     random( param('size'), param('start'), param('seed') );
   };
   get '/search/:size/:start' => sub {
     return cook assets =>

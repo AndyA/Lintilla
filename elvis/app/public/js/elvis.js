@@ -11,6 +11,10 @@ $(function() {
   var target = window.location.hash;
   target = target.length > 1 ? target.substr(1) : null;
 
+  function makeMapLink(lat, lon) {
+    return 'http://maps.google.com/maps?q=' + lat + ',' + lon;
+  }
+
   function traverseUntil(elt, move, test) {
     var ofs = elt.offset();
     for (;;) {
@@ -50,6 +54,7 @@ $(function() {
     if (info.headline) body += textDiv('headline', info.headline);
     if (info.annotation) body += rawDiv('annotation', info.annotation);
     if (info.origin_date) body += textDiv('origin-date', info.origin_date);
+    if (info.latitude && info.longitude) body += rawDiv('map-link', '<a target="_blank" href="' + makeMapLink(info.latitude, info.longitude) + '">map</a>');
     body += '<dl>';
 
     var refs = Object.keys(ref).sort();
