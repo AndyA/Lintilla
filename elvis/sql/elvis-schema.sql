@@ -42,10 +42,12 @@ CREATE TABLE `elvis_coordinates` (
   `acno` int(10) unsigned NOT NULL COMMENT 'Asset id',
   `latitude` double NOT NULL,
   `longitude` double NOT NULL,
+  `location` point NOT NULL,
   PRIMARY KEY (`acno`),
   KEY `elvis_coordinates_latitude` (`latitude`),
-  KEY `elvis_coordinates_longitude` (`longitude`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+  KEY `elvis_coordinates_longitude` (`longitude`),
+  SPATIAL KEY `location` (`location`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -261,4 +263,4 @@ CREATE TABLE `elvis_subject` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2014-07-10 17:41:21
+-- Dump completed on 2014-07-11 13:48:39
