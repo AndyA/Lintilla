@@ -13,7 +13,7 @@ img.slice {
   background-color: rgba(255,255,255,0.3);
   color: black;
   padding: 1em;
-  pointer-events: none;
+/*  pointer-events: none;*/
 }
 
 #popup .ident {
@@ -213,9 +213,14 @@ img.slice {
 .keyword {
 /*  border: 1px solid green;*/
   border-radius: 0.5em;
-  background: #8f8;
+  background: #bfb;
   font-size: 0.9em;
   padding: 0.25em 0.5em;
   margin: 0.25em 0.3em;
   display: inline-block;
+}
+
+.keyword a {
+  text-decoration: none;
+  color: black;
 }

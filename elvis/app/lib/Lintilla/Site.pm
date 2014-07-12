@@ -35,4 +35,13 @@ get '/by/:field/:value' => sub {
    };
 };
 
+get '/tag/:id' => sub {
+  my $id = param('id');
+  die unless $id =~ /^\d+$/;
+  template 'index',
+   {q  => '',
+    ds => request->uri_for("/data/tag/:size/:start/$id"),
+   };
+};
+
 true;

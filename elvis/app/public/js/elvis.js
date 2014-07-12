@@ -190,7 +190,8 @@ $(function() {
       if (kwl.length) {
         var words = [];
         for (var i = 0; i < kwl.length; i++) {
-          words.push('<span class="keyword">' + kwl[i].name + '</span>');
+          var link = '/tag/' + kwl[i].id;
+          words.push('<span class="keyword"><a href="' + link + '">' + kwl[i].name + '</a></span>');
         }
         $('.detail .text').append($('<div class="keywords">' + words.join('') + '</div>'));
       }

@@ -150,6 +150,23 @@ sub keywords {
   return $by_acno;
 }
 
+sub tag {
+  my ( $size, $start, $id ) = @_;
+  $size = MAX_PAGE if $size > MAX_PAGE;
+  fix_lat_long(
+    database->selectall_arrayref(
+      "SELECT i.*, AsText(c.location) AS location FROM elvis_image AS i "
+       . "LEFT JOIN elvis_coordinates AS c ON i.acno=c.acno, "
+       . "elvis_image_keyword AS ik "
+       . "WHERE hash IS NOT NULL AND ik.acno=i.acno AND ik.id=? LIMIT ?, ?",
+      { Slice => {} },
+      $id,
+      $start,
+      $size
+    )
+  );
+}
+
 prefix '/data' => sub {
   get '/ref/index' => sub {
     return [sort keys %REF];
@@ -159,6 +176,9 @@ prefix '/data' => sub {
   };
   get '/page/:size/:start' => sub {
     return cook assets => page( param('size'), param('start') );
+  };
+  get '/tag/:size/:start/:id' => sub {
+    return cook assets => tag( param('size'), param('start'), param('id') );
   };
   get '/keywords/:acnos' => sub {
     return cook keywords => keywords( split /,/, param('acnos') );
