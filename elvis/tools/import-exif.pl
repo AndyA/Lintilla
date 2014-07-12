@@ -38,8 +38,15 @@ sub import {
     die unless defined $src;
     my $hash = hash_from_file($src);
     die unless defined $hash;
-    my $rows = $dbh->do( 'UPDATE elvis_image SET exif=? WHERE hash=?',
-      {}, JSON->new->utf8->encode($img), $hash );
+    my @ids = @{
+      $dbh->selectcol_arrayref( 'SELECT acno FROM elvis_image WHERE hash=?',
+        {}, $hash ) };
+    print join( ', ', @ids ), "\n";
+    my $sql = join ' ',
+     'INSERT INTO elvis_exif (acno, exif) VALUES',
+     join( ', ', map { "(?, ?)" } @ids );
+    my $exif = JSON->new->utf8->encode($img);
+    my $rows = $dbh->do( $sql, {}, map { ( $_, $exif ) } @ids );
     print "$hash : $rows\n";
   }
 }
