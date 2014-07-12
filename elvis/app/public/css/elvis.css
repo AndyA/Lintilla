@@ -13,6 +13,7 @@ img.slice {
   background-color: rgba(255,255,255,0.3);
   color: black;
   padding: 1em;
+  pointer-events: none;
 }
 
 #popup .ident {
@@ -207,4 +208,14 @@ img.slice {
 .map-link {
   float: left;
   margin-left: 1em;
+}
+
+.keyword {
+/*  border: 1px solid green;*/
+  border-radius: 0.5em;
+  background: #8f8;
+  font-size: 0.9em;
+  padding: 0.25em 0.5em;
+  margin: 0.25em 0.3em;
+  display: inline-block;
 }

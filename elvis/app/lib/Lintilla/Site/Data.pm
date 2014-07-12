@@ -129,6 +129,27 @@ sub region {
   );
 }
 
+sub keywords {
+  my @acno = @_;
+  my @bad = grep { !/^\d+$/ } @acno;
+  die "Bad acno: ", join( ', ', @bad ) if @bad;
+  my $sql = join ' ',
+   'SELECT ik.acno, k.id, k.name, COUNT(ik2.acno) AS freq',
+   'FROM elvis_keyword AS k, elvis_image_keyword AS ik, elvis_image_keyword AS ik2',
+   'WHERE ik.acno IN (', join( ', ', map { "?" } @acno ), ')',
+   'AND ik.id=k.id',
+   'AND ik2.id=k.id',
+   'GROUP BY ik2.id',
+   'ORDER BY acno, freq DESC';
+  my $rs = database->selectall_arrayref( $sql, { Slice => {} }, @acno );
+  my $by_acno = {};
+  for my $row (@$rs) {
+    my $acno = delete $row->{acno};
+    push @{ $by_acno->{$acno} }, $row;
+  }
+  return $by_acno;
+}
+
 prefix '/data' => sub {
   get '/ref/index' => sub {
     return [sort keys %REF];
@@ -138,6 +159,9 @@ prefix '/data' => sub {
   };
   get '/page/:size/:start' => sub {
     return cook assets => page( param('size'), param('start') );
+  };
+  get '/keywords/:acnos' => sub {
+    return cook keywords => keywords( split /,/, param('acnos') );
   };
   get '/search/:size/:start' => sub {
     return cook assets =>

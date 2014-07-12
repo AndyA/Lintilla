@@ -184,6 +184,17 @@ $(function() {
     $("html, body").animate({
       scrollTop: scrollTo(deet) + 'px'
     });
+
+    getJson('/data/keywords/' + info.acno, function(kw) {
+      var kwl = kw[info.acno];
+      if (kwl.length) {
+        var words = [];
+        for (var i = 0; i < kwl.length; i++) {
+          words.push('<span class="keyword">' + kwl[i].name + '</span>');
+        }
+        $('.detail .text').append($('<div class="keywords">' + words.join('') + '</div>'));
+      }
+    });
   }
 
   function addImage($c, info) {
