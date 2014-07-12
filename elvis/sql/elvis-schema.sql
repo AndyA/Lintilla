@@ -75,6 +75,20 @@ CREATE TABLE `elvis_copyright_holder` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `elvis_exif`
+--
+
+DROP TABLE IF EXISTS `elvis_exif`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `elvis_exif` (
+  `acno` int(10) unsigned NOT NULL COMMENT 'Asset id',
+  `exif` text,
+  PRIMARY KEY (`acno`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `elvis_format`
 --
 
@@ -111,9 +125,9 @@ CREATE TABLE `elvis_image` (
   `subject_id` int(10) unsigned DEFAULT NULL,
   `width` int(5) unsigned DEFAULT NULL,
   `height` int(5) unsigned DEFAULT NULL,
+  `seq` double DEFAULT NULL,
   `annotation` text,
   `headline` text,
-  `seq` double DEFAULT NULL,
   PRIMARY KEY (`acno`),
   KEY `elvis_image_hash` (`hash`),
   KEY `elvis_image_seq` (`seq`),
@@ -130,6 +144,34 @@ CREATE TABLE `elvis_image` (
   KEY `elvis_image_subject_id` (`subject_id`),
   KEY `elvis_image_width` (`width`),
   KEY `elvis_image_height` (`height`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `elvis_image_keyword`
+--
+
+DROP TABLE IF EXISTS `elvis_image_keyword`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `elvis_image_keyword` (
+  `id` int(10) unsigned NOT NULL COMMENT 'Keyword id',
+  `acno` int(10) unsigned NOT NULL COMMENT 'Asset id',
+  PRIMARY KEY (`id`,`acno`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `elvis_keyword`
+--
+
+DROP TABLE IF EXISTS `elvis_keyword`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `elvis_keyword` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'Keyword id',
+  `name` varchar(60) NOT NULL COMMENT 'Keyword',
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -259,4 +301,4 @@ CREATE TABLE `elvis_subject` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2014-07-11 19:12:24
+-- Dump completed on 2014-07-12  9:28:28
