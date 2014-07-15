@@ -198,9 +198,9 @@ sub tag_complete {
   my $rs = $self->dbh->selectcol_arrayref(
     join( ' ',
       'SELECT k.name, COUNT(ik.acno) AS freq',
-      'FROM elvis_keyword AS k, elvis_image_keyword AS ik',
+      'FROM elvis_keyword AS k',
+      'LEFT JOIN elvis_image_keyword AS ik ON ik.id=k.id',
       'WHERE name LIKE ?',
-      'AND ik.id=k.id',
       'GROUP BY k.id',
       'ORDER BY freq DESC LIMIT ?' ),
     {},
