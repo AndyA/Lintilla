@@ -171,8 +171,9 @@ DROP TABLE IF EXISTS `elvis_keyword`;
 CREATE TABLE `elvis_keyword` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'Keyword id',
   `name` varchar(60) NOT NULL COMMENT 'Keyword',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2766 DEFAULT CHARSET=utf8;
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `name` (`name`)
+) ENGINE=InnoDB AUTO_INCREMENT=2817 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -200,7 +201,7 @@ CREATE TABLE `elvis_location` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'Location id',
   `name` varchar(100) NOT NULL COMMENT 'Location name',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=229 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -301,4 +302,4 @@ CREATE TABLE `elvis_subject` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2014-07-15 13:48:42
+-- Dump completed on 2014-07-15 15:59:04
