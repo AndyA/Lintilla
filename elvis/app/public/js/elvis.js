@@ -146,6 +146,14 @@ $(function() {
     if (adj) $(window).scrollTop($(window).scrollTop() - adj);
   }
 
+  function makeTag(info) {
+    var link = '/tag/' + info.id;
+    return '<span class="keyword minus">' //
+    + '<span class="keyword-minus fa fa-minus-circle"></span>' //
+    + '<a href="' + link + '">' + info.name + '</a>' //
+    + '</span>';
+  }
+
   function imageClick() {
     // Image clicked
     var $this = $(this);
@@ -189,16 +197,10 @@ $(function() {
       var kwl = kw[info.acno];
       var words = [];
       for (var i = 0; i < kwl.length; i++) {
-        var link = '/tag/' + kwl[i].id;
-        words.push( //
-        '<span class="keyword">' //
-        + '<span class="keyword-minus fa fa-minus-circle"></span>' //
-        + '<a href="' + link + '">' + kwl[i].name + '</a>' //
-        + '</span>' //
-        );
+        words.push(makeTag(kwl[i]));
       }
       words.push( //
-      '<span class="keyword new">' //
+      '<span class="keyword plus">' //
       + '<form>' //
       + '<span class="keyword-plus fa fa-plus-circle"></span>' //
       + '<input type="text">' //
@@ -206,6 +208,35 @@ $(function() {
       + '</span>' //
       );
       $('.detail .text').append($('<div class="keywords">' + words.join('') + '</div>'));
+
+      var kw_remove = function(e) {
+        $(this).parent().remove();
+        e.stopPropagation();
+      };
+
+      var kw_submit = function(e) {
+        var tag = $(this).find('input:first').val();
+        if (tag.length) {
+          $(this).parent().before($(makeTag({
+            id: 1,
+            name: tag
+          })));
+          $('.keyword.minus span').click(kw_remove);
+          $(this).find('input:first').val('');
+        }
+        e.stopPropagation();
+      };
+
+      var kw_remove = function(e) {
+        $(this).parent().remove();
+        e.stopPropagation();
+      };
+
+      $('.keyword.minus span').click(kw_remove);
+      $('.keyword.plus span').click(function(e) {
+        $(this).parent().submit();
+      });
+      $('.keyword form').submit(kw_submit);
     });
   }
 

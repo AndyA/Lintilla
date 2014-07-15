@@ -220,7 +220,6 @@ img.slice {
 
 .keyword {
   border-radius: 1em;
-  background: #fc8;
   font-size: 0.9em;
   padding: 0.25em 0.5em;
   padding-right: 0.7em;
@@ -228,7 +227,11 @@ img.slice {
   display: inline-block;
 }
 
-.keyword.new {
+.keyword.minus {
+  background: #fc8;
+}
+
+.keyword.plus {
   background: #9fb;
 }
 
@@ -237,16 +240,16 @@ img.slice {
   color: black;
 }
 
-.keyword .fa {
+.keyword span {
   padding-right: 0.3em;
   cursor: pointer;
 }
 
-.keyword-minus:hover {
+.keyword.minus span:hover {
   color: #C00;
 }
 
-.keyword-plus:hover {
+.keyword.plus span:hover {
   color: #080;
 }
 
