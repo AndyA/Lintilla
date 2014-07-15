@@ -216,6 +216,7 @@ $(function() {
       $('.detail .text').append($('<div class="keywords">' + words.join('') + '</div>'));
 
       var kw_remove = function(e) {
+        e.stopPropagation();
         var $this = $(this);
         var id = getLeaf($this.parent().find('a').attr('href'));
         $.post('/svc/tag/remove/' + info.acno + '/' + id, {}).done(function(data) {
@@ -223,10 +224,10 @@ $(function() {
         }).fail(function(data) {
           alert("Failed to remove tag");
         })
-        e.stopPropagation();
       };
 
       var kw_submit = function(e) {
+        e.stopPropagation();
         var $this = $(this);
         var tag = $this.find('input:first').val();
         if (tag.length) {
@@ -235,12 +236,11 @@ $(function() {
           }).done(function(data) {
             $this.parent().before($(makeTag(data)));
           }).fail(function(data) {
-            alert("Failed to add tag");
+//            alert("Failed to add tag");
           })
           $('.keyword.minus span').click(kw_remove);
           $(this).find('input:first').val('');
         }
-        e.stopPropagation();
       };
 
       $('.keyword.minus span').click(kw_remove);
