@@ -142,7 +142,7 @@ sub keywords {
    'GROUP BY ik2.id',
    'ORDER BY acno, freq DESC';
   my $rs = database->selectall_arrayref( $sql, { Slice => {} }, @acno );
-  my $by_acno = {};
+  my $by_acno = { map { $_ => [] } @acno };
   for my $row (@$rs) {
     my $acno = delete $row->{acno};
     push @{ $by_acno->{$acno} }, $row;

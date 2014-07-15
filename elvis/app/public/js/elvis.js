@@ -187,14 +187,25 @@ $(function() {
 
     getJson('/data/keywords/' + info.acno, function(kw) {
       var kwl = kw[info.acno];
-      if (kwl.length) {
-        var words = [];
-        for (var i = 0; i < kwl.length; i++) {
-          var link = '/tag/' + kwl[i].id;
-          words.push('<span class="keyword"><a href="' + link + '">' + kwl[i].name + '</a></span>');
-        }
-        $('.detail .text').append($('<div class="keywords">' + words.join('') + '</div>'));
+      var words = [];
+      for (var i = 0; i < kwl.length; i++) {
+        var link = '/tag/' + kwl[i].id;
+        words.push( //
+        '<span class="keyword">' //
+        + '<span class="keyword-minus fa fa-minus-circle"></span>' //
+        + '<a href="' + link + '">' + kwl[i].name + '</a>' //
+        + '</span>' //
+        );
       }
+      words.push( //
+      '<span class="keyword new">' //
+      + '<form>' //
+      + '<span class="keyword-plus fa fa-plus-circle"></span>' //
+      + '<input type="text">' //
+      + '</form>' //
+      + '</span>' //
+      );
+      $('.detail .text').append($('<div class="keywords">' + words.join('') + '</div>'));
     });
   }
 

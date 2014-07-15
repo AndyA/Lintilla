@@ -219,16 +219,43 @@ img.slice {
 }
 
 .keyword {
-/*  border: 1px solid green;*/
-  border-radius: 0.5em;
+  border-radius: 1em;
   background: #fc8;
   font-size: 0.9em;
   padding: 0.25em 0.5em;
+  padding-right: 0.7em;
   margin: 0.25em 0.3em;
   display: inline-block;
+}
+
+.keyword.new {
+  background: #9fb;
 }
 
 .keyword a {
   text-decoration: none;
   color: black;
+}
+
+.keyword .fa {
+  padding-right: 0.3em;
+  cursor: pointer;
+}
+
+.keyword-minus:hover {
+  color: #C00;
+}
+
+.keyword-plus:hover {
+  color: #080;
+}
+
+.keyword form {
+  display: inline-block;
+}
+
+.keyword input {
+  background: white;
+  padding: 0 0.5em;
+  border: none;
 }
