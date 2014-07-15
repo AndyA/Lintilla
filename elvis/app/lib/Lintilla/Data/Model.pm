@@ -169,6 +169,29 @@ sub tag {
   );
 }
 
+sub get_tag {
+  my ( $self, $acno, $tag ) = @_;
+  $self->dbh->do( 'INSERT IGNORE INTO elvis_keyword (name) VALUES (?)',
+    {}, $tag );
+  my $id = (
+    $self->dbh->selectrow_array(
+      'SELECT id FROM elvis_keyword WHERE name=?',
+      {}, $tag
+    )
+  )[0];
+  $self->dbh->do(
+    'INSERT INTO elvis_image_keyword (id, acno) VALUES (?, ?)',
+    {}, $id, $acno );
+  return { id => $id, name => $tag };
+}
+
+sub remove_tag {
+  my ( $self, $acno, $id ) = @_;
+  $self->dbh->do( 'DELETE FROM elvis_image_keyword WHERE id=? AND acno=?',
+    {}, $id, $acno );
+  return { id => $id };
+}
+
 1;
 
 # vim:ts=2:sw=2:sts=2:et:ft=perl

@@ -154,6 +154,12 @@ $(function() {
     + '</span>';
   }
 
+  function getLeaf(url) {
+    var slash = url.lastIndexOf('/');
+    if (slash == -1) return null;
+    return url.substr(slash + 1);
+  }
+
   function imageClick() {
     // Image clicked
     var $this = $(this);
@@ -210,25 +216,30 @@ $(function() {
       $('.detail .text').append($('<div class="keywords">' + words.join('') + '</div>'));
 
       var kw_remove = function(e) {
-        $(this).parent().remove();
+        var $this = $(this);
+        var id = getLeaf($this.parent().find('a').attr('href'));
+        $.post('/svc/tag/remove/' + info.acno + '/' + id, {}).done(function(data) {
+          $this.parent().remove();
+        }).fail(function(data) {
+          alert("Failed to remove tag");
+        })
         e.stopPropagation();
       };
 
       var kw_submit = function(e) {
-        var tag = $(this).find('input:first').val();
+        var $this = $(this);
+        var tag = $this.find('input:first').val();
         if (tag.length) {
-          $(this).parent().before($(makeTag({
-            id: 1,
-            name: tag
-          })));
+          $.post('/svc/tag/add/' + info.acno, {
+            tag: tag
+          }).done(function(data) {
+            $this.parent().before($(makeTag(data)));
+          }).fail(function(data) {
+            alert("Failed to add tag");
+          })
           $('.keyword.minus span').click(kw_remove);
           $(this).find('input:first').val('');
         }
-        e.stopPropagation();
-      };
-
-      var kw_remove = function(e) {
-        $(this).parent().remove();
         e.stopPropagation();
       };
 
