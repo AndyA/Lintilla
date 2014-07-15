@@ -138,6 +138,7 @@ $(function() {
 
   function killDetail(pos) {
     var adj = 0;
+    $('.autocomplete-suggestions').remove();
     $('.detail').each(function() {
       var $this = $(this);
       var dpos = $this.offset();
@@ -248,6 +249,10 @@ $(function() {
       $('.keyword.minus span').click(kw_remove);
       $('.keyword.plus span').click(kw_submit);
       $('.keyword form').submit(kw_submit);
+      $('.keyword.plus input:first').autocomplete({
+        serviceUrl: '/svc/tag/complete/30',
+        maxHeight: 10000,
+      });
     });
   }
 
@@ -307,7 +312,7 @@ $(function() {
     var delta = 500;
 
     $(window).resize(function() {
-      $('.detail').remove();
+      $('.autocomplete-suggestions, .detail').remove();
       rtime = new Date();
       if (!timeout) {
         setTimeout(resizeend, delta);

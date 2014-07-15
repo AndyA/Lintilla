@@ -262,3 +262,35 @@ img.slice {
   padding: 0 0.5em;
   border: none;
 }
+
+.autocomplete-suggestions {
+  border-radius: 1em;
+  background: #9fb;
+  color: #555;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  padding: 0.5em 1em 1em 0.5em;
+  margin-top: 0.5em;
+} 
+
+.autocomplete-suggestion {
+  cursor: default;
+  text-align: left;
+  font-size: 0.9em;
+} 
+
+.autocomplete-selected {
+  color: black;
+} 
+
+.autocomplete-suggestion div { 
+  padding: 0.2em 0.5em;
+  white-space: nowrap; 
+  overflow: hidden; 
+} 
+
+.autocomplete-suggestion strong {
+  font-weight: bold;
+} 
+

@@ -23,6 +23,9 @@ prefix '/svc' => sub {
   post '/tag/add/:acno' => sub {
     model->get_tag( param('acno'), param('tag') );
   };
+  get '/tag/complete/:size' => sub {
+    model->tag_complete( param('size'), param('query') );
+  };
 };
 
 prefix '/data' => sub {

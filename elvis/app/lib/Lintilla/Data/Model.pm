@@ -192,6 +192,27 @@ sub remove_tag {
   return { id => $id };
 }
 
+sub tag_complete {
+  my ( $self, $size, $prefix ) = @_;
+  $size = MAX_PAGE if $size > MAX_PAGE;
+  my $rs = $self->dbh->selectcol_arrayref(
+    join( ' ',
+      'SELECT k.name, COUNT(ik.acno) AS freq',
+      'FROM elvis_keyword AS k, elvis_image_keyword AS ik',
+      'WHERE name LIKE ?',
+      'AND ik.id=k.id',
+      'GROUP BY k.id',
+      'ORDER BY freq DESC LIMIT ?' ),
+    {},
+    "$prefix%",
+    $size
+  );
+  return {
+    query       => $prefix,
+    suggestions => $rs,
+  };
+}
+
 1;
 
 # vim:ts=2:sw=2:sts=2:et:ft=perl
