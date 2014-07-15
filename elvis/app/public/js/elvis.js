@@ -217,10 +217,10 @@ $(function() {
 
       var kw_remove = function(e) {
         e.stopPropagation();
-        var $this = $(this);
-        var id = getLeaf($this.parent().find('a').attr('href'));
+        var $this = $(this).closest('.keyword');
+        var id = getLeaf($this.find('a').attr('href'));
         $.post('/svc/tag/remove/' + info.acno + '/' + id, {}).done(function(data) {
-          $this.parent().remove();
+          $this.remove();
         }).fail(function(data) {
           alert("Failed to remove tag");
         })
@@ -228,25 +228,25 @@ $(function() {
 
       var kw_submit = function(e) {
         e.stopPropagation();
-        var $this = $(this);
-        var tag = $this.find('input:first').val();
+        var $this = $(this).closest('.keyword');
+        var $input = $this.find('input:first');
+        var tag = $input.val();
+        $input.val('');
         if (tag.length) {
           $.post('/svc/tag/add/' + info.acno, {
             tag: tag
           }).done(function(data) {
-            $this.parent().before($(makeTag(data)));
+            $this.before($(makeTag(data)));
           }).fail(function(data) {
-//            alert("Failed to add tag");
+            alert("Failed to add tag");
           })
           $('.keyword.minus span').click(kw_remove);
-          $(this).find('input:first').val('');
         }
+        return false;
       };
 
       $('.keyword.minus span').click(kw_remove);
-      $('.keyword.plus span').click(function(e) {
-        $(this).parent().submit();
-      });
+      $('.keyword.plus span').click(kw_submit);
       $('.keyword form').submit(kw_submit);
     });
   }
