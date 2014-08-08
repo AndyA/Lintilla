@@ -7,6 +7,7 @@ use Lintilla::DB::Genome;
 use Lintilla::Data::Static;
 use Lintilla::Site::Asset;
 use Lintilla::Site::Data;
+use Lintilla::TT::Extensions;
 use Path::Class;
 
 our $VERSION = '0.1';
