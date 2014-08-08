@@ -86,6 +86,27 @@ sub _build_decades {
   return [sort { $a <=> $b } keys %dec];
 }
 
+sub _decade_years {
+  my ( $self, $first, $last ) = @_;
+  my ( $fd, $ld )
+   = map { 10 * int( $_ / 10 ) } ( $first, $last );
+  my @dy = ();
+  for ( my $decade = $fd; $decade <= $ld; $decade += 10 ) {
+    push @dy,
+     {decade => sprintf( '%02d', $decade % 100 ),
+      years  => [
+        map { $_ >= $first && $_ <= $last ? $_ : undef }
+         ( $decade .. $decade + 9 )
+      ] };
+  }
+  return \@dy;
+}
+
+sub decade_years {
+  my $self = shift;
+  return $self->_decade_years( YEAR_START, YEAR_END );
+}
+
 =head2 Dynamic Data
 
 =cut

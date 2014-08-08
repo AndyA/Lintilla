@@ -11,7 +11,7 @@ use Path::Class;
 
 our $VERSION = '0.1';
 
-use constant BOILERPLATE => qw( services years decades );
+use constant BOILERPLATE => qw( services years decades decade_years );
 
 sub db() { Lintilla::DB::Genome->new( dbh => database ) }
 
