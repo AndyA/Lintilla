@@ -1,5 +1,6 @@
 package Lintilla::DB::Genome;
 
+use JSON;
 use Moose;
 use Sphinx::Search;
 
@@ -149,7 +150,16 @@ sub listing_for_schedule {
 
   my $rows = $self->dbh->selectall_arrayref( $sql, { Slice => {} },
     $self->source, $service, $date );
+}
 
+sub stash {
+  my ( $self, $name ) = @_;
+  my @row
+   = $self->dbh->selectrow_array(
+    'SELECT stash FROM genome_stash WHERE name=?',
+    {}, $name );
+  return unless @row;
+  return JSON->new->utf8->allow_nonref->decode( $row[0] );
 }
 
 =head2 Search

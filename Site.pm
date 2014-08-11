@@ -20,10 +20,12 @@ my $STATIC = Lintilla::Data::Static->new(
   store => dir( setting('appdir'), 'data' ) );
 
 get '/' => sub {
+  my $db = db;
   template 'index',
-   {db->gather(BOILERPLATE),
+   {$db->gather(BOILERPLATE),
     title    => 'BBC Genome',
     stations => $STATIC->get('stations'),
+    stash    => sub { $db->stash(shift) },
    };
 };
 
