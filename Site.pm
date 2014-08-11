@@ -19,6 +19,13 @@ sub db() { Lintilla::DB::Genome->new( dbh => database ) }
 my $STATIC = Lintilla::Data::Static->new(
   store => dir( setting('appdir'), 'data' ) );
 
+sub our_uri_for {
+  my $sn = delete request->env->{SCRIPT_NAME};
+  my $uri = request->uri_for( join '/', '', @_ );
+  request->env->{SCRIPT_NAME} = $sn;
+  return $uri;
+}
+
 get '/' => sub {
   my $db = db;
   template 'index',
@@ -30,7 +37,8 @@ get '/' => sub {
 };
 
 get '/schedules/:service' => sub {
-  forward '/schedules/'
+  delete request->env->{SCRIPT_NAME}; # don't include disptch.fcgi in URI
+  redirect '/schedules/'
    . param('service') . '/'
    . db->service_start_date( param('service') );
 };

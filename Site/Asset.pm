@@ -43,8 +43,9 @@ my %RECIPE = (
 get '/data/recipe' => sub { \%RECIPE };
 
 sub our_uri_for {
+  my $sn = delete request->env->{SCRIPT_NAME};
   my $uri = request->uri_for( join '/', '', @_ );
-  $uri =~ s@/dispatch\.f?cgi/@/@;    # hack
+  request->env->{SCRIPT_NAME} = $sn;
   return $uri;
 }
 
