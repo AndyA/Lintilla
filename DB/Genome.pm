@@ -119,6 +119,32 @@ sub programme {
     {}, $self->_format_uuid($uuid) );
 }
 
+sub service_defaults {
+  my ( $self, $service, @got ) = @_;
+  my $sql = join ' ',
+   'SELECT sd.date, s._uuid, s.has_outlets',
+   'FROM genome_service_dates AS sd, genome_services AS s',
+   'WHERE sd.service=s._uuid AND s._key=?',
+   'ORDER BY date LIMIT 1';
+  my $rec = $self->dbh->selectrow_hashref( $sql, {}, $service );
+  die unless defined $rec;
+  # Simple case
+  return ( $rec->{date} ) unless $rec->{has_outlets} eq 'Y';
+
+  if ( @got < 1 ) {
+    # Find default outlet
+    my $outlet = join ' ',
+     'SELECT subkey FROM genome_services',
+     'WHERE _parent=?',
+     'ORDER BY `order` IS NULL, `order` ASC, `title` ASC';
+    my $orec = $self->dbh->selectrow_hashref( $outlet, {}, $rec->{_uuid} );
+    push @got, $orec->{subkey};
+  }
+
+  push @got, $rec->{date} if @got < 2;
+  return @got;
+}
+
 sub service_start_date {
   my ( $self, $service ) = @_;
   my $sql = join ' ',

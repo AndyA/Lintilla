@@ -26,26 +26,39 @@ sub our_uri_for {
   return $uri;
 }
 
-get '/' => sub {
-  my $db = db;
-  template 'index',
-   {$db->gather(BOILERPLATE),
+sub boilerplate() {
+  my $db = db();
+  return (
+    $db->gather(BOILERPLATE),
     title    => 'BBC Genome',
     stations => $STATIC->get('stations'),
     stash    => sub { $db->stash(shift) },
-   };
+  );
+}
+
+get '/' => sub {
+  template 'index', {boilerplate};
 };
 
 get '/schedules/:service' => sub {
-  delete request->env->{SCRIPT_NAME}; # don't include disptch.fcgi in URI
-  redirect '/schedules/'
-   . param('service') . '/'
-   . db->service_start_date( param('service') );
+  delete request->env->{SCRIPT_NAME};   # don't include disptch.fcgi in URI
+  redirect join '/', '/schedules', param('service'),
+   db->service_defaults( param('service') );
+};
+
+get '/schedules/:service/:outlet/:date' => sub {
+  my $db = db;
+  template 'schedule', {boilerplate};
 };
 
 get '/schedules/:service/:date' => sub {
   my $db = db;
-  template 'schedule', { $db->gather(BOILERPLATE), };
+  my @dflt = $db->service_defaults( param('service'), param('date') );
+  if ( @dflt > 1 ) {
+    delete request->env->{SCRIPT_NAME};
+    redirect join '/', '/schedules', param('service'), @dflt;
+  }
+  template 'schedule', {boilerplate};
 };
 
 get '/search' => sub {
