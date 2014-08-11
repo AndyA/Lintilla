@@ -121,12 +121,12 @@ sub programme {
 
 sub service_start_date {
   my ( $self, $service ) = @_;
-  return (
-    $self->dbh->selectrow_array(
-      'SELECT MIN(`date`) FROM `genome_listings_v2` WHERE `service_key` = ?',
-      {}, $service
-    )
-  )[0];
+  my $sql = join ' ',
+   'SELECT sd.date',
+   'FROM genome_service_dates AS sd, genome_services AS s',
+   'WHERE sd.service=s._uuid AND s._key=?',
+   'ORDER BY date LIMIT 1';
+  return ( $self->dbh->selectrow_array( $sql, {}, $service ) )[0];
 }
 
 sub listing_for_schedule {
