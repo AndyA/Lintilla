@@ -155,27 +155,83 @@ sub service_start_date {
   return ( $self->dbh->selectrow_array( $sql, {}, $service ) )[0];
 }
 
+sub resolve_service {
+  my ( $self, $service, @spec ) = @_;
+  my $rec = $self->dbh->selectrow_hashref(
+    join( ' ',
+      'SELECT _uuid, has_outlets',
+      'FROM genome_services',
+      'WHERE _key=?',
+      'LIMIT 1' ),
+    {},
+    $service
+  );
+  return $rec->{_uuid} unless $rec->{has_outlets} eq 'Y';
+  die unless @spec;
+  my @row
+   = $self->dbh->selectrow_array(
+    'SELECT _uuid FROM genome_services WHERE _parent=? AND subkey=?',
+    {}, $rec->{_uuid}, $spec[0] );
+  die unless @row;
+  return $row[0];
+}
+
+sub decode_date {
+  my ( $self, $date ) = @_;
+  die unless $date =~ /^(\d+)-(\d+)-(\d+)/;
+  return ( $1, $2, $3 );
+}
+
+sub decode_time {
+  my ( $self, $time ) = @_;
+  die unless $time =~ /(\d+):(\d+):(\d+)$/;
+  return ( $1, $2, $3 );
+}
+
+sub clean_id {
+  my ( $self, $uuid ) = @_;
+  $uuid =~ s/-//g;
+  return $uuid;
+}
+
+sub _add_programme_details {
+  my ( $self, $rows ) = @_;
+  my @uids = map { $_->{_uuid} } @$rows;
+  my $sql
+   = 'SELECT * FROM genome_contributors WHERE _parent IN ('
+   . join( ', ', map '?', @uids )
+   . ') ORDER BY _parent, `index` ASC';
+  my $contrib
+   = $self->dbh->selectall_arrayref( $sql, { Slice => {} }, @uids );
+  my %by_parent = ();
+  push @{ $by_parent{ $_->{_parent} }{ $_->{group} } }, $_ for @$contrib;
+  for my $row (@$rows) {
+    $row->{contrib} = $by_parent{ $row->{_uuid} } || [];
+    $row->{time} = sprintf '%d.%02d', $self->decode_time( $row->{when} );
+    $row->{link} = $self->clean_id( $row->{_uuid} );
+  }
+  return $rows;
+}
+
 sub listing_for_schedule {
-  my ( $self, $date, $service ) = @_;
+  my ( $self, @spec ) = @_;
+
+  my ( $year, $month, $day ) = $self->decode_date( pop @spec );
+  my $service = $self->resolve_service(@spec);
 
   my $sql = join ' ',
-   'SELECT l.*, i.*, ',
-   'l.`_uuid` AS `_uuid`, ',
-   'l.`_created` AS `_created`, ',
-   'l.`_modified` AS `modified`, ',
-   'l.`_key` AS `_key`, ', 'l.`issue` AS `issue`, ',
-   'i.`_uuid` AS `issue_uuid`, ',
-   'i.`_created` AS `issue_created`, ',
-   'i.`_modified` AS `issue_modified`, ',
-   'i.`_key` AS `issue_key`, ',
-   'i.`_parent` AS `issue_parent`, ',
-   'i.`issue` AS `issue_issue` ',
-   'FROM `genome_listings_v2` AS l, `genome_issues` AS i ',
-   'WHERE l.`source` = ? AND l.`service` = ? AND l.`date` = ? AND i.`_uuid` = l.`issue` ',
-   'ORDER BY l.`issue_key` ASC, l.`page` ASC';
+   'SELECT * FROM genome_programmes_v2',
+   'WHERE `source` = ?',
+   'AND `service` = ?',
+   'AND `year` = ?',
+   'AND `month` = ?',
+   'AND `day` = ?',
+   'ORDER BY `when` ASC';
 
   my $rows = $self->dbh->selectall_arrayref( $sql, { Slice => {} },
-    $self->source, $service, $date );
+    $self->source, $service, $year, $month, $day );
+
+  return $self->_add_programme_details($rows);
 }
 
 sub stash {

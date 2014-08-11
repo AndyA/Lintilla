@@ -48,7 +48,12 @@ get '/schedules/:service' => sub {
 
 get '/schedules/:service/:outlet/:date' => sub {
   my $db = db;
-  template 'schedule', {boilerplate};
+  template 'schedule',
+   {boilerplate,
+    listing => $db->listing_for_schedule(
+      param('service'), param('outlet'), param('date')
+    ),
+   };
 };
 
 get '/schedules/:service/:date' => sub {
@@ -57,8 +62,12 @@ get '/schedules/:service/:date' => sub {
   if ( @dflt > 1 ) {
     delete request->env->{SCRIPT_NAME};
     redirect join '/', '/schedules', param('service'), @dflt;
+    return;
   }
-  template 'schedule', {boilerplate};
+  template 'schedule',
+   {boilerplate,
+    listing => $db->listing_for_schedule( param('service'), param('date') ),
+   };
 };
 
 get '/search' => sub {
