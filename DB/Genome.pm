@@ -26,6 +26,11 @@ has years    => ( is => 'ro', lazy => 1, builder => '_build_years' );
 has decades  => ( is => 'ro', lazy => 1, builder => '_build_decades' );
 has services => ( is => 'ro', lazy => 1, builder => '_build_services' );
 
+my @DAY = qw(
+ SUN MON TUE WED
+ THU FRI SAT
+);
+
 my @MONTH = qw(
  January   February March    April
  May       June     July     August
@@ -152,6 +157,38 @@ sub service_months {
   return [map { $bym{$_} } ( 1 .. 12 )];
 }
 
+sub day_for_date {
+  my ( $self, $tm ) = @_;
+  my @tm = gmtime $tm;
+  return ( day => $DAY[$tm[6]], mday => $tm[3] );
+}
+
+sub service_proximate_days {
+  my ( $self, $service, $date, $span ) = @_;
+
+  my $rs = $self->dbh->selectall_arrayref(
+    join( ' ',
+      'SELECT `date`, UNIX_TIMESTAMP(`date`) AS epoch',
+      'FROM genome_service_dates',
+      'WHERE service = ?',
+      'AND `date` BETWEEN DATE_SUB(?, INTERVAL ? DAY) AND DATE_ADD(?, INTERVAL ? DAY)',
+      'ORDER BY `date`' ),
+    { Slice => {} },
+    $service, $date, $span, $date, $span
+  );
+
+  return [
+    map {
+      {
+        %$_,
+         current => !!( $_->{date} eq $date ),
+         $self->day_for_date( $_->{epoch}, )
+      }
+    } @$rs
+  ];
+
+}
+
 =head2 Dynamic Data
 
 =cut
@@ -253,7 +290,8 @@ sub _add_programme_details {
 sub listing_for_schedule {
   my ( $self, @spec ) = @_;
 
-  my ( $year, $month, $day ) = $self->decode_date( pop @spec );
+  my $date = pop @spec;
+  my ( $year, $month, $day ) = $self->decode_date($date);
   my ( $service, $type, $short_title, $title )
    = $self->resolve_service(@spec);
 
@@ -276,6 +314,7 @@ sub listing_for_schedule {
     service_type   => $type,
     service_years  => $self->service_years($service),
     service_months => $self->service_months( $service, $year ),
+    proximate_days => $self->service_proximate_days( $service, $date, 6 ),
     year           => $year,
     month          => $month,
     month_name     => $MONTH[$month - 1],
