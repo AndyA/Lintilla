@@ -307,13 +307,23 @@ sub _issue_image_path {
    $issue->{_key} . '-0.png';
 }
 
+sub _make_public {
+  my ( $self, $in ) = @_;
+  my $out = {};
+  while ( my ( $k, $v ) = each %$in ) {
+    ( my $kk = $k ) =~ s/_+//g;
+    $out->{$kk} = $v;
+  }
+  return $out;
+}
+
 sub _cook_issues {
   my ( $self, $issues ) = @_;
 
   return cook issues => [
     map {
       {
-        %$_,
+        %{ $self->_make_public($_) },
          path        => $self->_issue_image_path($_),
          pdf         => $self->_issue_pdf_path($_),
          month_name  => $MONTH[$_->{month} - 1],

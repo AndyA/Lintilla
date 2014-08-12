@@ -50,6 +50,11 @@ for my $conj (qw( and or )) {
    = sub { _singular_or_plural( $conj, $_[1], $_[2], @{ $_[0] } ) };
 }
 
+$Template::Stash::SCALAR_OPS->{strip_uuid} = sub {
+  ( my $uuid = shift ) =~ s/-//g;
+  return $uuid;
+};
+
 1;
 
 # vim:ts=2:sw=2:sts=2:et:ft=perl
