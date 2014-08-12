@@ -159,7 +159,7 @@ sub service_months {
 
 sub day_for_date {
   my ( $self, $tm ) = @_;
-  my @tm = gmtime $tm;
+  my @tm = gmtime( $tm // 0 );
   return ( day => $DAY[$tm[6]], mday => $tm[3] );
 }
 
@@ -168,25 +168,26 @@ sub service_proximate_days {
 
   my $rs = $self->dbh->selectall_arrayref(
     join( ' ',
-      'SELECT `date`, UNIX_TIMESTAMP(`date`) AS epoch',
+      'SELECT `date`,',
+      ' TO_DAYS(`date`) * 86400 - 62167219200 AS `epoch`, ',
+      ' DATEDIFF(`date`, ?) AS `offset`',
       'FROM genome_service_dates',
       'WHERE service = ?',
       'AND `date` BETWEEN DATE_SUB(?, INTERVAL ? DAY) AND DATE_ADD(?, INTERVAL ? DAY)',
       'ORDER BY `date`' ),
     { Slice => {} },
-    $service, $date, $span, $date, $span
+    $date, $service, $date, $span, $date, $span
   );
+
+  my %ent = map { $_->{offset} => $_ } map {
+    { %$_, $self->day_for_date( $_->{epoch}, ) }
+  } @$rs;
 
   return [
     map {
-      {
-        %$_,
-         current => !!( $_->{date} eq $date ),
-         $self->day_for_date( $_->{epoch}, )
-      }
-    } @$rs
+      { %{ $ent{$_} || {} }, offset => $_ }
+    } ( -$span .. $span )
   ];
-
 }
 
 =head2 Dynamic Data
