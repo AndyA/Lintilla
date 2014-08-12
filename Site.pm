@@ -12,7 +12,7 @@ use Path::Class;
 
 our $VERSION = '0.1';
 
-use constant BOILERPLATE => qw( services years decades decade_years );
+use constant BOILERPLATE => qw( services years decades decade_years month_names );
 
 sub db() { Lintilla::DB::Genome->new( dbh => database ) }
 
@@ -26,8 +26,8 @@ sub our_uri_for {
   return $uri;
 }
 
-sub boilerplate() {
-  my $db = db();
+sub boilerplate($) {
+  my $db = shift;
   return (
     $db->gather(BOILERPLATE),
     title    => 'BBC Genome',
@@ -37,7 +37,7 @@ sub boilerplate() {
 }
 
 get '/' => sub {
-  template 'index', {boilerplate};
+  template 'index', { boilerplate db };
 };
 
 get '/schedules/:service' => sub {
@@ -49,8 +49,8 @@ get '/schedules/:service' => sub {
 get '/schedules/:service/:outlet/:date' => sub {
   my $db = db;
   template 'schedule',
-   {boilerplate,
-    listing => $db->listing_for_schedule(
+   {boilerplate $db,
+    $db->listing_for_schedule(
       param('service'), param('outlet'), param('date')
     ),
    };
@@ -65,8 +65,8 @@ get '/schedules/:service/:date' => sub {
     return;
   }
   template 'schedule',
-   {boilerplate,
-    listing => $db->listing_for_schedule( param('service'), param('date') ),
+   {boilerplate $db,
+    $db->listing_for_schedule( param('service'), param('date') ),
    };
 };
 

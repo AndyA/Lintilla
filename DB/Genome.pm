@@ -26,6 +26,12 @@ has years    => ( is => 'ro', lazy => 1, builder => '_build_years' );
 has decades  => ( is => 'ro', lazy => 1, builder => '_build_decades' );
 has services => ( is => 'ro', lazy => 1, builder => '_build_services' );
 
+my @MONTH = qw(
+ January   February March    April
+ May       June     July     August
+ September October  November December
+);
+
 sub _format_uuid {
   my ( $self, $uuid ) = @_;
   return join '-', $1, $2, $3, $4, $5
@@ -57,10 +63,6 @@ sub _group_by {
   return $hash;
 }
 
-=head2 Reference Data
-
-=cut
-
 sub _build_services {
   my $self = shift;
   my $sql  = join ' ',
@@ -87,25 +89,61 @@ sub _build_decades {
   return [sort { $a <=> $b } keys %dec];
 }
 
+# If @years is supplied it's a list of hashes each of which contain a
+# year key.
 sub _decade_years {
-  my ( $self, $first, $last ) = @_;
-  my ( $fd, $ld )
-   = map { 10 * int( $_ / 10 ) } ( $first, $last );
+  my ( $self, $first, $last, @years ) = @_;
+
+  @years = map { { year => $_ } } ( $first .. $last ) unless @years;
+  my %byy = map { $_->{year} => $_ } @years;
+
+  my ( $fd, $ld ) = map { 10 * int( $_ / 10 ) } ( $first, $last );
   my @dy = ();
   for ( my $decade = $fd; $decade <= $ld; $decade += 10 ) {
     push @dy,
      {decade => sprintf( '%02d', $decade % 100 ),
-      years  => [
-        map { $_ >= $first && $_ <= $last ? $_ : undef }
-         ( $decade .. $decade + 9 )
-      ] };
+      years => [map { $byy{$_} } ( $decade .. $decade + 9 )] };
   }
   return \@dy;
 }
 
+sub month_names { \@MONTH }
+
 sub decade_years {
   my $self = shift;
   return $self->_decade_years( YEAR_START, YEAR_END );
+}
+
+sub service_years {
+  my ( $self, $service ) = @_;
+
+  my $rs = $self->dbh->selectall_arrayref(
+    join( ' ',
+      'SELECT DISTINCT(`year`), MIN(`date`) AS `first`',
+      'FROM genome_service_dates',
+      'WHERE `service`=?',
+      'GROUP BY `year`',
+      'ORDER BY `date`' ),
+    { Slice => {} },
+    $service
+  );
+
+  return $self->_decade_years( YEAR_START, YEAR_END, @$rs );
+}
+
+sub service_months {
+  my ( $self, $service, $year ) = @_;
+
+  my $sql = join ' ',
+   'SELECT DISTINCT(month)',
+   'FROM genome_service_dates',
+   'WHERE service=?',
+   'AND year=?',
+   'ORDER BY `date`';
+
+  my %okm = map { $_ => 1 }
+   @{ $self->dbh->selectcol_arrayref( $sql, {}, $service, $year ) };
+
 }
 
 =head2 Dynamic Data
@@ -145,35 +183,28 @@ sub service_defaults {
   return @got;
 }
 
-sub service_start_date {
-  my ( $self, $service ) = @_;
-  my $sql = join ' ',
-   'SELECT sd.date',
-   'FROM genome_service_dates AS sd, genome_services AS s',
-   'WHERE sd.service=s._uuid AND s._key=?',
-   'ORDER BY date LIMIT 1';
-  return ( $self->dbh->selectrow_array( $sql, {}, $service ) )[0];
-}
-
 sub resolve_service {
   my ( $self, $service, @spec ) = @_;
   my $rec = $self->dbh->selectrow_hashref(
     join( ' ',
-      'SELECT _uuid, has_outlets',
+      'SELECT _uuid, has_outlets, title, type',
       'FROM genome_services',
-      'WHERE _key=?',
-      'LIMIT 1' ),
+      'WHERE _key=?', 'LIMIT 1' ),
     {},
     $service
   );
-  return $rec->{_uuid} unless $rec->{has_outlets} eq 'Y';
-  die unless @spec;
-  my @row
-   = $self->dbh->selectrow_array(
-    'SELECT _uuid FROM genome_services WHERE _parent=? AND subkey=?',
-    {}, $rec->{_uuid}, $spec[0] );
-  die unless @row;
-  return $row[0];
+  my ( $uuid, @title ) = @{$rec}{ '_uuid', 'title' };
+  if ( $rec->{has_outlets} eq 'Y' ) {
+    die unless @spec;
+    my $outlet = $self->dbh->selectrow_hashref(
+      'SELECT _uuid, title FROM genome_services WHERE _parent=? AND subkey=?',
+      {}, $rec->{_uuid}, $spec[0]
+    );
+    die unless $outlet;
+    $uuid = $outlet->{_uuid};
+    push @title, $outlet->{title};
+  }
+  return ( $uuid, $rec->{type}, $rec->{title}, join ' ', @title );
 }
 
 sub decode_date {
@@ -217,7 +248,8 @@ sub listing_for_schedule {
   my ( $self, @spec ) = @_;
 
   my ( $year, $month, $day ) = $self->decode_date( pop @spec );
-  my $service = $self->resolve_service(@spec);
+  my ( $service, $type, $short_title, $title )
+   = $self->resolve_service(@spec);
 
   my $sql = join ' ',
    'SELECT * FROM genome_programmes_v2',
@@ -231,7 +263,19 @@ sub listing_for_schedule {
   my $rows = $self->dbh->selectall_arrayref( $sql, { Slice => {} },
     $self->source, $service, $year, $month, $day );
 
-  return $self->_add_programme_details($rows);
+  return (
+    short_title   => $short_title,
+    title         => $title,
+    service_type  => $type,
+    service_years => $self->service_years($service),
+    year          => $year,
+    month         => $month,
+    month_name    => $MONTH[$month - 1],
+    day           => $day,
+    service       => $spec[0],
+    outlet        => join( '/', @spec ),
+    listing       => $self->_add_programme_details($rows)
+  );
 }
 
 sub stash {
