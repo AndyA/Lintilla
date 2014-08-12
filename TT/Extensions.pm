@@ -30,7 +30,18 @@ $Template::Stash::LIST_OPS->{distribute} = sub {
   return \@out;
 };
 
+sub _conj_list {
+  my ( $conj, @list ) = @_;
+  my $last = pop @list;
+  return $last unless @list;
+  return join " $conj ", join( ', ', @list ), $last;
+}
+
+for my $conj (qw( and or )) {
+  $Template::Stash::LIST_OPS->{"${conj}_list"}
+   = sub { _conj_list( $conj, @_ ) };
+}
+
 1;
 
 # vim:ts=2:sw=2:sts=2:et:ft=perl
-## Please see file perltidy.ERR
