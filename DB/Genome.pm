@@ -307,28 +307,43 @@ sub _issue_image_path {
    $issue->{_key} . '-0.png';
 }
 
-sub issues {
-  my ( $self, @uuid ) = @_;
-
-  my $rs = $self->dbh->selectall_arrayref(
-    join( ' ',
-      'SELECT * FROM genome_issues',
-      'WHERE _uuid IN (',
-      join( ', ', map '?', @uuid ),
-      ')' ),
-    { Slice => {} },
-    @uuid
-  );
+sub _cook_issues {
+  my ( $self, $issues ) = @_;
 
   return cook issues => [
     map {
       {
         %$_,
-         path => $self->_issue_image_path($_),
-         pdf  => $self->_issue_pdf_path($_),
+         path        => $self->_issue_image_path($_),
+         pdf         => $self->_issue_pdf_path($_),
+         month_name  => $MONTH[$_->{month} - 1],
+         pretty_date => $self->_pretty_date( @{$_}{ 'year', 'month', 'day' } ),
       }
-    } @$rs
+    } @$issues
   ];
+}
+
+sub issues {
+  my ( $self, @uuid ) = @_;
+
+  return $self->_cook_issues(
+    $self->dbh->selectall_arrayref(
+      join( ' ',
+        'SELECT * FROM genome_issues',
+        'WHERE _uuid IN (',
+        join( ', ', map '?', @uuid ),
+        ')' ),
+      { Slice => {} },
+      @uuid
+    )
+  );
+}
+
+sub _pretty_date {
+  my ( $self, $y, $m, $d ) = @_;
+  ( my $pd = strftime( "%d %B %Y", 0, 0, 0, $d, $m - 1, $y - 1900 ) )
+   =~ s/^0//;
+  return $pd;
 }
 
 sub listing_for_schedule {
@@ -354,10 +369,6 @@ sub listing_for_schedule {
   my @pages  = _uniq( map { $_->{page} } @$rows );
   my @issues = _uniq( map { $_->{issue} } @$rows );
 
-  ( my $pretty_date
-     = strftime( "%d %B %Y", 0, 0, 0, $day, $month - 1, $year - 1900 ) )
-   =~ s/^0//;
-
   return (
     outlet         => join( '/',                       @spec ),
     short_title    => $short_title,
@@ -373,8 +384,29 @@ sub listing_for_schedule {
     service        => $spec[0],
     listing        => $self->_add_programme_details($rows),
     pages          => \@pages,
-    pretty_date    => $pretty_date,
-    issues         => $self->issues(@issues),
+    pretty_date => $self->_pretty_date( $year, $month, $day ),
+    issues      => $self->issues(@issues),
+  );
+}
+
+sub issues_for_year {
+  my ( $self, $year ) = @_;
+  return (
+    issues => $self->_group_by(
+      $self->_cook_issues(
+        $self->dbh->selectall_arrayref(
+          join( ' ',
+            'SELECT * ',
+            'FROM genome_issues',
+            'WHERE `year`=?',
+            'AND `_parent` IS NOT NULL',
+            'ORDER BY `issue` ASC' ),
+          { Slice => {} },
+          $year
+        )
+      ),
+      'month'
+    )
   );
 }
 

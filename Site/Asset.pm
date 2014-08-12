@@ -20,6 +20,12 @@ my %RECIPE = (
     height  => 425,
     quality => 90,
   },
+  cover_md => {
+    width   => 223,
+    height  => 285,
+    quality => 90,
+    base    => 'cover_lg',
+  },
   cover_sm => {
     width   => 128,
     height  => 170,
