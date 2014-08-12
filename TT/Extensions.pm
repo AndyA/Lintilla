@@ -3,6 +3,7 @@ package Lintilla::TT::Extensions;
 use strict;
 use warnings;
 
+use POSIX qw( strftime );
 use Template::Stash;
 
 =head1 NAME
@@ -53,6 +54,30 @@ for my $conj (qw( and or )) {
 $Template::Stash::SCALAR_OPS->{strip_uuid} = sub {
   ( my $uuid = shift ) =~ s/-//g;
   return $uuid;
+};
+
+sub _nth {
+  my $x = shift;
+  $x *= 1;
+
+  return $x    if $x < 0;
+  return '0th' if $x == 0;
+  return '1st' if $x == 1;
+  return '2nd' if $x == 2;
+  return '3rd' if $x == 3;
+
+  return int( $x / 10 ) . _nth( $x % 10 )
+   if $x >= 20;
+
+  return "${x}th";
+}
+
+$Template::Stash::SCALAR_OPS->{long_date} = sub {
+  my $ds = shift;
+  return $ds unless $ds =~ /^(\d+)-(\d+)-(\d+)/;
+  my $pd = strftime "%A, %d %B %Y", 0, 0, 0, $3, $2 - 1, $1 - 1900;
+  $pd =~ s/(\d+)/_nth($1)/e;
+  return $pd;
 };
 
 1;

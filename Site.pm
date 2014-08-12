@@ -1,5 +1,6 @@
 package Lintilla::Site;
 
+use v5.10;
 use Dancer ':syntax';
 
 use Dancer::Plugin::Database;
@@ -83,6 +84,20 @@ get '/search' => sub {
    {q  => $q,
     ds => request->uri_for( '/data/search/:size/:start', { q => $q } ),
    };
+};
+
+get qr/\/([0-9a-f]{32})/i => sub {
+  my ($uuid) = splat;
+  my $db     = db;
+  my $thing  = $db->lookup_uuid($uuid);
+  given ( $thing->{kind} ) {
+    when ('issue') {
+      template 'issue', { boilerplate $db, $db->issue_listing($uuid) };
+    }
+    default {
+      die;
+    }
+  }
 };
 
 true;

@@ -1,5 +1,6 @@
 package Lintilla::DB::Genome;
 
+use Dancer ':syntax';
 use JSON;
 use Lintilla::Filter qw( cook );
 use Moose;
@@ -39,7 +40,7 @@ my @MONTH = qw(
  September October  November December
 );
 
-sub _uniq {
+sub _uniq(@) {
   my %seen = ();
   grep { !$seen{$_}++ } @_;
 }
@@ -311,7 +312,7 @@ sub _make_public {
   my ( $self, $in ) = @_;
   my $out = {};
   while ( my ( $k, $v ) = each %$in ) {
-    ( my $kk = $k ) =~ s/_+//g;
+    ( my $kk = $k ) =~ s/^_+//g;
     $out->{$kk} = $v;
   }
   return $out;
@@ -328,6 +329,10 @@ sub _cook_issues {
          pdf         => $self->_issue_pdf_path($_),
          month_name  => $MONTH[$_->{month} - 1],
          pretty_date => $self->_pretty_date( @{$_}{ 'year', 'month', 'day' } ),
+         pretty_start_date =>
+         $self->_pretty_date( $self->decode_date( $_->{start_date} ) ),
+         pretty_end_date =>
+         $self->_pretty_date( $self->decode_date( $_->{end_date} ) ),
       }
     } @$issues
   ];
@@ -376,8 +381,8 @@ sub listing_for_schedule {
   my $rows = $self->dbh->selectall_arrayref( $sql, { Slice => {} },
     $self->source, $service, $year, $month, $day );
 
-  my @pages  = _uniq( map { $_->{page} } @$rows );
-  my @issues = _uniq( map { $_->{issue} } @$rows );
+  my @pages  = _uniq map { $_->{page} } @$rows;
+  my @issues = _uniq map { $_->{issue} } @$rows;
 
   return (
     outlet         => join( '/',                       @spec ),
@@ -418,6 +423,109 @@ sub issues_for_year {
       'month'
     )
   );
+}
+
+sub lookup_uuid {
+  my ( $self, $uuid ) = @_;
+  my @row
+   = $self->dbh->selectrow_hashref( 'SELECT * FROM dirty WHERE uuid=?',
+    {}, $self->_format_uuid($uuid) );
+  return unless @row;
+  return $row[0];
+}
+
+sub services_for_ids {
+  my ( $self, @ids ) = @_;
+  @ids = _uniq @ids;
+  return [] unless @ids;
+  return $self->dbh->selectall_arrayref(
+    join( ' ',
+      'SELECT *',
+      'FROM genome_services',
+      'WHERE _uuid IN (',
+      join( ', ', map '?', @ids ),
+      ')' ),
+    { Slice => {} },
+    @ids
+  );
+}
+
+sub service_info {
+  my ( $self, @ids ) = @_;
+
+  my $svcs = $self->services_for_ids(@ids);
+  my @parent = grep defined $_, map { $_->{_parent} } @$svcs;
+  if (@parent) {
+    my $parents = $self->service_info(@parent);
+    $_->{parent} = $parents->{ $_->{_parent} }[0]
+     for grep { defined $_->{_parent} } @$svcs;
+  }
+  for my $svc (@$svcs) {
+    $svc->{subkey} = $svc->{_key} unless defined $svc->{subkey};
+    $svc->{full_title} = join ' ', $self->_walk_down( $svc, 'title' );
+    $svc->{path}       = join '/', $self->_walk_down( $svc, 'subkey' );
+  }
+  return $self->_group_by( $svcs, '_uuid' );
+}
+
+sub _walk_down {
+  my ( $self, $service, $key ) = @_;
+  debug "service: ", $service, ", key: ", $key;
+  return () unless $service->{$key};
+  return ( $service->{$key} ) unless $service->{parent};
+  return ( $self->_walk_down( $service->{parent}, $key ),
+    $service->{$key} );
+}
+
+sub issue_listing {
+  my ( $self, $uuid ) = @_;
+
+  my $iss = $self->_cook_issues(
+    [ $self->dbh->selectrow_hashref(
+        join( ' ', 'SELECT *', 'FROM genome_issues', 'WHERE _uuid=?' ), {},
+        $self->_format_uuid($uuid)
+      )
+    ]
+  )->[0];
+
+  my $list = $self->dbh->selectall_arrayref(
+    join( ' ',
+      'SELECT *',
+      'FROM genome_listings_v2',
+      'WHERE `issue`=?',
+      'AND `source`=?',
+      'ORDER BY `page`, `date` ASC' ),
+    { Slice => {} },
+    $self->_format_uuid($uuid),
+    $self->source
+  );
+
+  my @services = _uniq map { $_->{service} } @$list;
+  my $svc_info = $self->service_info(@services);
+
+  my $svc_dates = $self->_group_by(
+    $self->dbh->selectall_arrayref(
+      join( ' ',
+        'SELECT *',
+        'FROM genome_service_dates',
+        'WHERE `service` IN (',
+        join( ', ', map '?', @services ),
+        ')',
+        'GROUP BY `service`',
+        'ORDER BY `date` ASC' ),
+      { Slice => {} },
+      @services
+    ),
+    'service'
+  );
+
+  for my $i (@$list) {
+    $i->{service_info}  = $svc_info->{ $i->{service} };
+    $i->{service_dates} = $svc_dates->{ $i->{service} };
+  }
+
+  $iss->{listing} = $self->_group_by( $list, 'date' );
+  return ( issue => $iss, );
 }
 
 sub stash {
