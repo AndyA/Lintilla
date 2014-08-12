@@ -295,6 +295,12 @@ sub _add_programme_details {
   return $rows;
 }
 
+sub _issue_pdf_path {
+  my ( $self, $issue ) = @_;
+  return join '/', $issue->{decade}, $issue->{year}, $issue->{_key},
+   $issue->{_key} . '.pdf';
+}
+
 sub _issue_image_path {
   my ( $self, $issue ) = @_;
   return join '/', $issue->{decade}, $issue->{year}, $issue->{_key},
@@ -316,7 +322,11 @@ sub issues {
 
   return cook issues => [
     map {
-      { %$_, path => $self->_issue_image_path($_) }
+      {
+        %$_,
+         path => $self->_issue_image_path($_),
+         pdf  => $self->_issue_pdf_path($_),
+      }
     } @$rs
   ];
 }
