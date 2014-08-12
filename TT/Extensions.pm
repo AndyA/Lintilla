@@ -31,6 +31,17 @@ $Template::Stash::LIST_OPS->{distribute} = sub {
   return \@out;
 };
 
+sub _deref {
+  my ( $obj, $key, @path ) = @_;
+  return $obj unless defined $key && ref $obj;
+  return _deref( $obj->{$key}, @path ) if 'HASH' eq ref $obj;
+  return [map { _deref( $_, $key, @path ) } @$obj] if 'ARRAY' eq ref $obj;
+  die;
+}
+
+$Template::Stash::LIST_OPS->{deref} = \&_deref;
+$Template::Stash::HASH_OPS->{deref} = \&_deref;
+
 sub _conj_list {
   my ( $conj, @list ) = @_;
   my $last = pop @list;
