@@ -407,6 +407,7 @@ sub listing_for_schedule {
 sub issues_for_year {
   my ( $self, $year ) = @_;
   return (
+    year   => $year,
     issues => $self->_group_by(
       $self->_cook_issues(
         $self->dbh->selectall_arrayref(
