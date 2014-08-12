@@ -15,28 +15,16 @@ Lintilla::Site::Asset - Asset handling
 
 # TODO move this into a config file.
 my %RECIPE = (
-  display => {
-    width   => 1024,
-    height  => 576,
-    quality => 95,
+  cover_lg => {
+    width   => 320,
+    height  => 425,
+    quality => 90,
   },
-  thumb => {
-    width   => 80,
-    height  => 80,
-    quality => 75,
-    base    => 'display',
-  },
-  small => {
-    width   => 200,
-    height  => 200,
-    quality => 75,
-    base    => 'display',
-  },
-  slice => {
-    width   => 800,
-    height  => 150,
-    quality => 85,
-    base    => 'display',
+  cover_sm => {
+    width   => 128,
+    height  => 170,
+    quality => 90,
+    base    => 'cover_lg',
   },
 );
 
@@ -50,37 +38,25 @@ sub our_uri_for {
 }
 
 sub url_for_asset {
-  my ( $asset, $variant ) = @_;
-
-  my @p = $asset->{hash} =~ /^(.{3})(.{3})(.+)$/;
-  my $name = join( '/', @p ) . '.jpg';
+  my ( $name, $variant ) = @_;
 
   return "/asset/$name" unless defined $variant && $variant ne 'full';
   return "/asset/var/$variant/$name";
 }
 
-filter assets => sub {
+filter issues => sub {
   my $data = shift;
-  for my $asset (@$data) {
-    $asset->{var}{full} = {
-      width  => $asset->{width} * 1,
-      height => $asset->{height} * 1,
-      url    => url_for_asset($asset),
-    };
+  for my $issue (@$data) {
+    $issue->{var}{full} = { url => url_for_asset( $issue->{path} ), };
     for my $recipe ( keys %RECIPE ) {
-      my $sc = Lintilla::Image::Scaler->new( spec => $RECIPE{$recipe} );
-      my ( $vw, $vh ) = $sc->fit( $asset->{width} * 1, $asset->{height} * 1 );
-      $asset->{var}{$recipe} = {
-        width  => $vw,
-        height => $vh,
-        url    => url_for_asset( $asset, $recipe ),
-      };
+      $issue->{var}{$recipe}
+       = { url => url_for_asset( $issue->{path}, $recipe ), };
     }
   }
   return $data;
 };
 
-get '/asset/var/*/**.jpg' => sub {
+get '/asset/var/*/**' => sub {
   my ( $recipe, $id ) = splat;
 
   debug "recipe: $recipe, id: @$id";
@@ -90,7 +66,7 @@ get '/asset/var/*/**.jpg' => sub {
   die "Unknown recipe $recipe" unless defined $spec;
 
   my @name = @$id;
-  $name[-1] .= '.jpg';
+  #  $name[-1] .= '.jpg';
 
   my @p = ('asset');
   my @v = ( var => $recipe );

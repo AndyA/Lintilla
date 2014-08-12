@@ -1,7 +1,9 @@
 package Lintilla::DB::Genome;
 
 use JSON;
+use Lintilla::Filter qw( cook );
 use Moose;
+use POSIX qw( strftime );
 use Sphinx::Search;
 
 =head1 NAME
@@ -36,6 +38,11 @@ my @MONTH = qw(
  May       June     July     August
  September October  November December
 );
+
+sub _uniq {
+  my %seen = ();
+  grep { !$seen{$_}++ } @_;
+}
 
 sub _format_uuid {
   my ( $self, $uuid ) = @_;
@@ -288,6 +295,32 @@ sub _add_programme_details {
   return $rows;
 }
 
+sub _issue_image_path {
+  my ( $self, $issue ) = @_;
+  return join '/', $issue->{decade}, $issue->{year}, $issue->{_key},
+   $issue->{_key} . '-0.png';
+}
+
+sub issues {
+  my ( $self, @uuid ) = @_;
+
+  my $rs = $self->dbh->selectall_arrayref(
+    join( ' ',
+      'SELECT * FROM genome_issues',
+      'WHERE _uuid IN (',
+      join( ', ', map '?', @uuid ),
+      ')' ),
+    { Slice => {} },
+    @uuid
+  );
+
+  return cook issues => [
+    map {
+      { %$_, path => $self->_issue_image_path($_) }
+    } @$rs
+  ];
+}
+
 sub listing_for_schedule {
   my ( $self, @spec ) = @_;
 
@@ -308,6 +341,13 @@ sub listing_for_schedule {
   my $rows = $self->dbh->selectall_arrayref( $sql, { Slice => {} },
     $self->source, $service, $year, $month, $day );
 
+  my @pages  = _uniq( map { $_->{page} } @$rows );
+  my @issues = _uniq( map { $_->{issue} } @$rows );
+
+  ( my $pretty_date
+     = strftime( "%d %B %Y", 0, 0, 0, $day, $month - 1, $year - 1900 ) )
+   =~ s/^0//;
+
   return (
     outlet         => join( '/',                       @spec ),
     short_title    => $short_title,
@@ -322,6 +362,9 @@ sub listing_for_schedule {
     day            => $day,
     service        => $spec[0],
     listing        => $self->_add_programme_details($rows),
+    pages          => \@pages,
+    pretty_date    => $pretty_date,
+    issues         => $self->issues(@issues),
   );
 }
 
