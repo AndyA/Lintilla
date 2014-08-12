@@ -45,9 +45,9 @@ sub _singular_or_plural {
 
 for my $conj (qw( and or )) {
   $Template::Stash::LIST_OPS->{"${conj}_list"}
-   = sub { _conj_list( $conj, @_ ) };
+   = sub { _conj_list( $conj, @{ $_[0] } ) };
   $Template::Stash::LIST_OPS->{"${conj}_some"}
-   = sub { _singular_or_plural( $conj, @_ ) };
+   = sub { _singular_or_plural( $conj, $_[1], $_[2], @{ $_[0] } ) };
 }
 
 1;
