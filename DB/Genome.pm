@@ -134,16 +134,22 @@ sub service_years {
 sub service_months {
   my ( $self, $service, $year ) = @_;
 
-  my $sql = join ' ',
-   'SELECT DISTINCT(month)',
-   'FROM genome_service_dates',
-   'WHERE service=?',
-   'AND year=?',
-   'ORDER BY `date`';
+  my $rs = $self->dbh->selectall_arrayref(
+    join( ' ',
+      'SELECT DISTINCT(`month`), MIN(`date`) AS `first`',
+      'FROM genome_service_dates',
+      'WHERE `service`=?',
+      'AND `year`=?',
+      'GROUP BY `month`',
+      'ORDER BY `date`' ),
+    { Slice => {} },
+    $service, $year
+  );
 
-  my %okm = map { $_ => 1 }
-   @{ $self->dbh->selectcol_arrayref( $sql, {}, $service, $year ) };
+  my %bym
+   = map { $_->{month} => { %$_, name => $MONTH[$_->{month} - 1] } } @$rs;
 
+  return [map { $bym{$_} } ( 1 .. 12 )];
 }
 
 =head2 Dynamic Data
@@ -264,17 +270,18 @@ sub listing_for_schedule {
     $self->source, $service, $year, $month, $day );
 
   return (
-    short_title   => $short_title,
-    title         => $title,
-    service_type  => $type,
-    service_years => $self->service_years($service),
-    year          => $year,
-    month         => $month,
-    month_name    => $MONTH[$month - 1],
-    day           => $day,
-    service       => $spec[0],
-    outlet        => join( '/', @spec ),
-    listing       => $self->_add_programme_details($rows)
+    outlet         => join( '/',                       @spec ),
+    short_title    => $short_title,
+    title          => $title,
+    service_type   => $type,
+    service_years  => $self->service_years($service),
+    service_months => $self->service_months( $service, $year ),
+    year           => $year,
+    month          => $month,
+    month_name     => $MONTH[$month - 1],
+    day            => $day,
+    service        => $spec[0],
+    listing        => $self->_add_programme_details($rows),
   );
 }
 
