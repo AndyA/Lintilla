@@ -37,9 +37,17 @@ sub _conj_list {
   return join " $conj ", join( ', ', @list ), $last;
 }
 
+sub _singular_or_plural {
+  my ( $conj, $singular, $plural, @list ) = @_;
+  return join ' ', $singular, @list if @list < 2;
+  return join ' ', $plural, _conj_list( $conj, @list );
+}
+
 for my $conj (qw( and or )) {
   $Template::Stash::LIST_OPS->{"${conj}_list"}
    = sub { _conj_list( $conj, @_ ) };
+  $Template::Stash::LIST_OPS->{"${conj}_some"}
+   = sub { _singular_or_plural( $conj, @_ ) };
 }
 
 1;
