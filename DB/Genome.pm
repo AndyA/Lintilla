@@ -568,22 +568,34 @@ sub stash {
 =cut
 
 sub search {
-  my ( $start, $size, $query ) = @_;
+  my ( $self, $start, $size, $query ) = @_;
   #  $size = MAX_PAGE if $size > MAX_PAGE;
 
   my $sph = Sphinx::Search->new();
   $sph->SetMatchMode(SPH_MATCH_EXTENDED);
   $sph->SetSortMode(SPH_SORT_RELEVANCE);
   $sph->SetLimits( $start, $size );
-  my $results = $sph->Query( $query, 'elvis_idx' );
+  my $results = $sph->Query( $query, 'prog_idx' );
 
-  my $ids = join ', ', map { $_->{doc} } @{ $results->{matches} };
-  my $sql
-   = "SELECT * FROM elvis_image "
-   . "WHERE acno IN ($ids) "
-   . "ORDER BY FIELD(acno, $ids) ";
+  my @ids = map { $_->{doc} } @{ $results->{matches} };
+  my $ph = join ', ', map '?', @ids;
 
-  database->selectall_arrayref( $sql, { Slice => {} } );
+  return $self->dbh->selectall_arrayref(
+    join( ' ',
+      'SELECT *,',
+      'IF (parent_service_key IS NOT NULL, parent_service_key, service_key) AS root_service_key',
+      'FROM (',
+      '  SELECT p.*, s2._key AS parent_service_key',
+      '  FROM (genome_programmes_v2 AS p, genome_services AS s, genome_uuid_map AS m)',
+      '  LEFT JOIN genome_services AS s2 ON s2._uuid = s._parent',
+      '  WHERE p.service = s._uuid',
+      '  AND p._uuid = m.uuid',
+      "  AND m.id IN ($ph)",
+      "  ORDER BY FIELD(m.id, $ph) ",
+      ') AS q' ),
+    { Slice => {} },
+    @ids
+  );
 }
 
 1;
