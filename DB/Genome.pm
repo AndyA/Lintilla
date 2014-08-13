@@ -373,13 +373,11 @@ sub listing_for_schedule {
    'SELECT * FROM genome_programmes_v2',
    'WHERE `source` = ?',
    'AND `service` = ?',
-   'AND `year` = ?',
-   'AND `month` = ?',
-   'AND `day` = ?',
+   'AND `date` = ?',
    'ORDER BY `when` ASC';
 
   my $rows = $self->dbh->selectall_arrayref( $sql, { Slice => {} },
-    $self->source, $service, $year, $month, $day );
+    $self->source, $service, $date );
 
   my @pages  = _uniq map { $_->{page} } @$rows;
   my @issues = _uniq map { $_->{issue} } @$rows;
