@@ -1,7 +1,7 @@
 package Lintilla::DB::Genome;
 
 use Dancer ':syntax';
-use JSON;
+#use JSON;
 use Lintilla::Filter qw( cook );
 use Moose;
 use POSIX qw( strftime );
@@ -40,7 +40,7 @@ my @MONTH = qw(
  September October  November December
 );
 
-sub _uniq(@) {
+sub unique(@) {
   my %seen = ();
   grep { !$seen{$_}++ } @_;
 }
@@ -405,8 +405,8 @@ sub listing_for_schedule {
   my $rows = $self->dbh->selectall_arrayref( $sql, { Slice => {} },
     $self->source, $service, $date );
 
-  my @pages  = _uniq map { $_->{page} } @$rows;
-  my @issues = _uniq map { $_->{issue} } @$rows;
+  my @pages  = unique map { $_->{page} } @$rows;
+  my @issues = unique map { $_->{issue} } @$rows;
 
   return (
     outlet         => join( '/',                       @spec ),
@@ -461,7 +461,7 @@ sub lookup_uuid {
 
 sub services_for_ids {
   my ( $self, @ids ) = @_;
-  @ids = _uniq @ids;
+  @ids = unique @ids;
   return [] unless @ids;
   return $self->dbh->selectall_arrayref(
     join( ' ',
@@ -525,7 +525,7 @@ sub issue_listing {
     $self->source
   );
 
-  my @services = _uniq map { $_->{service} } @$list;
+  my @services = unique map { $_->{service} } @$list;
   my $svc_info = $self->service_info(@services);
 
   my $svc_dates = $self->_group_by(
