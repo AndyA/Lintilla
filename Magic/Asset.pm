@@ -34,7 +34,7 @@ sub render {
     if ( flock( $lh, LOCK_EX | LOCK_NB ) ) {
       debug "Rendering $fn";
       eval { $self->provider->create };
-      my $err = @_;
+      my $err = $@;
       close $lh;
       die $err if $err;
     }

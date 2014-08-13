@@ -6,6 +6,7 @@ use Lintilla::Image::Scaler;
 use Lintilla::Magic::Asset;
 use Moose;
 use Path::Class;
+use URI;
 
 =head1 NAME
 
@@ -68,6 +69,16 @@ filter issues => sub {
   return $data;
 };
 
+sub cook_uri {
+  my $uri = shift;
+  if ( defined( my $base_host = config->{base_host} ) ) {
+    my $u = URI->new($uri);
+    $u->host($base_host);
+    return $u;
+  }
+  return $uri;
+}
+
 get '/asset/var/*/**' => sub {
   my ( $recipe, $id ) = splat;
 
@@ -83,8 +94,11 @@ get '/asset/var/*/**' => sub {
   my @p = ('asset');
   my @v = ( var => $recipe );
 
-  my $in_url = our_uri_for( @p,
-    ( defined $spec->{base} ? ( var => $spec->{base} ) : () ), @name );
+  my $in_url = cook_uri(
+    our_uri_for(
+      @p, ( defined $spec->{base} ? ( var => $spec->{base} ) : () ), @name
+    )
+  );
 
   my $out_file = file setting('public'), @p, @v, @name;
 
@@ -105,7 +119,7 @@ get '/asset/var/*/**' => sub {
 
   $magic->render or die "Can't render";
 
-  my $self = our_uri_for( @p, @v, @name );
+  my $self = our_uri_for( @p, @v, @name ) . '?1';
 
   return redirect $self, 307;
 };
