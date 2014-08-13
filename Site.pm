@@ -78,6 +78,11 @@ get '/years/:year' => sub {
    { boilerplate $db, $db->issues_for_year( param('year') ), };
 };
 
+get '/issues' => sub {
+  my $db = db;
+  template 'issues', { boilerplate $db, $db->annual_issues };
+};
+
 get '/search' => sub {
   my $q = param('q');
   template 'index',

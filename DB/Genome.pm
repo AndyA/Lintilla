@@ -354,6 +354,32 @@ sub issues {
   );
 }
 
+sub annual_issues {
+  my $self = shift;
+
+  return (
+    issues => $self->_group_by(
+      $self->_cook_issues(
+        $self->dbh->selectall_arrayref(
+          join( ' ',
+            'SELECT *',
+            'FROM genome_issues AS i1 ',
+            'INNER JOIN (',
+            '  SELECT MIN(`date`) AS `first`',
+            '  FROM genome_issues',
+            '  GROUP BY `year`',
+            ') AS i2',
+            'ON i2.`first`=i1.`date`',
+            'AND i1.`_parent` IS NOT NULL',
+            'ORDER BY `year`' ),
+          { Slice => {} }
+        )
+      ),
+      'decade'
+    )
+  );
+}
+
 sub _pretty_date {
   my ( $self, $y, $m, $d ) = @_;
   ( my $pd = strftime( "%d %B %Y", 0, 0, 0, $d, $m - 1, $y - 1900 ) )
