@@ -91,6 +91,30 @@ $Template::Stash::SCALAR_OPS->{long_date} = sub {
   return $pd;
 };
 
+sub _thousands {
+  ( my $n = reverse shift ) =~ s/(\d\d\d)(?=\d)/$1,/g;
+  return reverse $n;
+}
+
+$Template::Stash::SCALAR_OPS->{thousands} = sub {
+  my $n = shift;
+  $n =~ s/(\d+)/_thousands($1)/e;
+  return $n;
+};
+
+sub _make_matcher {
+  my $term = shift;
+  my $re = join '\s+', map quotemeta, split /\s+/, $term;
+  return qr{\b$re\b}i;
+}
+
+$Template::Stash::SCALAR_OPS->{highlight} = sub {
+  my ( $str, $term ) = @_;
+  my $re = _make_matcher($term);
+  $str =~ s/($re)/[[:$1:]]/g;
+  return $str;
+};
+
 1;
 
 # vim:ts=2:sw=2:sts=2:et:ft=perl

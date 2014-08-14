@@ -84,11 +84,8 @@ get '/issues' => sub {
 };
 
 get '/search' => sub {
-  my $q = param('q');
-  template 'index',
-   {q  => $q,
-    ds => request->uri_for( '/data/search/:size/:start', { q => $q } ),
-   };
+  my $db = db;
+  template 'search', { boilerplate $db, $db->search( 0, 50, param('q') ) };
 };
 
 get qr/\/([0-9a-f]{32})/i => sub {
