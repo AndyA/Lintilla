@@ -98,6 +98,9 @@ get '/search' => sub {
   redirect $uri;
 };
 
+get '/help'  => sub { template 'help' };
+get '/about' => sub { template 'about' };
+
 get qr/\/([0-9a-f]{32})/i => sub {
   my ($uuid) = splat;
   my $db     = db;
