@@ -655,7 +655,13 @@ sub programme {
     { Slice => {} },
     $self->_format_uuid($uuid)
   );
-  return ( programme => $progs->[0] );
+
+  my $issues = $self->issues( unique map { $_->{issue} } @$progs );
+
+  return (
+    programme => $progs->[0],
+    issue     => $issues->[0],
+  );
 }
 
 1;
