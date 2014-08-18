@@ -306,6 +306,13 @@ sub _issue_key {
   return $issue->{_key};
 }
 
+sub _issue_id {
+  my ( $self, $issue ) = @_;
+  return $issue->{default_child}
+   if defined $issue->{default_child};
+  return $issue->{_uuid};
+}
+
 sub _issue_pdf_path {
   my ( $self, $issue ) = @_;
   my $key = $self->_issue_key($issue);
@@ -335,6 +342,7 @@ sub _cook_issues {
     map {
       {
         %{ $self->_make_public($_) },
+         link        => $self->_issue_id($_),
          path        => $self->_issue_image_path($_),
          pdf         => $self->_issue_pdf_path($_),
          month_name  => $MONTH[$_->{month} - 1],
