@@ -83,9 +83,19 @@ get '/issues' => sub {
   template 'issues', { boilerplate $db, $db->annual_issues };
 };
 
+get '/search/:start/:size' => sub {
+  my $db = db;
+  template 'search',
+   {boilerplate $db,
+    $db->search( param('start'), param('size'), param('q') ) };
+};
+
 get '/search' => sub {
   my $db = db;
-  template 'search', { boilerplate $db, $db->search( 0, 50, param('q') ) };
+  delete request->env->{SCRIPT_NAME};
+  my $uri = URI->new( request->uri_for('/search/0/20') );
+  $uri->query_form(params);
+  redirect $uri;
 };
 
 get qr/\/([0-9a-f]{32})/i => sub {
