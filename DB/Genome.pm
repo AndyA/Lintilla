@@ -582,27 +582,39 @@ sub search {
   my @ids = map { $_->{doc} } @{ $results->{matches} };
   my $ph = join ', ', map '?', @ids;
 
+  my $progs = $self->_add_programme_details(
+    $self->dbh->selectall_arrayref(
+      join( ' ',
+        'SELECT *,',
+        'IF (parent_service_key IS NOT NULL, parent_service_key, service_key) AS root_service_key',
+        'FROM (',
+        '  SELECT',
+        '    p.*,',
+        '    s2._key AS parent_service_key,',
+        '    s.title AS service_name,',
+        '    s2.title AS service_sub,',
+        '    s.subkey AS subkey',
+        '  FROM (genome_programmes_v2 AS p, genome_services AS s, genome_uuid_map AS m)',
+        '  LEFT JOIN genome_services AS s2 ON s2._uuid = s._parent',
+        '  WHERE p.service = s._uuid',
+        '  AND p._uuid = m.uuid',
+        "  AND m.id IN ($ph)",
+        "  ORDER BY FIELD(m.id, $ph) ",
+        ') AS q' ),
+      { Slice => {} },
+      @ids, @ids
+    )
+  );
+
+  for my $prog (@$progs) {
+    $prog->{outlet} = join '/',
+     grep defined, @{$prog}{ 'root_service_key', 'subkey' };
+  }
+
   return (
     q          => $query,
     results    => $results,
-    programmes => $self->_add_programme_details(
-      $self->dbh->selectall_arrayref(
-        join( ' ',
-          'SELECT *,',
-          'IF (parent_service_key IS NOT NULL, parent_service_key, service_key) AS root_service_key',
-          'FROM (',
-          '  SELECT p.*, s2._key AS parent_service_key, s.title AS service_name, s2.title AS service_sub',
-          '  FROM (genome_programmes_v2 AS p, genome_services AS s, genome_uuid_map AS m)',
-          '  LEFT JOIN genome_services AS s2 ON s2._uuid = s._parent',
-          '  WHERE p.service = s._uuid',
-          '  AND p._uuid = m.uuid',
-          "  AND m.id IN ($ph)",
-          "  ORDER BY FIELD(m.id, $ph) ",
-          ') AS q' ),
-        { Slice => {} },
-        @ids, @ids
-      )
-    )
+    programmes => $progs,
   );
 }
 
