@@ -203,13 +203,6 @@ sub service_proximate_days {
 
 =cut
 
-sub programme {
-  my ( $self, $uuid ) = @_;
-  return $self->dbh->selectrow_hashref(
-    'SELECT * FROM `genome_programmes_v2` WHERE `_uuid`=?',
-    {}, $self->_format_uuid($uuid) );
-}
-
 sub service_defaults {
   my ( $self, $service, @got ) = @_;
   my $sql = join ' ',
@@ -581,9 +574,18 @@ sub stash {
   return JSON->new->utf8->allow_nonref->decode( $row[0] );
 }
 
-=head2 Search
+sub _programme_query {
+  my ( $self, @args ) = @_;
+  my $progs = $self->_add_programme_details(
+    $self->dbh->selectall_arrayref(@args) );
 
-=cut
+  for my $prog (@$progs) {
+    $prog->{outlet} = join '/',
+     grep defined, @{$prog}{ 'root_service_key', 'subkey' };
+  }
+
+  return $progs;
+}
 
 sub search {
   my ( $self, $start, $size, $query ) = @_;
@@ -601,41 +603,59 @@ sub search {
   my @ids = map { $_->{doc} } @{ $results->{matches} };
   my $ph = join ', ', map '?', @ids;
 
-  my $progs = $self->_add_programme_details(
-    $self->dbh->selectall_arrayref(
-      join( ' ',
-        'SELECT *,',
-        'IF (parent_service_key IS NOT NULL, parent_service_key, service_key) AS root_service_key',
-        'FROM (',
-        '  SELECT',
-        '    p.*,',
-        '    s2._key AS parent_service_key,',
-        '    s.title AS service_name,',
-        '    s2.title AS service_sub,',
-        '    s.subkey AS subkey',
-        '  FROM (genome_programmes_v2 AS p, genome_services AS s, genome_uuid_map AS m)',
-        '  LEFT JOIN genome_services AS s2 ON s2._uuid = s._parent',
-        '  WHERE p.service = s._uuid',
-        '  AND p._uuid = m.uuid',
-        "  AND m.id IN ($ph)",
-        "  ORDER BY FIELD(m.id, $ph) ",
-        ') AS q' ),
-      { Slice => {} },
-      @ids, @ids
-    )
+  my $progs = $self->_programme_query(
+    join( ' ',
+      'SELECT *,',
+      'IF (parent_service_key IS NOT NULL, parent_service_key, service_key) AS root_service_key',
+      'FROM (',
+      '  SELECT',
+      '    p.*,',
+      '    s2._key AS parent_service_key,',
+      '    s.title AS service_name,',
+      '    s2.title AS service_sub,',
+      '    s.subkey AS subkey',
+      '  FROM (genome_programmes_v2 AS p, genome_services AS s, genome_uuid_map AS m)',
+      '  LEFT JOIN genome_services AS s2 ON s2._uuid = s._parent',
+      '  WHERE p.service = s._uuid',
+      '  AND p._uuid = m.uuid',
+      "  AND m.id IN ($ph)",
+      "  ORDER BY FIELD(m.id, $ph) ",
+      ') AS q' ),
+    { Slice => {} },
+    @ids, @ids
   );
-
-  for my $prog (@$progs) {
-    $prog->{outlet} = join '/',
-     grep defined, @{$prog}{ 'root_service_key', 'subkey' };
-  }
 
   return (
     q          => $query,
     results    => $results,
     programmes => $progs,
-    pagination => $srch->pagination(9),
+    pagination => $srch->pagination(5),
   );
+}
+
+sub programme {
+  my ( $self, $uuid ) = @_;
+
+  my $progs = $self->_programme_query(
+    join( ' ',
+      'SELECT *,',
+      'IF (parent_service_key IS NOT NULL, parent_service_key, service_key) AS root_service_key',
+      'FROM (',
+      '  SELECT',
+      '    p.*,',
+      '    s2._key AS parent_service_key,',
+      '    s.title AS service_name,',
+      '    s2.title AS service_sub,',
+      '    s.subkey AS subkey',
+      '  FROM (genome_programmes_v2 AS p, genome_services AS s)',
+      '  LEFT JOIN genome_services AS s2 ON s2._uuid = s._parent',
+      '  WHERE p.service = s._uuid',
+      '  AND p._uuid = ?',
+      ') AS q' ),
+    { Slice => {} },
+    $self->_format_uuid($uuid)
+  );
+  return ( programme => $progs->[0] );
 }
 
 1;

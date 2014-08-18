@@ -106,6 +106,9 @@ get qr/\/([0-9a-f]{32})/i => sub {
     when ('issue') {
       template 'issue', { boilerplate $db, $db->issue_listing($uuid) };
     }
+    when ('programme') {
+      template 'programme', { boilerplate $db, $db->programme($uuid) };
+    }
     default {
       die;
     }
