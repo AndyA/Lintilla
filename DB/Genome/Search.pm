@@ -43,14 +43,35 @@ sub pagination {
   my $cur   = $self->page;
   my $first = max( $cur - int( $window / 2 ), 0 );
   my $last  = min( $first + $window, $self->pages ) - 1;
-  return [
-    map {
-      { page   => $_ + 1,
-        link   => $self->page_link($_),
-        offset => $_ - $cur,
-      }
-    } ( $first .. $last )
-  ];
+  return {
+    ( $cur > 0
+      ? (
+        prev => {
+          page   => $cur,
+          link   => $self->page_link( $cur - 1 ),
+          offset => -1,
+        }
+       )
+      : ()
+    ),
+    ( $cur < $self->pages - 1
+      ? (
+        next => {
+          page   => $cur + 2,
+          link   => $self->page_link( $cur + 1 ),
+          offset => 1,
+        }
+       )
+      : ()
+    ),
+    pages => [
+      map {
+        { page   => $_ + 1,
+          link   => $self->page_link($_),
+          offset => $_ - $cur,
+        }
+      } ( $first .. $last )
+    ] };
 }
 
 sub _do_search {
