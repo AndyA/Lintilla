@@ -342,6 +342,8 @@ sub _cook_issues {
          pretty_date => $self->_pretty_date( @{$_}{ 'year', 'month', 'day' } ),
          pretty_start_date =>
          $self->_pretty_date( $self->decode_date( $_->{start_date} ) ),
+         short_start_date =>
+         $self->_short_date( $self->decode_date( $_->{start_date} ) ),
          pretty_end_date =>
          $self->_pretty_date( $self->decode_date( $_->{end_date} ) ),
       }
@@ -391,6 +393,11 @@ sub annual_issues {
   );
 }
 
+sub _short_date {
+  my ( $self, $y, $m, $d ) = @_;
+  return sprintf '%02d %s', $d, lc substr $MONTH[$m - 1], 0, 3;
+}
+
 sub _pretty_date {
   my ( $self, $y, $m, $d ) = @_;
   ( my $pd = strftime( "%d %B %Y", 0, 0, 0, $d, $m - 1, $y - 1900 ) )
@@ -437,6 +444,37 @@ sub listing_for_schedule {
     pretty_date => $self->_pretty_date( $year, $month, $day ),
     issues      => $self->issues(@issues),
   );
+}
+
+sub issue_proximate {
+  my ( $self, $issue, $span ) = @_;
+
+  my $before = $self->_cook_issues(
+    $self->dbh->selectall_arrayref(
+      join( ' ',
+        'SELECT * FROM genome_issues',
+        'WHERE issue <= ? AND _parent IS NULL',
+        'ORDER BY issue DESC LIMIT ?' ),
+      { Slice => {} },
+      $issue,
+      $span + 1
+    )
+  );
+
+  my $after = $self->_cook_issues(
+    $self->dbh->selectall_arrayref(
+      join( ' ',
+        'SELECT * FROM genome_issues',
+        'WHERE issue > ? AND _parent IS NULL',
+        'ORDER BY issue ASC LIMIT ?' ),
+      { Slice => {} },
+      $issue, $span
+    )
+  );
+
+  push @$before, {} while @$before < $span + 1;
+  push @$after,  {} while @$after < $span;
+  return [reverse(@$before), @$after];
 }
 
 sub issues_for_year {
@@ -561,7 +599,10 @@ sub issue_listing {
   }
 
   $iss->{listing} = $self->_group_by( $list, 'date' );
-  return ( issue => $iss, );
+  return (
+    issue     => $iss,
+    proximate => $self->issue_proximate( $iss->{issue}, 6 ),
+  );
 }
 
 sub stash {
