@@ -1,7 +1,8 @@
 package Lintilla::DB::Genome;
 
-use Dancer ':syntax';
 #use JSON;
+use Dancer ':syntax';
+use Lintilla::DB::Genome::Search;
 use Lintilla::Filter qw( cook );
 use Moose;
 use POSIX qw( strftime );
@@ -580,11 +581,14 @@ sub search {
   my ( $self, $start, $size, $query ) = @_;
   #  $size = MAX_PAGE if $size > MAX_PAGE;
 
-  my $sph = Sphinx::Search->new();
-  $sph->SetMatchMode(SPH_MATCH_EXTENDED);
-  $sph->SetSortMode(SPH_SORT_RELEVANCE);
-  $sph->SetLimits( $start, $size );
-  my $results = $sph->Query( $query, 'prog_idx' );
+  my $srch = Lintilla::DB::Genome::Search->new(
+    start => $start,
+    size  => $size,
+    query => $query,
+    index => 'prog_idx',
+  );
+
+  my $results = $srch->search;
 
   my @ids = map { $_->{doc} } @{ $results->{matches} };
   my $ph = join ', ', map '?', @ids;
@@ -622,6 +626,7 @@ sub search {
     q          => $query,
     results    => $results,
     programmes => $progs,
+    pagination => $srch->pagination(9),
   );
 }
 
