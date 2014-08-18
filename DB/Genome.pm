@@ -298,16 +298,23 @@ sub _add_programme_details {
   return $rows;
 }
 
+sub _issue_key {
+  my ( $self, $issue ) = @_;
+  return $issue->{default_child_key}
+   if defined $issue->{default_child_key};
+  return $issue->{_key};
+}
+
 sub _issue_pdf_path {
   my ( $self, $issue ) = @_;
-  return join '/', $issue->{decade}, $issue->{year}, $issue->{_key},
-   $issue->{_key} . '.pdf';
+  my $key = $self->_issue_key($issue);
+  return join '/', $issue->{decade}, $issue->{year}, $key, $key . '.pdf';
 }
 
 sub _issue_image_path {
   my ( $self, $issue ) = @_;
-  return join '/', $issue->{decade}, $issue->{year}, $issue->{_key},
-   $issue->{_key} . '-0.png';
+  my $key = $self->_issue_key($issue);
+  return join '/', $issue->{decade}, $issue->{year}, $key, $key . '-0.png';
 }
 
 sub _make_public {
@@ -372,7 +379,7 @@ sub annual_issues {
             '  GROUP BY `year`',
             ') AS i2',
             'ON i2.`first`=i1.`date`',
-            'AND i1.`_parent` IS NOT NULL',
+            'AND i1.`_parent` IS NULL',
             'ORDER BY `year`' ),
           { Slice => {} }
         )
@@ -441,7 +448,7 @@ sub issues_for_year {
             'SELECT * ',
             'FROM genome_issues',
             'WHERE `year`=?',
-            'AND `_parent` IS NOT NULL',
+            'AND `_parent` IS NULL',
             'ORDER BY `issue` ASC' ),
           { Slice => {} },
           $year
