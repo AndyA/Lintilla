@@ -25,6 +25,12 @@ has index => (
   default  => 'prog_idx',
 );
 
+has source => (
+  is       => 'ro',
+  required => 1,
+  default  => 1,
+);
+
 has start => ( is => 'ro', isa => 'Num', required => 1, default => 0 );
 has size  => ( is => 'ro', isa => 'Num', required => 1, default => 20 );
 has q     => ( is => 'ro', isa => 'Str', required => 1, default => '' );
@@ -39,7 +45,7 @@ has media => ( is => 'ro', isa => 'Str', default => 'all' );
 has ['adv', 'co'] => ( is => 'ro', isa => 'Bool', default => 0 );
 
 has ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] =>
- ( is => 'ro', isa => 'Bool', default => 1 );
+ ( is => 'ro', isa => 'Bool', default => 0 );
 
 has search => ( is => 'ro', lazy => 1, builder => '_do_search' );
 
@@ -113,6 +119,7 @@ sub _day_filter {
     my $dn = $day[$idx];
     push @set, $idx + 1 if $self->$dn;
   }
+  @set = ( 1 .. 7 ) unless @set;
   return \@set;
 }
 
@@ -121,11 +128,12 @@ sub _do_search {
   my $sph  = Sphinx::Search->new();
   $sph->SetMatchMode(SPH_MATCH_EXTENDED);
   $sph->SetSortMode(SPH_SORT_RELEVANCE);
+  $sph->SetFilter( source => [$self->source] );
   $sph->SetFieldWeights( { title => 2 } );
 
   if ( $self->adv ) {
-    $sph->SetFilterRange( 'year', $self->yf, $self->yt );
-#    $sph->SetFilterRange( 'weekday', $self->_day_filter );
+    $sph->SetFilterRange( year => $self->yf, $self->yt );
+    $sph->SetFilter( weekday => $self->_day_filter );
   }
 
   $sph->SetLimits( $self->start, $self->size );

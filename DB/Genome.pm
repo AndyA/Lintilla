@@ -22,8 +22,9 @@ with 'Lintilla::Role::Gatherer';
 has dbh => ( is => 'ro', isa => 'DBI::db' );
 
 has source => (
-  is      => 'ro',
-  default => '70ba6e0c-c493-42bd-8c64-c9f4be994f6d',
+  is       => 'ro',
+  required => 1,
+  default  => '70ba6e0c-c493-42bd-8c64-c9f4be994f6d',
 );
 
 has years    => ( is => 'ro', lazy => 1, builder => '_build_years' );
@@ -628,11 +629,23 @@ sub _programme_query {
   return $progs;
 }
 
+sub _search_id {
+  my ( $self, $uuid ) = @_;
+  my @row
+   = $self->dbh->selectrow_array(
+    'SELECT id FROM genome_uuid_map WHERE uuid=?',
+    {}, $uuid );
+  return $row[0];
+}
+
 sub search {
   my ( $self, @params ) = @_;
 
-  my $srch
-   = Lintilla::DB::Genome::Search->new( @params, index => 'prog_idx', );
+  my $srch = Lintilla::DB::Genome::Search->new(
+    @params,
+    index  => 'prog_idx',
+    source => $self->_search_id( $self->source ), 
+  );
 
   my $results = $srch->search;
 
