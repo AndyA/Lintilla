@@ -28,29 +28,16 @@ sub our_uri_for {
   return $uri;
 }
 
-sub magic {
-  my $db = shift;
-  return (
-    stash    => sub { $db->stash(shift) },
-    timelist => sub {
-      my $quant = shift || 15;
-      my @tm = ();
-      for ( my $td = 0; $td < 24 * 60; $td += $quant ) {
-        push @tm, sprintf '%02d:%02d', int( $td / 60 ), $td % 60;
-      }
-      return @tm;
-    },
-  );
-}
-
 sub boilerplate($) {
-  my $db = shift;
+  my $db   = shift;
+  my $srch = Lintilla::DB::Genome::Search->new;
   return (
     $db->gather(BOILERPLATE),
-    magic($db),
+    stash    => sub { $db->stash(shift) },
+    timelist => sub { $srch->timelist },
     title    => 'BBC Genome',
     stations => $STATIC->get('stations'),
-    form     => Lintilla::DB::Genome::Search->new->persist,
+    form     => $srch->persist,
   );
 }
 

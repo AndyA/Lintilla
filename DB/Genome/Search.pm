@@ -31,6 +31,13 @@ has source => (
   default  => 1,
 );
 
+has time_quantum => (
+  is       => 'ro',
+  isa      => 'Num',
+  required => 1,
+  default  => 15,
+);
+
 has start => ( is => 'ro', isa => 'Num', required => 1, default => 0 );
 has size  => ( is => 'ro', isa => 'Num', required => 1, default => 20 );
 has q     => ( is => 'ro', isa => 'Str', required => 1, default => '' );
@@ -111,6 +118,25 @@ sub pagination {
     ] };
 }
 
+sub timelist {
+  my $self  = shift;
+  my $quant = $self->time_quantum;
+  my @tm    = ();
+  for ( my $td = 0; $td < 24 * 60; $td += $quant ) {
+    push @tm, sprintf '%02d:%02d', int( $td / 60 ), $td % 60;
+  }
+  return \@tm;
+}
+
+sub _parse_seconds {
+  my ( $self, $tm ) = @_;
+  die unless $tm =~ /^(\d+):(\d+)$/;
+  return ( $1 * 60 + $2 ) * 60;
+}
+
+sub tfs { my $self = shift; return $self->_parse_seconds( $self->tf ) }
+sub tts { my $self = shift; return $self->_parse_seconds( $self->tt ) }
+
 sub _day_filter {
   my $self = shift;
   my @day  = qw( sun mon tue wed thu fri sat );
@@ -121,6 +147,14 @@ sub _day_filter {
   }
   @set = ( 1 .. 7 ) unless @set;
   return \@set;
+}
+
+sub _time_filter {
+  my $self = shift;
+  my ( $tfs, $tts ) = ( $self->tfs, $self->tts );
+  return if $tfs == $tts;
+  return ( $tts, $tfs, 1 ) if $tts < $tfs;
+  return ( $tfs, $tts, 0 );
 }
 
 sub _do_search {
@@ -134,6 +168,8 @@ sub _do_search {
   if ( $self->adv ) {
     $sph->SetFilterRange( year => $self->yf, $self->yt );
     $sph->SetFilter( weekday => $self->_day_filter );
+    my @tfilt = $self->_time_filter;
+    $sph->SetFilterRange( timeslot => @tfilt ) if @tfilt;
   }
 
   $sph->SetLimits( $self->start, $self->size );
