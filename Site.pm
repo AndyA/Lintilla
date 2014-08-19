@@ -4,6 +4,7 @@ use v5.10;
 use Dancer ':syntax';
 
 use Dancer::Plugin::Database;
+use Lintilla::DB::Genome::SearchOptions;
 use Lintilla::DB::Genome;
 use Lintilla::Data::Static;
 use Lintilla::Site::Asset;
@@ -28,13 +29,29 @@ sub our_uri_for {
   return $uri;
 }
 
+sub magic {
+  my $db = shift;
+  return (
+    stash    => sub { $db->stash(shift) },
+    timelist => sub {
+      my $quant = shift || 15;
+      my @tm = ();
+      for ( my $td = 0; $td < 24 * 60; $td += $quant ) {
+        push @tm, sprintf '%02d:%02d', int( $td / 60 ), $td % 60;
+      }
+      return @tm;
+    },
+  );
+}
+
 sub boilerplate($) {
   my $db = shift;
   return (
     $db->gather(BOILERPLATE),
+    magic($db),
     title    => 'BBC Genome',
     stations => $STATIC->get('stations'),
-    stash    => sub { $db->stash(shift) },
+    form     => Lintilla::DB::Genome::Search->new->persist,
   );
 }
 
@@ -85,9 +102,7 @@ get '/issues' => sub {
 
 get '/search/:start/:size' => sub {
   my $db = db;
-  template 'search',
-   {boilerplate $db,
-    $db->search( param('start'), param('size'), param('q') ) };
+  template 'search', { boilerplate $db, $db->search(params) };
 };
 
 get '/search' => sub {

@@ -5,17 +5,48 @@ use Moose;
 use Sphinx::Search;
 use URI;
 
+with 'Lintilla::Role::Gatherer';
+
 =head1 NAME
 
 Lintilla::DB::Genome::Search - A Genome search
 
 =cut
 
-has ['start', 'size'] => ( is => 'ro', isa => 'Num', required => 1 );
+use constant PASSTHRU => qw(
+ q adv media yf yt tf tt co
+ sun mon tue wed thu fri sat
+);
 
-has ['query', 'index'] => ( is => 'ro', isa => 'Str', required => 1 );
+has index => (
+  is       => 'ro',
+  isa      => 'Str',
+  required => 1,
+  default  => 'prog_idx',
+);
+
+has start => ( is => 'ro', isa => 'Num', required => 1, default => 0 );
+has size  => ( is => 'ro', isa => 'Num', required => 1, default => 20 );
+has q     => ( is => 'ro', isa => 'Str', required => 1, default => '' );
+
+has yf => ( is => 'ro', isa => 'Num', default => 1923 );
+has yt => ( is => 'ro', isa => 'Num', default => 2009 );
+
+has ['tf', 'tt'] => ( is => 'ro', isa => 'Str', default => '00:00' );
+
+has media => ( is => 'ro', isa => 'Str', default => 'all' );
+
+has ['adv', 'co'] => ( is => 'ro', isa => 'Bool', default => 0 );
+
+has ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] =>
+ ( is => 'ro', isa => 'Bool', default => 1 );
 
 has search => ( is => 'ro', lazy => 1, builder => '_do_search' );
+
+sub persist {
+  my $self = shift;
+  return { $self->gather(PASSTHRU) };
+}
 
 sub total { shift->search->{total_found} }
 
@@ -34,7 +65,7 @@ sub page_link {
   return if $page < 0 || $page >= $self->pages;
   my $uri
    = URI->new( sprintf '/search/%d/%d', $page * $self->size, $self->size );
-  $uri->query_form( q => $self->query );
+  $uri->query_form( q => $self->q );
   return "$uri";
 }
 
@@ -74,13 +105,31 @@ sub pagination {
     ] };
 }
 
+sub _day_filter {
+  my $self = shift;
+  my @day  = qw( sun mon tue wed thu fri sat );
+  my @set  = ();
+  for my $idx ( 0 .. $#day ) {
+    my $dn = $day[$idx];
+    push @set, $idx + 1 if $self->$dn;
+  }
+  return \@set;
+}
+
 sub _do_search {
   my $self = shift;
   my $sph  = Sphinx::Search->new();
   $sph->SetMatchMode(SPH_MATCH_EXTENDED);
   $sph->SetSortMode(SPH_SORT_RELEVANCE);
+  $sph->SetFieldWeights( { title => 2 } );
+
+  if ( $self->adv ) {
+    $sph->SetFilterRange( 'year', $self->yf, $self->yt );
+#    $sph->SetFilterRange( 'weekday', $self->_day_filter );
+  }
+
   $sph->SetLimits( $self->start, $self->size );
-  return $sph->Query( $self->query, $self->index );
+  return $sph->Query( $self->q, $self->index );
 }
 
 1;

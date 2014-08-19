@@ -629,22 +629,19 @@ sub _programme_query {
 }
 
 sub search {
-  my ( $self, $start, $size, $query ) = @_;
-  #  $size = MAX_PAGE if $size > MAX_PAGE;
+  my ( $self, @params ) = @_;
 
-  my $srch = Lintilla::DB::Genome::Search->new(
-    start => $start,
-    size  => $size,
-    query => $query,
-    index => 'prog_idx',
-  );
+  my $srch
+   = Lintilla::DB::Genome::Search->new( @params, index => 'prog_idx', );
 
   my $results = $srch->search;
 
   my @ids = map { $_->{doc} } @{ $results->{matches} };
   my $ph = join ', ', map '?', @ids;
 
-  my $progs = $self->_programme_query(
+  my $progs
+   = @ids
+   ? $self->_programme_query(
     join( ' ',
       'SELECT *,',
       'IF (parent_service_key IS NOT NULL, parent_service_key, service_key) AS root_service_key',
@@ -664,10 +661,11 @@ sub search {
       ') AS q' ),
     { Slice => {} },
     @ids, @ids
-  );
+   )
+   : [];
 
   return (
-    q          => $query,
+    form       => $srch->persist,
     results    => $results,
     programmes => $progs,
     pagination => $srch->pagination(5),
