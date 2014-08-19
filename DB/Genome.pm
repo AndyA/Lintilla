@@ -640,6 +640,31 @@ sub _search_id {
   return $row[0];
 }
 
+sub _search_load_services {
+  my ( $self, @sids ) = @_;
+
+  my $svcs
+   = @sids
+   ? $self->dbh->selectall_arrayref(
+    join( ' ',
+      'SELECT',
+      '  s2._key AS parent_service_key,',
+      '  s.title AS service_name,',
+      '  s2.title AS service_sub,',
+      '  s.subkey AS subkey,',
+      '  m.id AS search_id',
+      'FROM (genome_services AS s, genome_uuid_map AS m)',
+      'LEFT JOIN genome_services AS s2 ON s2._uuid = s._parent',
+      'WHERE m.uuid = s._uuid',
+      'AND m.id IN (',
+      join( ', ', map '?', @sids ),
+      ')' ),
+    { Slice => {} },
+    @sids
+   )
+   : [];
+}
+
 sub search {
   my ( $self, @params ) = @_;
 
@@ -693,7 +718,7 @@ sub search {
     form       => $srch->persist,
     results    => $results,
     programmes => $progs,
-    services   => $srch->services,
+    services   => $self->_search_load_services(@sids),
     pagination => $srch->pagination(5),
   );
 }
