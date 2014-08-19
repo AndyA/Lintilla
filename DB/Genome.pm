@@ -687,7 +687,7 @@ sub search {
    : [];
 
   my $ssvc = $srch->services;
-  my @ssids = map { $_->{service_id} } @{ $ssvc->{matches} || [] };
+  my @sids = map { $_->{service_id} } @{ $ssvc->{matches} || [] };
 
   return (
     form       => $srch->persist,
