@@ -1,5 +1,7 @@
 package Lintilla::DB::Genome;
 
+use v5.10;
+
 #use JSON;
 use Dancer ':syntax';
 use Lintilla::DB::Genome::Search;
@@ -644,13 +646,20 @@ sub search {
   my $srch = Lintilla::DB::Genome::Search->new(
     @params,
     index  => 'prog_idx',
-    source => $self->_search_id( $self->source ), 
+    source => $self->_search_id( $self->source ),
   );
 
   my $results = $srch->search;
 
   my @ids = map { $_->{doc} } @{ $results->{matches} };
   my $ph = join ', ', map '?', @ids;
+
+  my $o = $srch->order;
+  my ( $ord, @extra )
+   = $o eq 'rank' ? ( "ORDER BY FIELD(search_id, $ph) ", @ids )
+   : $o eq 'asc'  ? ("ORDER BY `when` ASC")
+   : $o eq 'desc' ? ("ORDER BY `when` DESC")
+   :                die;
 
   my $progs
    = @ids
@@ -664,16 +673,16 @@ sub search {
       '    s2._key AS parent_service_key,',
       '    s.title AS service_name,',
       '    s2.title AS service_sub,',
-      '    s.subkey AS subkey',
+      '    s.subkey AS subkey,',
+      '    m.id AS search_id',
       '  FROM (genome_programmes_v2 AS p, genome_services AS s, genome_uuid_map AS m)',
       '  LEFT JOIN genome_services AS s2 ON s2._uuid = s._parent',
       '  WHERE p.service = s._uuid',
       '  AND p._uuid = m.uuid',
       "  AND m.id IN ($ph)",
-      "  ORDER BY FIELD(m.id, $ph) ",
-      ') AS q' ),
+      ") AS q $ord" ),
     { Slice => {} },
-    @ids, @ids
+    @ids, @extra
    )
    : [];
 

@@ -1,5 +1,7 @@
 package Lintilla::DB::Genome::Search;
 
+use v5.10;
+
 use List::Util qw( min max );
 use Moose;
 use Sphinx::Search;
@@ -14,9 +16,13 @@ Lintilla::DB::Genome::Search - A Genome search
 =cut
 
 use constant PASSTHRU => qw(
- q adv media yf yt tf tt co
+ q order adv media yf yt tf tt co
  sun mon tue wed thu fri sat
 );
+
+# Based on ENUM values from DB
+use constant SERVICE_TV    => 1;
+use constant SERVICE_RADIO => 2;
 
 has index => (
   is       => 'ro',
@@ -41,6 +47,9 @@ has time_quantum => (
 has start => ( is => 'ro', isa => 'Num', required => 1, default => 0 );
 has size  => ( is => 'ro', isa => 'Num', required => 1, default => 20 );
 has q     => ( is => 'ro', isa => 'Str', required => 1, default => '' );
+
+has order =>
+ ( is => 'ro', isa => 'Str', required => 1, default => 'rank' );
 
 has yf => ( is => 'ro', isa => 'Num', default => 1923 );
 has yt => ( is => 'ro', isa => 'Num', default => 2009 );
@@ -78,7 +87,16 @@ sub page_link {
   return if $page < 0 || $page >= $self->pages;
   my $uri
    = URI->new( sprintf '/search/%d/%d', $page * $self->size, $self->size );
-  $uri->query_form( q => $self->q );
+  $uri->query_form( $self->persist );
+  return "$uri";
+}
+
+sub order_link {
+  my ( $self, $order ) = @_;
+  my $uri = URI->new( sprintf '/search/%d/%d', 0, $self->size );
+  my $p = $self->persist;
+  $p->{order} = $order;
+  $uri->query_form($p);
   return "$uri";
 }
 
@@ -108,6 +126,7 @@ sub pagination {
        )
       : ()
     ),
+    order => { map { $_ => $self->order_link($_) } qw( rank asc desc ) },
     pages => [
       map {
         { page   => $_ + 1,
@@ -170,10 +189,29 @@ sub _do_search {
     $sph->SetFilter( weekday => $self->_day_filter );
     my @tfilt = $self->_time_filter;
     $sph->SetFilterRange( timeslot => @tfilt ) if @tfilt;
+    given ( $self->media ) {
+      when ('all')   { }
+      when ('tv')    { $sph->SetFilter( service_type => SERVICE_TV ) }
+      when ('radio') { $sph->SetFilter( service_type => SERVICE_RADIO ) }
+      default        { die }
+    }
+  }
+
+  given ( $self->order ) {
+    when ('rank') { }
+    when ('asc')  { $sph->SetSortMode( SPH_SORT_ATTR_ASC, 'when' ) }
+    when ('desc') { $sph->SetSortMode( SPH_SORT_ATTR_DESC, 'when' ) }
+    default       { die }
   }
 
   $sph->SetLimits( $self->start, $self->size );
-  return $sph->Query( $self->q, $self->index );
+
+  my $query
+   = $self->adv && $self->co
+   ? '@people "' . $self->q . '"'
+   : $self->q;
+
+  return $sph->Query( $query, $self->index );
 }
 
 1;
