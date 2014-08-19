@@ -63,7 +63,7 @@ has ['adv', 'co'] => ( is => 'ro', isa => 'Bool', default => 0 );
 has ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] =>
  ( is => 'ro', isa => 'Bool', default => 0 );
 
-has search => ( is => 'ro', lazy => 1, builder => '_do_search' );
+has _search => ( is => 'ro', lazy => 1, builder => '_do_search' );
 
 sub persist {
   my $self = shift;
@@ -179,6 +179,7 @@ sub _time_filter {
 sub _do_search {
   my $self = shift;
   my $sph  = Sphinx::Search->new();
+  $sph->Open;
   $sph->SetMatchMode(SPH_MATCH_EXTENDED);
   $sph->SetSortMode(SPH_SORT_RELEVANCE);
   $sph->SetFilter( source => [$self->source] );
@@ -191,8 +192,8 @@ sub _do_search {
     $sph->SetFilterRange( timeslot => @tfilt ) if @tfilt;
     given ( $self->media ) {
       when ('all')   { }
-      when ('tv')    { $sph->SetFilter( service_type => SERVICE_TV ) }
-      when ('radio') { $sph->SetFilter( service_type => SERVICE_RADIO ) }
+      when ('tv')    { $sph->SetFilter( service_type => [SERVICE_TV] ) }
+      when ('radio') { $sph->SetFilter( service_type => [SERVICE_RADIO] ) }
       default        { die }
     }
   }
@@ -211,8 +212,24 @@ sub _do_search {
    ? '@people "' . $self->q . '"'
    : $self->q;
 
-  return $sph->Query( $query, $self->index );
+  my $qq = $sph->Query( $query, $self->index );
+  die $sph->GetLastError unless $qq;
+
+  # Enumerate services
+  $sph->SetSelect('service_id');
+  $sph->SetGroupBy( 'service_id', SPH_GROUPBY_ATTR, 'service_id asc' );
+  $sph->SetGroupDistinct('service_id');
+  $sph->SetLimits( 0, 1000 );
+  my $svc = $sph->Query( $query, $self->index );
+  die $sph->GetLastError unless $svc;
+
+  $sph->Close;
+
+  return { qq => $qq, svc => $svc };
 }
+
+sub search   { shift->_search->{qq} }
+sub services { shift->_search->{svc} }
 
 1;
 

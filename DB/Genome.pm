@@ -690,6 +690,7 @@ sub search {
     form       => $srch->persist,
     results    => $results,
     programmes => $progs,
+    services   => $srch->services,
     pagination => $srch->pagination(5),
   );
 }
