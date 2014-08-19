@@ -4,7 +4,6 @@ use v5.10;
 use Dancer ':syntax';
 
 use Dancer::Plugin::Database;
-use Lintilla::DB::Genome::SearchOptions;
 use Lintilla::DB::Genome;
 use Lintilla::Data::Static;
 use Lintilla::Site::Asset;
