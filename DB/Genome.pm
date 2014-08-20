@@ -219,7 +219,7 @@ sub service_proximate_days {
 sub service_defaults {
   my ( $self, $service, @got ) = @_;
   my $sql = join ' ',
-   'SELECT sd.date, s._uuid, s.has_outlets',
+   'SELECT sd.date, s._uuid, s.has_outlets, s.default_outlet',
    'FROM genome_service_dates AS sd, genome_services AS s',
    'WHERE sd.service=s._uuid AND s._key=?',
    'ORDER BY date LIMIT 1';
@@ -232,9 +232,9 @@ sub service_defaults {
     # Find default outlet
     my $outlet = join ' ',
      'SELECT subkey FROM genome_services',
-     'WHERE _parent=?',
-     'ORDER BY `order` IS NULL, `order` ASC, `title` ASC';
-    my $orec = $self->dbh->selectrow_hashref( $outlet, {}, $rec->{_uuid} );
+     'WHERE _uuid=?';
+    my $orec
+     = $self->dbh->selectrow_hashref( $outlet, {}, $rec->{default_outlet} );
     push @got, $orec->{subkey};
   }
 
