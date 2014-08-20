@@ -726,7 +726,7 @@ sub search {
   my @sids = map { $_->{service_id} } @{ $ssvc->{matches} || [] };
 
   return (
-    form       => $srch->persist,
+    form       => $srch->form,
     results    => $results,
     programmes => $progs,
     services   => $self->_search_load_services( $srch, @sids ),

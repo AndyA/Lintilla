@@ -17,7 +17,7 @@ Lintilla::DB::Genome::Search - A Genome search
 
 use constant PASSTHRU => qw(
  q order adv media yf yt tf tt co
- sun mon tue wed thu fri sat
+ sun mon tue wed thu fri sat svc
 );
 
 # Based on ENUM values from DB
@@ -67,9 +67,29 @@ has ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] =>
 
 has _search => ( is => 'ro', lazy => 1, builder => '_do_search' );
 
-sub persist {
+sub _cmp {
+  my ( $a, $b ) = @_;
+  return 0 unless defined $a || defined $b;
+  return -1 unless defined $a;
+  return 1  unless defined $b;
+  return $a cmp $b;
+}
+
+sub form {
   my $self = shift;
   return { $self->gather(PASSTHRU) };
+}
+
+sub persist {
+  my $self = shift;
+  my $ref  = __PACKAGE__->new;
+  my $out  = {};
+  for my $key (PASSTHRU) {
+    my $dv = $ref->$key;
+    my $vv = $self->$key;
+    $out->{$key} = $vv if defined $vv && _cmp( $vv, $dv );
+  }
+  return $out;
 }
 
 sub total { shift->search->{total_found} }

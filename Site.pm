@@ -37,7 +37,7 @@ sub boilerplate($) {
     timelist => sub { $srch->timelist },
     title    => 'BBC Genome',
     stations => $STATIC->get('stations'),
-    form     => $srch->persist,
+    form     => $srch->form,
   );
 }
 
