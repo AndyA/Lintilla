@@ -379,14 +379,9 @@ sub annual_issues {
         $self->dbh->selectall_arrayref(
           join( ' ',
             'SELECT *',
-            'FROM genome_issues AS i1 ',
-            'INNER JOIN (',
-            '  SELECT MIN(`date`) AS `first`',
-            '  FROM genome_issues',
-            '  GROUP BY `year`',
-            ') AS i2',
-            'ON i2.`first`=i1.`date`',
-            'AND i1.`_parent` IS NULL',
+            'FROM genome_issues ',
+            "WHERE approved_year='Y'",
+            'AND _parent IS NULL',
             'ORDER BY `year`' ),
           { Slice => {} }
         )
