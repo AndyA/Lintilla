@@ -126,7 +126,8 @@ sub service_link {
   my ( $self, $svc ) = @_;
   my $uri = URI->new( sprintf '/search/%d/%d', 0, $self->size );
   my $p = $self->persist;
-  $p->{svc} = $svc;
+  if ( defined $svc ) { $p->{svc} = $svc }
+  else                { delete $p->{svc} }
   $uri->query_form($p);
   return "$uri";
 }
@@ -165,7 +166,9 @@ sub pagination {
           offset => $_ - $cur,
         }
       } ( $first .. $last )
-    ] };
+    ],
+    ( defined $self->svc ? ( all => $self->service_link ) : () ),
+  };
 }
 
 sub timelist {
