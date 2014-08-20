@@ -60,7 +60,7 @@ has media => ( is => 'ro', isa => 'Str', default => 'all' );
 
 has ['adv', 'co'] => ( is => 'ro', isa => 'Bool', default => 0 );
 
-has svc => ( is => 'ro', isa => 'Maybe[Int]' );
+has svc => ( is => 'ro', isa => 'Maybe[Str]' );
 
 has ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] =>
  ( is => 'ro', isa => 'Bool', default => 0 );
@@ -123,11 +123,11 @@ sub order_link {
 }
 
 sub service_link {
-  my ( $self, $svc ) = @_;
+  my ( $self, @svc ) = @_;
   my $uri = URI->new( sprintf '/search/%d/%d', 0, $self->size );
   my $p = $self->persist;
-  if ( defined $svc ) { $p->{svc} = $svc }
-  else                { delete $p->{svc} }
+  if (@svc) { $p->{svc} = join ',', @svc }
+  else      { delete $p->{svc} }
   $uri->query_form($p);
   return "$uri";
 }
@@ -239,7 +239,7 @@ sub _do_search {
   $self->_set_filter($sph);
 
   if ( defined( my $svc = $self->svc ) ) {
-    $sph->SetFilter( 'service_id', [$svc] );
+    $sph->SetFilter( 'service_id', [split /,/, $svc] );
   }
 
   given ( $self->order ) {
