@@ -60,6 +60,8 @@ has media => ( is => 'ro', isa => 'Str', default => 'all' );
 
 has ['adv', 'co'] => ( is => 'ro', isa => 'Bool', default => 0 );
 
+has svc => ( is => 'ro', isa => 'Maybe[Int]' );
+
 has ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] =>
  ( is => 'ro', isa => 'Bool', default => 0 );
 
@@ -96,6 +98,15 @@ sub order_link {
   my $uri = URI->new( sprintf '/search/%d/%d', 0, $self->size );
   my $p = $self->persist;
   $p->{order} = $order;
+  $uri->query_form($p);
+  return "$uri";
+}
+
+sub service_link {
+  my ( $self, $svc ) = @_;
+  my $uri = URI->new( sprintf '/search/%d/%d', 0, $self->size );
+  my $p = $self->persist;
+  $p->{svc} = $svc;
   $uri->query_form($p);
   return "$uri";
 }
@@ -176,14 +187,9 @@ sub _time_filter {
   return ( $tfs, $tts, 0 );
 }
 
-sub _do_search {
-  my $self = shift;
-  my $sph  = Sphinx::Search->new();
-  $sph->Open;
-  $sph->SetMatchMode(SPH_MATCH_EXTENDED);
-  $sph->SetSortMode(SPH_SORT_RELEVANCE);
+sub _set_filter {
+  my ( $self, $sph ) = @_;
   $sph->SetFilter( source => [$self->source] );
-  $sph->SetFieldWeights( { title => 2 } );
 
   if ( $self->adv ) {
     $sph->SetFilterRange( year => $self->yf, $self->yt );
@@ -196,6 +202,21 @@ sub _do_search {
       when ('radio') { $sph->SetFilter( service_type => [SERVICE_RADIO] ) }
       default        { die }
     }
+  }
+}
+
+sub _do_search {
+  my $self = shift;
+  my $sph  = Sphinx::Search->new();
+  $sph->Open;
+  $sph->SetMatchMode(SPH_MATCH_EXTENDED);
+  $sph->SetSortMode(SPH_SORT_RELEVANCE);
+  $sph->SetFieldWeights( { title => 2 } );
+
+  $self->_set_filter($sph);
+
+  if ( defined( my $svc = $self->svc ) ) {
+    $sph->SetFilter( 'service_id', [$svc] );
   }
 
   given ( $self->order ) {
@@ -214,6 +235,9 @@ sub _do_search {
 
   my $qq = $sph->Query( $query, $self->index );
   die $sph->GetLastError unless $qq;
+
+  $sph->ResetFilters;
+  $self->_set_filter($sph);
 
   # Enumerate services
   $sph->SetSelect('service_id');

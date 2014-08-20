@@ -641,33 +641,39 @@ sub _search_id {
 }
 
 sub _search_load_services {
-  my ( $self, @sids ) = @_;
+  my ( $self, $srch, @sids ) = @_;
 
   my $svcs
    = @sids
    ? $self->dbh->selectall_arrayref(
     join( ' ',
       'SELECT *,',
-      'IF (parent_service_key IS NOT NULL, parent_service_key, service_key) AS root_service_key',
+      'IF (`parent_service_key` IS NOT NULL, `parent_service_key`, `service_key`) AS `root_service_key`',
       'FROM (',
       '  SELECT',
-      '    s2._key AS parent_service_key,',
-      '    s._key AS service_key,',
-      '    s.title AS service_name,',
-      '    s2.title AS service_sub,',
-      '    s.subkey AS subkey,',
-      '    m.id AS search_id',
-      '  FROM (genome_services AS s, genome_uuid_map AS m)',
-      '  LEFT JOIN genome_services AS s2 ON s2._uuid = s._parent',
-      '  WHERE m.uuid = s._uuid',
-      '  AND m.id IN (',
+      '    `s2`.`_key` AS `parent_service_key`,',
+      '    `s`.`_key` AS `service_key`,',
+      '    `s`.`title` AS `service_name`,',
+      '    `s2`.`title` AS `service_sub`,',
+      '    `s`.`subkey`, `s`.`order`, `s`.`type`,',
+      '    `m`.`id` AS `search_id`',
+      '  FROM (`genome_services` AS `s`, `genome_uuid_map` AS `m`)',
+      '  LEFT JOIN `genome_services` AS `s2` ON `s2`.`_uuid` = `s`.`_parent`',
+      '  WHERE `m`.`uuid` = `s`.`_uuid`',
+      '  AND `m`.`id` IN (',
       join( ', ', map '?', @sids ),
       '  )',
-      ') AS q' ),
+      ') AS `q` ORDER BY `type`, `order`' ),
     { Slice => {} },
     @sids
    )
    : [];
+
+  for my $svc (@$svcs) {
+    $svc->{link} = $srch->service_link( $svc->{search_id} );
+  }
+
+  return $svcs;
 }
 
 sub search {
@@ -723,7 +729,7 @@ sub search {
     form       => $srch->persist,
     results    => $results,
     programmes => $progs,
-    services   => $self->_search_load_services(@sids),
+    services   => $self->_search_load_services( $srch, @sids ),
     pagination => $srch->pagination(5),
   );
 }
