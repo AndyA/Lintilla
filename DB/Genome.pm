@@ -679,11 +679,22 @@ sub _search_load_services {
    )
    : [];
 
-  for my $svc (@$svcs) {
-    $svc->{link} = $srch->service_link( $svc->{search_id} );
-  }
+  # Slightly icky - coallesce by rsk but retain general order
+  my $by_rsk = $self->_group_by( $svcs, 'root_service_key' );
+  my @osvc = ();
 
-  return $svcs;
+  for my $svc (@$svcs) {
+    my $rsk  = $svc->{root_service_key};
+    my $list = delete $by_rsk->{$rsk};
+    next unless $list;
+    my @sid = sort { $a <=> $b } unique map { $_->{search_id} } @$list;
+    push @osvc,
+     {%$svc,
+      link => $srch->service_link(@sid),
+      svc  => join( ',', @sid ),
+     };
+  }
+  return \@osvc;
 }
 
 sub search {
