@@ -33,13 +33,34 @@ sub boilerplate($) {
   my $srch = Lintilla::DB::Genome::Search->new;
   return (
     $db->gather(BOILERPLATE),
-    stash    => sub { $db->stash(shift) },
-    timelist => sub { $srch->timelist },
-    title    => 'BBC Genome',
-    stations => $STATIC->get('stations'),
-    form     => $srch->form,
+    visibility => vars->{visibility},
+    stash      => sub { $db->stash(shift) },
+    timelist   => sub { $srch->timelist },
+    title      => 'BBC Genome',
+    stations   => $STATIC->get('stations'),
+    form       => $srch->form,
   );
 }
+
+{
+  my @HOSTENV = (
+    { m => qr{^ext\.}, e => 'external' },
+    { m => qr{^int\.}, e => 'internal' },
+    { m => qr{.},      e => 'internal' },
+  );
+
+  sub env_for_host {
+    my $hn = shift;
+    for my $he (@HOSTENV) {
+      return $he->{e} if $hn =~ $he->{m};
+    }
+    die;
+  }
+}
+
+hook 'before' => sub {
+  var visibility => env_for_host( request->host );
+};
 
 get '/' => sub {
   template 'index', { boilerplate db };
