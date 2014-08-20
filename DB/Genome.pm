@@ -4,6 +4,7 @@ use v5.10;
 
 #use JSON;
 use Dancer ':syntax';
+use HTML::Tiny;
 use Lintilla::DB::Genome::Search;
 use Lintilla::Filter qw( cook );
 use Moose;
@@ -65,6 +66,15 @@ sub _strip_uuid {
   # Format to validate
   ( my $stripped = $self->_format_uuid($uuid) ) =~ s/-//g;
   return $stripped;
+}
+
+sub _is_uuid {
+  my ( $self, $str ) = @_;
+  return $str =~ /^ ([0-9a-f]{8}) -
+                    ([0-9a-f]{4}) -
+                    ([0-9a-f]{4}) -
+                    ([0-9a-f]{4}) -
+                    ([0-9a-f]{12}) $/xi;
 }
 
 sub _group_by {
@@ -234,26 +244,55 @@ sub service_defaults {
 
 sub resolve_service {
   my ( $self, $service, @spec ) = @_;
+
+  my $idx = $self->_is_uuid($service) ? '_uuid' : '_key';
   my $rec = $self->dbh->selectrow_hashref(
     join( ' ',
-      'SELECT _uuid, has_outlets, title, type',
-      'FROM genome_services',
-      'WHERE _key=?', 'LIMIT 1' ),
+      'SELECT *', 'FROM genome_services',
+      "WHERE $idx=?", 'LIMIT 1' ),
     {},
     $service
   );
-  my ( $uuid, @title ) = @{$rec}{ '_uuid', 'title' };
-  if ( $rec->{has_outlets} eq 'Y' ) {
-    die unless @spec;
-    my $outlet = $self->dbh->selectrow_hashref(
-      'SELECT _uuid, title FROM genome_services WHERE _parent=? AND subkey=?',
-      {}, $rec->{_uuid}, $spec[0]
-    );
+
+  my $uuid  = $rec->{'_uuid'};
+  my @title = ( $rec->{'title'} );
+  my @path  = ( $rec->{'_key'} );
+  if ( $rec->{has_outlets} && $rec->{has_outlets} eq 'Y' ) {
+    my ( $ff, $vv )
+     = @spec ? ( subkey => $spec[0] ) : ( _uuid => $rec->{default_outlet} );
+    my $outlet
+     = $self->dbh->selectrow_hashref(
+      "SELECT * FROM genome_services WHERE _parent=? AND $ff=?",
+      {}, $rec->{_uuid}, $vv );
     die unless $outlet;
+    $rec->{outlet} = $outlet;
     $uuid = $outlet->{_uuid};
     push @title, $outlet->{title};
+    push @path,  $outlet->{subkey};
   }
-  return ( $uuid, $rec->{type}, $rec->{title}, join ' ', @title );
+
+  return {
+    svc         => $self->_make_public($rec),
+    uuid        => $uuid,
+    type        => $rec->{type},
+    short_title => $rec->{title},
+    title       => join( ' ', @title ),
+    path        => join( '/', @path ),
+    began       => $self->_pretty_date( $rec->{began} ),
+    ended       => $self->_pretty_date( $rec->{ended} ),
+  };
+}
+
+sub resolve_services {
+  my $self = shift;
+  my $rec  = $self->resolve_service(@_);
+  my $svc  = $rec->{svc};
+  for my $key ( 'preceded_by', 'succeeded_by' ) {
+    if ( defined( my $uuid = $svc->{$key} ) ) {
+      $svc->{$key} = $self->resolve_service($uuid);
+    }
+  }
+  return $rec;
 }
 
 sub decode_date {
@@ -343,12 +382,9 @@ sub _cook_issues {
          pdf         => $self->_issue_pdf_path($_),
          month_name  => $MONTH[$_->{month} - 1],
          pretty_date => $self->_pretty_date( @{$_}{ 'year', 'month', 'day' } ),
-         pretty_start_date =>
-         $self->_pretty_date( $self->decode_date( $_->{start_date} ) ),
-         short_start_date =>
-         $self->_short_date( $self->decode_date( $_->{start_date} ) ),
-         pretty_end_date =>
-         $self->_pretty_date( $self->decode_date( $_->{end_date} ) ),
+         pretty_start_date => $self->_pretty_date( $_->{start_date} ),
+         short_start_date  => $self->_short_date( $_->{start_date} ),
+         pretty_end_date   => $self->_pretty_date( $_->{end_date} ),
       }
     } @$issues
   ];
@@ -393,14 +429,54 @@ sub annual_issues {
 
 sub _short_date {
   my ( $self, $y, $m, $d ) = @_;
+  return undef unless defined $y;
+  ( $y, $m, $d ) = $self->decode_date($y) unless defined $m;
   return sprintf '%02d %s', $d, lc substr $MONTH[$m - 1], 0, 3;
 }
 
 sub _pretty_date {
   my ( $self, $y, $m, $d ) = @_;
+  return undef unless defined $y;
+  ( $y, $m, $d ) = $self->decode_date($y) unless defined $m;
   ( my $pd = strftime( "%d %B %Y", 0, 0, 0, $d, $m - 1, $y - 1900 ) )
    =~ s/^0//;
   return $pd;
+}
+
+sub _build_service_spiel {
+  my ( $self, $rec ) = @_;
+  my %case = ( tv => 'television', radio => 'radio' );
+  my $svc  = $rec->{svc};
+  my @para = ();
+
+  {
+    my @spiel
+     = ( $rec->{short_title}, 'is a', $case{ $svc->{type} }, 'service' );
+    my @dates = ();
+    push @dates, 'began broadcasting on ' . $rec->{began}
+     if defined $rec->{began};
+    push @dates, 'ended on ' . $rec->{ended} if defined $rec->{ended};
+    push @spiel, 'which', join( ' and ', @dates ) if @dates;
+    push @para, join( ' ', @spiel ) . '.';
+  }
+
+  {
+    my @others = ();
+    my $h      = HTML::Tiny->new;
+    push @others,
+     'replaced '
+     . $h->a( { href => '/schedules/' . $svc->{preceded_by}{path} },
+      $svc->{preceded_by}{title} )
+     if defined $svc->{preceded_by};
+    push @others,
+     'was replaced by '
+     . $h->a( { href => '/schedules/' . $svc->{succeeded_by}{path} },
+      $svc->{succeeded_by}{title} )
+     if defined $svc->{succeeded_by};
+    push @para, 'It ' . join( ' and ', @others ) . '.' if @others;
+  }
+
+  return join ' ', @para;
 }
 
 sub listing_for_schedule {
@@ -408,8 +484,10 @@ sub listing_for_schedule {
 
   my $date = pop @spec;
   my ( $year, $month, $day ) = $self->decode_date($date);
-  my ( $service, $type, $short_title, $title )
-   = $self->resolve_service(@spec);
+
+  my $rec = $self->resolve_services(@spec);
+  my ( $svc, $service, $type, $short_title, $title )
+   = @{$rec}{qw( svc uuid type short_title title )};
 
   my $sql = join ' ',
    'SELECT * FROM genome_programmes_v2',
@@ -425,22 +503,24 @@ sub listing_for_schedule {
   my @issues = unique map { $_->{issue} } @$rows;
 
   return (
-    outlet         => join( '/',                       @spec ),
-    short_title    => $short_title,
-    title          => $title,
-    service_type   => $type,
-    service_years  => $self->service_years($service),
-    service_months => $self->service_months( $service, $year ),
-    proximate_days => $self->service_proximate_days( $service, $date, 6 ),
-    year           => $year,
+    about          => $rec,
+    day            => $day,
+    issues         => $self->issues(@issues),
+    listing        => $self->_add_programme_details($rows),
     month          => $month,
     month_name     => $MONTH[$month - 1],
-    day            => $day,
-    service        => $spec[0],
-    listing        => $self->_add_programme_details($rows),
+    outlet         => join( '/', @spec ),
     pages          => \@pages,
-    pretty_date => $self->_pretty_date( $year, $month, $day ),
-    issues      => $self->issues(@issues),
+    pretty_date    => $self->_pretty_date( $year, $month, $day ),
+    proximate_days => $self->service_proximate_days( $service, $date, 6 ),
+    service        => $spec[0],
+    service_months => $self->service_months( $service, $year ),
+    service_type   => $type,
+    service_years  => $self->service_years($service),
+    short_title    => $short_title,
+    spiel          => $self->_build_service_spiel($rec),
+    title          => $title,
+    year           => $year,
   );
 }
 
