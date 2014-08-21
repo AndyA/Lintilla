@@ -370,6 +370,21 @@ sub _make_public {
   return $out;
 }
 
+sub _child_fold {
+  my ( $self, $hash ) = @_;
+
+  if ( 'ARRAY' eq ref $hash ) {
+    $self->_child_fold($_) for @$hash;
+    return $hash;
+  }
+
+  while ( my ( $k, $V ) = each %$hash ) {
+    my $ck = "child_$k";
+    $hash->{$k} //= $hash->{$ck};
+  }
+  return $hash;
+}
+
 sub _cook_issues {
   my ( $self, $issues ) = @_;
 
@@ -377,11 +392,11 @@ sub _cook_issues {
     map {
       {
         %{ $self->_make_public($_) },
-         link        => $self->_issue_id($_),
-         path        => $self->_issue_image_path($_),
-         pdf         => $self->_issue_pdf_path($_),
-         month_name  => $MONTH[$_->{month} - 1],
-         pretty_date => $self->_pretty_date( @{$_}{ 'year', 'month', 'day' } ),
+         link              => $self->_issue_id($_),
+         path              => $self->_issue_image_path($_),
+         pdf               => $self->_issue_pdf_path($_),
+         month_name        => $MONTH[$_->{month} - 1],
+         pretty_date       => $self->_pretty_date( $_->{date} ),
          pretty_start_date => $self->_pretty_date( $_->{start_date} ),
          short_start_date  => $self->_short_date( $_->{start_date} ),
          pretty_end_date   => $self->_pretty_date( $_->{end_date} ),
@@ -557,23 +572,28 @@ sub issue_proximate {
 
 sub issues_for_year {
   my ( $self, $year ) = @_;
-  return (
-    year   => $year,
-    issues => $self->_group_by(
-      $self->_cook_issues(
-        $self->dbh->selectall_arrayref(
-          join( ' ',
-            'SELECT * ',
-            'FROM genome_issues',
-            'WHERE `year`=?',
-            'AND `_parent` IS NULL',
-            'ORDER BY `issue` ASC' ),
-          { Slice => {} },
-          $year
-        )
-      ),
-      'month'
+
+  my $issues = $self->_cook_issues(
+    $self->_child_fold(
+      $self->dbh->selectall_arrayref(
+        join( ' ',
+          'SELECT ip.*, ic.region AS child_region, ic.pagecount AS child_pagecount ',
+          'FROM genome_issues AS ip',
+          'LEFT JOIN genome_issues AS ic',
+          'ON ic._uuid=ip.default_child',
+          'WHERE ip.`year`=?',
+          'AND ip.`_parent` IS NULL',
+          'ORDER BY `issue` ASC' ),
+        { Slice => {} },
+        $year
+      )
     )
+  );
+
+  return (
+    year => $year,
+    issues   => $self->_group_by( $issues, 'month' ),
+    approved => $self->_group_by( $issues, 'approved_year' ),
   );
 }
 
