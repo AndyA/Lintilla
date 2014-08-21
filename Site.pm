@@ -66,10 +66,35 @@ get '/' => sub {
   template 'index', { boilerplate db };
 };
 
+sub safe_service_defaults {
+  my ( $db, $service ) = @_;
+  my @dflt = db->service_defaults( param('service') );
+  return '/schedules/missing' unless @dflt;
+  return join( '/', '/schedules', $service, @dflt );
+}
+
+get '/schedules/missing' => sub {
+  template 'schedule', { boilerplate db, missing => 1, };
+};
+
 get '/schedules/:service' => sub {
   delete request->env->{SCRIPT_NAME};   # don't include disptch.fcgi in URI
-  redirect join '/', '/schedules', param('service'),
-   db->service_defaults( param('service') );
+  redirect safe_service_defaults( db, param('service') );
+};
+
+get '/schedules/:service/:date' => sub {
+  my $db = db;
+  my @dflt = $db->service_defaults( param('service'), param('date') );
+  if ( @dflt > 1 ) {
+    delete request->env->{SCRIPT_NAME};
+    return '/schedules/missing' unless @dflt;
+    redirect join '/', '/schedules', param('service'), @dflt;
+    return;
+  }
+  template 'schedule',
+   {boilerplate $db,
+    $db->listing_for_schedule( param('service'), param('date') ),
+   };
 };
 
 get '/schedules/:service/:outlet/:date' => sub {
@@ -79,20 +104,6 @@ get '/schedules/:service/:outlet/:date' => sub {
     $db->listing_for_schedule(
       param('service'), param('outlet'), param('date')
     ),
-   };
-};
-
-get '/schedules/:service/:date' => sub {
-  my $db = db;
-  my @dflt = $db->service_defaults( param('service'), param('date') );
-  if ( @dflt > 1 ) {
-    delete request->env->{SCRIPT_NAME};
-    redirect join '/', '/schedules', param('service'), @dflt;
-    return;
-  }
-  template 'schedule',
-   {boilerplate $db,
-    $db->listing_for_schedule( param('service'), param('date') ),
    };
 };
 

@@ -224,7 +224,8 @@ sub service_defaults {
    'WHERE sd.service=s._uuid AND s._key=?',
    'ORDER BY date LIMIT 1';
   my $rec = $self->dbh->selectrow_hashref( $sql, {}, $service );
-  die unless defined $rec;
+  return unless defined $rec;
+
   # Simple case
   return ( $rec->{date} ) unless $rec->{has_outlets} eq 'Y';
 
