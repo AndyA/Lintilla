@@ -136,6 +136,10 @@ sub _decade_years {
 
 sub month_names { \@MONTH }
 
+sub short_month_names {
+  return [map { substr $_, 0, 3 } @MONTH];
+}
+
 sub decade_years {
   my $self = shift;
   return $self->_decade_years( YEAR_START, YEAR_END );
