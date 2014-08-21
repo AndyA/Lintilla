@@ -328,7 +328,7 @@ sub _add_programme_details {
   my $contrib
    = $self->dbh->selectall_arrayref( $sql, { Slice => {} }, @uids );
   my %by_parent = ();
-  push @{ $by_parent{ $_->{_parent} }{ $_->{group} } }, $_ for @$contrib;
+  push @{ $by_parent{ $_->{_parent} } }, $_ for @$contrib;
   for my $row (@$rows) {
     $row->{contrib} = $by_parent{ $row->{_uuid} } || [];
     $row->{time} = sprintf '%d.%02d', $self->decode_time( $row->{when} );
