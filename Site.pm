@@ -10,6 +10,7 @@ use Lintilla::Site::Asset;
 use Lintilla::Site::Data;
 use Lintilla::TT::Extensions;
 use Path::Class;
+use URI;
 
 our $VERSION = '0.1';
 
@@ -31,6 +32,7 @@ sub our_uri_for {
 sub boilerplate($) {
   my $db   = shift;
   my $srch = Lintilla::DB::Genome::Search->new;
+  my $self = self();
   return (
     $db->gather(BOILERPLATE),
     visibility => vars->{visibility},
@@ -39,7 +41,29 @@ sub boilerplate($) {
     title      => 'BBC Genome',
     stations   => $STATIC->get('stations'),
     form       => $srch->form,
+    switchview => {
+      internal => to_internal($self),
+      external => to_external($self),
+    },
   );
+}
+
+sub self {
+  return request->scheme . '://' . request->host . request->request_uri;
+}
+
+sub to_internal {
+  my $uri  = URI->new(shift);
+  my $host = $uri->host;
+  $host =~ s/^ext\.//;
+  $uri->host($host);
+  return "$uri";
+}
+
+sub to_external {
+  my $uri = URI->new( to_internal(shift) );
+  $uri->host( 'ext.' . $uri->host );
+  return "$uri";
 }
 
 {
