@@ -524,6 +524,7 @@ sub listing_for_schedule {
 
   return (
     about          => $rec,
+    spiel          => $self->_build_service_spiel($rec),
     day            => $day,
     issues         => $self->issues(@issues),
     listing        => $self->_add_programme_details($rows),
@@ -538,7 +539,6 @@ sub listing_for_schedule {
     service_type   => $type,
     service_years  => $self->service_years($service),
     short_title    => $short_title,
-    spiel          => $self->_build_service_spiel($rec),
     title          => $title,
     year           => $year,
   );
@@ -861,11 +861,14 @@ sub programme {
   my $progs = $self->_programme_query(
     join( ' ',
       'SELECT *,',
-      'IF (parent_service_key IS NOT NULL, parent_service_key, service_key) AS root_service_key',
+      'IF (parent_service_key IS NOT NULL, parent_service_key, service_key) AS root_service_key,',
+      'IF (parent_uuid IS NOT NULL, parent_uuid, service_uuid) AS root_uuid',
       'FROM (',
       '  SELECT',
       '    p.*,',
       '    s2._key AS parent_service_key,',
+      '    s._uuid AS service_uuid,',
+      '    s2._uuid AS parent_uuid,',
       '    s.title AS service_name,',
       '    s2.title AS service_sub,',
       '    s.subkey AS subkey',
@@ -878,9 +881,12 @@ sub programme {
     $self->_format_uuid($uuid)
   );
 
-  my $issues = $self->issues( unique map { $_->{issue} } @$progs );
+  my $rec    = $self->resolve_services( $progs->[0]{root_uuid} );
+  my $issues = $self->issues( $progs->[0]{issue} );
 
   return (
+    about     => $rec,
+    spiel     => $self->_build_service_spiel($rec),
     programme => $progs->[0],
     issue     => $issues->[0],
   );
