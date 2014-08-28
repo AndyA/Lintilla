@@ -575,10 +575,10 @@ sub issue_proximate {
   return [reverse(@$before), @$after];
 }
 
-sub issues_for_year {
+sub _issues_for_year {
   my ( $self, $year ) = @_;
 
-  my $issues = $self->_cook_issues(
+  return $self->_cook_issues(
     $self->_child_fold(
       $self->dbh->selectall_arrayref(
         join( ' ',
@@ -594,6 +594,18 @@ sub issues_for_year {
       )
     )
   );
+}
+
+sub _month_issues_for_year {
+  my ( $self, $year ) = @_;
+  my $issues = $self->_group_by( $self->_issues_for_year($year), 'month' );
+  return [map { ( $issues->{$_} || [] )->[0] } ( 1 .. 12 )];
+}
+
+sub issues_for_year {
+  my ( $self, $year ) = @_;
+
+  my $issues = $self->_issues_for_year($year);
 
   return (
     year => $year,
@@ -705,6 +717,7 @@ sub issue_listing {
   return (
     issue     => $iss,
     proximate => $self->issue_proximate( $iss->{issue}, 6 ),
+    monthly   => $self->_month_issues_for_year( $iss->{year} ),
   );
 }
 
