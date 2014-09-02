@@ -659,7 +659,6 @@ sub service_info {
 
 sub _walk_down {
   my ( $self, $service, $key ) = @_;
-  debug "service: ", $service, ", key: ", $key;
   return () unless $service->{$key};
   return ( $service->{$key} ) unless $service->{parent};
   return ( $self->_walk_down( $service->{parent}, $key ),

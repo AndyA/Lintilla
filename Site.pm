@@ -30,13 +30,21 @@ sub our_uri_for {
   return $uri;
 }
 
+sub barlesque {
+  Barlesque::Client->new(
+    blq_doctype     => 'html5',
+    blq_link_prefix => 'http://www.bbc.co.uk',
+    blq_version     => 4,
+  );
+}
+
 sub boilerplate($) {
   my $db   = shift;
   my $srch = Lintilla::DB::Genome::Search->new;
   my $self = self();
   return (
     $db->gather(BOILERPLATE),
-    barlesque  => Barlesque::Client->new->parts,
+    barlesque  => barlesque->parts,
     visibility => vars->{visibility},
     stash      => sub { $db->stash(shift) },
     timelist   => sub { $srch->timelist },
@@ -90,6 +98,10 @@ hook 'before' => sub {
 
 get '/' => sub {
   template 'index', { boilerplate db };
+};
+
+get '/barlesque' => sub {
+  template 'index', { boilerplate db }, { layout => 'barlesque' };
 };
 
 sub safe_service_defaults {
