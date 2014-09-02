@@ -3,6 +3,7 @@ package Lintilla::Site;
 use v5.10;
 use Dancer ':syntax';
 
+use Barlesque::Client;
 use Dancer::Plugin::Database;
 use Lintilla::DB::Genome;
 use Lintilla::Data::Static;
@@ -35,6 +36,7 @@ sub boilerplate($) {
   my $self = self();
   return (
     $db->gather(BOILERPLATE),
+    barlesque  => Barlesque::Client->new->parts,
     visibility => vars->{visibility},
     stash      => sub { $db->stash(shift) },
     timelist   => sub { $srch->timelist },
