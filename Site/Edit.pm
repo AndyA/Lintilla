@@ -22,7 +22,8 @@ prefix '/edit' => sub {
   post '/programme/:uuid' => sub {
     my $uuid = param('uuid');
     my $data = JSON->new->decode( request->body );
-    return {};
+    db->submit( $uuid, 'programme', 'anon', $data );
+    return { status => 'OK' };
   };
 };
 
