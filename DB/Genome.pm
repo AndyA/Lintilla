@@ -48,46 +48,6 @@ sub unique(@) {
   grep { !$seen{$_}++ } @_;
 }
 
-sub _format_uuid {
-  my ( $self, $uuid ) = @_;
-  return join '-', $1, $2, $3, $4, $5
-   if $uuid =~ /^ ([0-9a-f]{8}) -?
-                  ([0-9a-f]{4}) -?
-                  ([0-9a-f]{4}) -?
-                  ([0-9a-f]{4}) -?
-                  ([0-9a-f]{12}) $/xi;
-  die "Bad UUID";
-}
-
-sub _strip_uuid {
-  my ( $self, $uuid ) = @_;
-  # Format to validate
-  ( my $stripped = $self->_format_uuid($uuid) ) =~ s/-//g;
-  return $stripped;
-}
-
-sub _is_uuid {
-  my ( $self, $str ) = @_;
-  return $str =~ /^ ([0-9a-f]{8}) -
-                    ([0-9a-f]{4}) -
-                    ([0-9a-f]{4}) -
-                    ([0-9a-f]{4}) -
-                    ([0-9a-f]{12}) $/xi;
-}
-
-sub _group_by {
-  my ( $self, $rows, @keys ) = @_;
-  my $leaf = pop @keys;
-  my $hash = {};
-  for my $row (@$rows) {
-    my $rr   = {%$row};    # clone
-    my $slot = $hash;
-    $slot = ( $slot->{ delete $rr->{$_} } ||= {} ) for @keys;
-    push @{ $slot->{ delete $rr->{$leaf} } }, $rr;
-  }
-  return $hash;
-}
-
 sub _build_services {
   my $self = shift;
   my $sql  = join ' ',
@@ -95,7 +55,7 @@ sub _build_services {
    'WHERE `_parent` IS NULL ',
    'ORDER BY `order` IS NULL, `order` ASC, `title` ASC';
 
-  return $self->_group_by(
+  return $self->group_by(
     $self->dbh->selectall_arrayref( $sql, { Slice => {} } ), 'type' );
 }
 
@@ -248,7 +208,7 @@ sub service_defaults {
 sub resolve_service {
   my ( $self, $service, @spec ) = @_;
 
-  my $idx = $self->_is_uuid($service) ? '_uuid' : '_key';
+  my $idx = $self->is_uuid($service) ? '_uuid' : '_key';
   my $rec = $self->dbh->selectrow_hashref(
     join( ' ',
       'SELECT *', 'FROM genome_services',
@@ -428,7 +388,7 @@ sub annual_issues {
   my $self = shift;
 
   return (
-    issues => $self->_group_by(
+    issues => $self->group_by(
       $self->_cook_issues(
         $self->dbh->selectall_arrayref(
           join( ' ',
@@ -596,7 +556,7 @@ sub _issues_for_year {
 
 sub _month_issues_for_year {
   my ( $self, $year ) = @_;
-  my $issues = $self->_group_by( $self->_issues_for_year($year), 'month' );
+  my $issues = $self->group_by( $self->_issues_for_year($year), 'month' );
   return [map { ( $issues->{$_} || [] )->[0] } ( 1 .. 12 )];
 }
 
@@ -607,8 +567,8 @@ sub issues_for_year {
 
   return (
     year => $year,
-    issues   => $self->_group_by( $issues, 'month' ),
-    approved => $self->_group_by( $issues, 'approved_year' ),
+    issues   => $self->group_by( $issues, 'month' ),
+    approved => $self->group_by( $issues, 'approved_year' ),
   );
 }
 
@@ -616,7 +576,7 @@ sub lookup_uuid {
   my ( $self, $uuid ) = @_;
   my @row
    = $self->dbh->selectrow_hashref( 'SELECT * FROM dirty WHERE uuid=?',
-    {}, $self->_format_uuid($uuid) );
+    {}, $self->format_uuid($uuid) );
   return unless @row;
   return $row[0];
 }
@@ -652,7 +612,7 @@ sub service_info {
     $svc->{full_title} = join ' ', $self->_walk_down( $svc, 'title' );
     $svc->{path}       = join '/', $self->_walk_down( $svc, 'subkey' );
   }
-  return $self->_group_by( $svcs, '_uuid' );
+  return $self->group_by( $svcs, '_uuid' );
 }
 
 sub _walk_down {
@@ -669,7 +629,7 @@ sub issue_listing {
   my $iss = $self->_cook_issues(
     [ $self->dbh->selectrow_hashref(
         join( ' ', 'SELECT *', 'FROM genome_issues', 'WHERE _uuid=?' ), {},
-        $self->_format_uuid($uuid)
+        $self->format_uuid($uuid)
       )
     ]
   )->[0];
@@ -682,14 +642,14 @@ sub issue_listing {
       'AND `source`=?',
       'ORDER BY `page`, `date` ASC' ),
     { Slice => {} },
-    $self->_format_uuid($uuid),
+    $self->format_uuid($uuid),
     $self->source
   );
 
   my @services = unique map { $_->{service} } @$list;
   my $svc_info = $self->service_info(@services);
 
-  my $svc_dates = $self->_group_by(
+  my $svc_dates = $self->group_by(
     $self->dbh->selectall_arrayref(
       join( ' ',
         'SELECT *',
@@ -710,7 +670,7 @@ sub issue_listing {
     $i->{service_dates} = $svc_dates->{ $i->{service} };
   }
 
-  $iss->{listing} = $self->_group_by( $list, 'date' );
+  $iss->{listing} = $self->group_by( $list, 'date' );
   return (
     issue     => $iss,
     proximate => $self->issue_proximate( $iss->{issue}, 6 ),
@@ -790,7 +750,7 @@ sub _search_load_services {
    : [];
 
   # Slightly icky - coallesce by rsk but retain general order
-  my $by_rsk = $self->_group_by( $svcs, 'root_service_key' );
+  my $by_rsk = $self->group_by( $svcs, 'root_service_key' );
   my @osvc = ();
 
   for my $svc (@$svcs) {
@@ -888,7 +848,7 @@ sub programme {
       '  AND p._uuid = ?',
       ') AS q' ),
     { Slice => {} },
-    $self->_format_uuid($uuid)
+    $self->format_uuid($uuid)
   );
 
   my $rec    = $self->resolve_services( $progs->[0]{root_uuid} );
