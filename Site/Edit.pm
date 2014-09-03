@@ -25,6 +25,19 @@ prefix '/edit' => sub {
     db->submit( $uuid, 'programme', 'anon', $data );
     return { status => 'OK' };
   };
+
+  get '/list/:kind/:state/:start/:size/:order' => sub {
+    return db->list(
+      param('kind'), param('state'), param('start'), param('size'),
+      param('order')
+    );
+  };
+};
+
+prefix '/admin' => sub {
+  get '/' => sub {
+    template 'admin', { title => 'Genome Admin' }, { layout => 'admin' };
+  };
 };
 
 1;

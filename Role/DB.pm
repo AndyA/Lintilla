@@ -52,6 +52,7 @@ sub is_uuid {
 
 sub group_by {
   my ( $self, $rows, @keys ) = @_;
+  return $rows unless @keys;
   my $leaf = pop @keys;
   my $hash = {};
   for my $row (@$rows) {
