@@ -19,9 +19,8 @@ Lintilla::DB::Genome - Genome model
 use constant YEAR_START => 1923;
 use constant YEAR_END   => 2009;
 
+with 'Lintilla::Role::DB';
 with 'Lintilla::Role::Gatherer';
-
-has dbh => ( is => 'ro', isa => 'DBI::db' );
 
 has source => (
   is       => 'ro',

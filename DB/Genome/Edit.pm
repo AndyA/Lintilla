@@ -12,7 +12,7 @@ Lintilla::DB::Genome::Edit - Editing support
 
 our $VERSION = '0.1';
 
-has dbh => ( is => 'ro', isa => 'DBI::db' );
+with 'Lintilla::Role::DB';
 
 sub submit {
   my $self = shift;
