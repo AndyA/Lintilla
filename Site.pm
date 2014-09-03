@@ -100,10 +100,6 @@ get '/' => sub {
   template 'index', { boilerplate db };
 };
 
-get '/barlesque' => sub {
-  template 'index', { boilerplate db }, { layout => 'barlesque' };
-};
-
 sub safe_service_defaults {
   my ( $db, $service ) = @_;
   my @dflt = db->service_defaults( param('service') );
