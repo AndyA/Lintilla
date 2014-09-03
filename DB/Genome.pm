@@ -9,7 +9,6 @@ use Lintilla::DB::Genome::Search;
 use Lintilla::Filter qw( cook );
 use Moose;
 use POSIX qw( strftime );
-use Sphinx::Search;
 
 =head1 NAME
 
