@@ -32,6 +32,10 @@ prefix '/edit' => sub {
       param('order')
     );
   };
+
+  get '/diff/:id' => sub {
+    return db->diff( param('id') );
+  };
 };
 
 prefix '/admin' => sub {

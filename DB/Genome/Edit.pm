@@ -2,9 +2,11 @@ package Lintilla::DB::Genome::Edit;
 
 use v5.10;
 
-#use Dancer ':syntax';
-use JSON;
 use Moose;
+
+use JSON;
+use Text::DeepDiff;
+use Text::HTMLCleaner;
 
 =head1 NAME
 
@@ -59,9 +61,52 @@ sub _cook_list {
   return $list;
 }
 
+sub _clean_lines {
+  my ( $self, $txt ) = @_;
+  my @ln = split /\n/, $txt;
+  s/\s+$//, s/\s+/ /g for @ln;
+  my $out = join "\n", @ln;
+  $out =~ s/\n\n\n+/\n\n/msg;
+  return $out;
+}
+
+sub _diff {
+  my ( $self, $text, $html ) = @_;
+
+  return Text::DeepDiff->new(
+    left => $self->_clean_lines($text),
+    right =>
+     $self->_clean_lines( Text::HTMLCleaner->new( html => $html )->text )
+  )->diff;
+}
+
+sub diff {
+  my ( $self, $id ) = @_;
+
+  my $edit = $self->dbh->selectrow_hashref(
+    join( ' ',
+      'SELECT e.*, p.`title`, p.`synopsis`,',
+      "  IF(s2.`title` IS NULL, s.`title`, CONCAT_WS(' ', s2.`title`, s.`title`)) AS service",
+      'FROM genome_edit AS e, genome_programmes_v2 AS p, genome_services AS s',
+      'LEFT JOIN genome_services AS s2 ON s2._uuid=s._parent',
+      'WHERE e.uuid=p._uuid',
+      '  AND s._uuid=p.service',
+      '  AND e.id=?' ),
+    { Slice => {} },
+    $id
+  );
+
+  my $data = JSON->new->decode( delete $edit->{data} );
+  return {
+    edit     => $edit,
+    data     => $data,
+    title    => $self->_diff( $edit->{title}, $data->{title} ),
+    synopsis => $self->_diff( $edit->{synopsis}, $data->{synopsis} ),
+  };
+}
+
 sub list {
-  my $self = shift;
-  my ( $kind, $state, $start, $size, $order ) = @_;
+  my ( $self, $kind, $state, $start, $size, $order ) = @_;
 
   my $ord = $self->_cook_order($order);
 
@@ -101,8 +146,7 @@ sub list {
 }
 
 sub submit {
-  my $self = shift;
-  my ( $uuid, $kind, $who, $data ) = @_;
+  my ( $self, $uuid, $kind, $who, $data ) = @_;
   my $dbh = $self->dbh;
   $self->transaction(
     sub {
