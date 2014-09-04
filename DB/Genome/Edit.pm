@@ -129,6 +129,7 @@ sub diff {
   return {
     edit => $edit,
     data => $data,
+    link => $self->strip_uuid( $edit->{uuid} ),
     ( map { $_ => $self->_diff( $edit->{$_}, $data->{$_} ) }
        qw( title synopsis contributors )
     ),
@@ -169,6 +170,10 @@ sub list {
       @bind, $start, $size
     )
   );
+
+  for my $rc (@$res) {
+    $rc->{link} = $self->strip_uuid( $rc->{uuid} );
+  }
 
   return $self->group_by( $res, @group ) if @group;
 
