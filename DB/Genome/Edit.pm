@@ -64,7 +64,7 @@ sub _cook_list {
 sub _clean_lines {
   my ( $self, $txt ) = @_;
   my @ln = split /\n/, $txt;
-  s/\s+$//, s/\s+/ /g for @ln;
+  s/^\s+//, s/\s+$//, s/\s+/ /g for @ln;
   my $out = join "\n", @ln;
   $out =~ s/\n\n\n+/\n\n/msg;
   return $out;
@@ -73,11 +73,39 @@ sub _clean_lines {
 sub _diff {
   my ( $self, $text, $html ) = @_;
 
-  return Text::DeepDiff->new(
-    left => $self->_clean_lines($text),
-    right =>
-     $self->_clean_lines( Text::HTMLCleaner->new( html => $html )->text )
-  )->diff;
+  my $left = $self->_clean_lines($text);
+  my $right
+   = $self->_clean_lines( Text::HTMLCleaner->new( html => $html )->text );
+
+  my $diff = Text::DeepDiff->new( left => $left, right => $right )->diff;
+
+  return {
+    left  => $left,
+    right => $right,
+    diff  => $diff
+  };
+}
+
+sub _contrib {
+  my ( $self, $uuid ) = @_;
+
+  my $contrib = $self->dbh->selectall_arrayref(
+    join( ' ',
+      'SELECT *',
+      'FROM genome_contributors',
+      'WHERE _parent=?',
+      'ORDER BY `index`' ),
+    { Slice => {} },
+    $uuid
+  );
+
+  my @rows = ();
+  for my $rec (@$contrib) {
+    push @rows, join ': ', $rec->{type}, join ' ', $rec->{first_name},
+     $rec->{last_name};
+  }
+
+  return join "\n", @rows;
 }
 
 sub diff {
@@ -92,16 +120,18 @@ sub diff {
       'WHERE e.uuid=p._uuid',
       '  AND s._uuid=p.service',
       '  AND e.id=?' ),
-    { Slice => {} },
-    $id
+    undef, $id
   );
 
   my $data = JSON->new->decode( delete $edit->{data} );
+  $edit->{contributors} = $self->_contrib( $edit->{uuid} );
+
   return {
-    edit     => $edit,
-    data     => $data,
-    title    => $self->_diff( $edit->{title}, $data->{title} ),
-    synopsis => $self->_diff( $edit->{synopsis}, $data->{synopsis} ),
+    edit => $edit,
+    data => $data,
+    ( map { $_ => $self->_diff( $edit->{$_}, $data->{$_} ) }
+       qw( title synopsis contributors )
+    ),
   };
 }
 
