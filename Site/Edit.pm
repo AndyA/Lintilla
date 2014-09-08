@@ -42,6 +42,10 @@ prefix '/admin' => sub {
   get '/' => sub {
     template 'admin', { title => 'Genome Admin' }, { layout => 'admin' };
   };
+
+  get '/copy' => sub {
+    template 'copy', { title => 'Genome Admin' }, { layout => 'admin' };
+  }
 };
 
 1;
