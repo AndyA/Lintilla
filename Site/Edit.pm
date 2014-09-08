@@ -28,6 +28,10 @@ prefix '/edit' => sub {
 };
 
 prefix '/admin' => sub {
+  get '/list/stash' => sub {
+    return db->list_stash;
+  };
+
   get '/list/:kind/:state/:start/:size/:order' => sub {
     return db->list(
       param('kind'), param('state'), param('start'), param('size'),
@@ -45,7 +49,7 @@ prefix '/admin' => sub {
 
   get '/copy' => sub {
     template 'copy', { title => 'Genome Admin' }, { layout => 'admin' };
-  }
+   }
 };
 
 1;

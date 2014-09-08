@@ -198,6 +198,13 @@ sub submit {
   );
 }
 
+sub list_stash {
+  my $self = shift;
+  return $self->dbh->selectall_arrayref(
+    'SELECT * FROM genome_stash ORDER BY name',
+    { Slice => {} } );
+}
+
 1;
 
 # vim:ts=2:sw=2:sts=2:et:ft=perl
