@@ -28,6 +28,11 @@ prefix '/edit' => sub {
 };
 
 prefix '/admin' => sub {
+  get '/message/:serial' => sub {
+    sleep 5;
+    return { name => 'PING', serial => param('serial') + 1 };
+  };
+
   get '/list/stash' => sub {
     return db->list_stash;
   };
@@ -44,11 +49,13 @@ prefix '/admin' => sub {
   };
 
   get '/' => sub {
-    template 'admin', { title => 'Genome Admin' }, { layout => 'admin' };
+    template 'admin', { title => 'Genome Admin', scripts => ['edit'] },
+     { layout => 'admin' };
   };
 
   get '/copy' => sub {
-    template 'copy', { title => 'Genome Admin' }, { layout => 'admin' };
+    template 'copy', { title => 'Genome Admin', scripts => ['copy'] },
+     { layout => 'admin' };
    }
 };
 
