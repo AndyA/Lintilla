@@ -10,17 +10,26 @@ Lintilla::Role::DB - Database trait
 
 has dbh => ( is => 'ro', isa => 'DBI::db' );
 
+has in_transaction => ( is => 'rw', isa => 'Bool', default => 0 );
+
 sub transaction {
   my $self = shift;
   my $cb   = shift;
-  my $dbh  = $self->dbh;
-  $dbh->do('START TRANSACTION');
-  eval { $cb->() };
-  if ( my $err = $@ ) {
-    $dbh->do('ROLLBACK');
-    die $err;
+  if ( $self->in_transaction ) {
+    $cb->();
   }
-  $dbh->do('COMMIT');
+  else {
+    my $dbh = $self->dbh;
+    $dbh->do('START TRANSACTION');
+    $self->in_transaction(1);
+    eval { $cb->() };
+    $self->in_transaction(0);
+    if ( my $err = $@ ) {
+      $dbh->do('ROLLBACK');
+      die $err;
+    }
+    $dbh->do('COMMIT');
+  }
 }
 
 sub format_uuid {

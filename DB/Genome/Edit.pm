@@ -181,16 +181,19 @@ sub list {
 }
 
 sub submit {
-  my ( $self, $uuid, $kind, $who, $data ) = @_;
+  my ( $self, $uuid, $kind, $who, $data, $state, $parent ) = @_;
   my $dbh = $self->dbh;
+  $state //= 'pending';
   $self->transaction(
     sub {
       $dbh->do(
-        'INSERT INTO genome_edit (`uuid`, `kind`, `data`) VALUES (?, ?, ?)',
+        'INSERT INTO genome_edit (`parent`, `uuid`, `kind`, `data`, `state`) VALUES (?, ?, ?, ?, ?)',
         {},
+        $parent,
         $self->format_uuid($uuid),
         $kind,
-        JSON->new->utf8->allow_nonref->encode($data)
+        JSON->new->utf8->allow_nonref->encode($data),
+        $state
       );
       my $edit_id = $dbh->last_insert_id( undef, undef, undef, undef );
       $self->audit( $edit_id, $who, undef, 'pending' );
@@ -210,6 +213,229 @@ sub list_stash {
   }
 
   return $st;
+}
+
+sub _format_contributors {
+  my ( $self, $contrib ) = @_;
+}
+
+sub _parse_contributors {
+  my ( $self, $contrib ) = @_;
+  return $contrib if ref $contrib;
+  my $idx = 0;
+  my @row = ();
+  for my $ln ( split /\n/, $contrib ) {
+    next if $ln =~ m{^\s*$};
+    die unless $ln =~ m{^\s*([^:]+):\s*(.+?)\s*$};
+    my ( $type, $name ) = ( $1, $2 );
+    $type = undef if $type eq 'Unknown';
+    my @np    = split /\s+/, $name;
+    my $last  = pop @np;
+    my $first = @np ? join( ' ', @np ) : undef;
+    push @row,
+     {type       => $type,
+      first_name => $first,
+      last_name  => $last
+     };
+  }
+  return \@row;
+}
+
+sub _default_contrib {
+  my ( $self, $data ) = @_;
+  my $idx = 0;
+  for my $row (@$data) {
+    %$row = (
+      index => $idx,
+      group => 'crew',
+      kind  => 'member',
+      code  => undef,
+      %$row
+    );
+    $idx = $row->{index} + 1;
+  }
+  return $data;
+}
+
+sub _put_contrib {
+  my ( $self, $uuid, $contrib ) = @_;
+  $self->transaction(
+    sub {
+      my $data
+       = $self->_default_contrib( $self->_parse_contributors($contrib) );
+      my $fuuid = $self->format_uuid($uuid);
+      $self->dbh->do( 'DELETE FROM genome_contributors WHERE _parent=?',
+        {}, $fuuid );
+      my %kk = ();
+      %kk = ( %kk, %$_ ) for @$data;
+      my @f = sort keys %kk;
+      my $val = join ', ', ('?') x @f;
+      $self->dbh->do(
+        join( ' ',
+          'INSERT INTO genome_contributors',
+          '(',
+          join( ', ', map { "`$_`" } '_parent', @f ),
+          ') VALUES',
+          join( ', ', map { "( ?, $val )" } @$data ) ),
+        {},
+        map { $fuuid, @{$_}{@f} } @$data
+      );
+    }
+  );
+}
+
+sub _put_programme {
+  my ( $self, $uuid, $data, $edit_id ) = @_;
+
+  $self->transaction(
+    sub {
+      $self->_put_contrib( $uuid, delete $data->{contributors} )
+       if exists $data->{contributors};
+
+      my @f = sort keys %$data;
+
+      if (@f) {
+        my @b = @{$data}{@f};
+
+        $self->dbh->do(
+          join( ' ',
+            'UPDATE', "`genome_programmes_v2`", 'SET',
+            join( ', ', '`_modified`=NOW()`', map { "`$_`=?" } '_edit_id', @f ),
+            'WHERE _uuid=?',
+            'LIMIT 1' ),
+          {},
+          $edit_id, @b
+        );
+      }
+
+    }
+  );
+}
+
+sub _get_contrib {
+  my ( $self, $uuid ) = @_;
+  return $self->dbh->selectall_arrayref(
+    join( ' ',
+      'SELECT *',
+      'FROM genome_contributors',
+      'WHERE _parent=?',
+      'ORDER BY `index`' ),
+    { Slice => {} },
+    $self->format_uuid($uuid)
+  );
+}
+
+sub _get_programme {
+  my ( $self, $uuid ) = @_;
+  my $fuuid = $self->format_uuid($uuid);
+  my $prog  = $self->dbh->selectrow_hashref(
+    'SELECT `_modified`, `_edit_id`, `title`, `synopsis` FROM `genome_programmes_v2` WHERE `_uuid`=?',
+    {}, $fuuid
+  );
+  $prog->{contributors} = $self->_get_contrib($fuuid);
+  return $prog;
+}
+
+sub _deep_cmp {
+  my ( $self, $a, $b ) = @_;
+
+  return 1 unless defined $a || defined $b;
+  return unless defined $a && defined $b;
+  return $a eq $b unless ref $a || ref $b;
+  return unless ref $a && ref $b && ref $a eq ref $b;
+
+  if ( ref $a eq 'ARRAY' ) {
+    return unless @$a == @$b;
+    for my $i ( 0 .. $#$a ) {
+      return unless $self->_deep_cmp( $a->[$i], $b->[$i] );
+    }
+    return 1;
+  }
+
+  if ( ref $a eq 'HASH' ) {
+    my %kk = map { $_ => 1 } keys %$a;
+    $kk{$_}++ for keys %$b;
+    for my $k ( grep { $kk{$_} == 2 } keys %$b ) {
+      return unless $self->_deep_cmp( $a->{$k}, $b->{$k} );
+    }
+    return 1;
+  }
+
+  return;
+}
+
+{
+  my %KIND = (
+    programme => {
+      put => sub { shift->_put_programme(@_) },
+      get => sub { shift->_get_programme(@_) }
+    }
+  );
+
+  sub apply {
+    my ( $self, $kind, $uuid, $who, $data, $edit_id ) = @_;
+
+    $self->transaction(
+      sub {
+        my $kh = $KIND{$kind} // die;
+
+        my $old_data = $kh->{get}( $self, $uuid );
+        my ( $old_modified, $old_edit_id )
+         = delete @{$old_data}{ '_modified', '_edit_id' };
+
+        # Only stash data that changes
+        for my $ok ( keys %$old_data ) {
+          delete $old_data->{$ok} unless exists $data->{$ok};
+          if ( $self->_deep_cmp( $old_data->{$ok}, $data->{$ok} ) ) {
+            delete $old_data->{$ok};
+            delete $data->{$ok};
+          }
+        }
+
+        # Update if necessary
+        if ( keys %$data ) {
+          my $self->dbh->do(
+            join( ' ',
+              'INSERT INTO genome_editlog',
+              '(`edit_id`, `prev_id`, `uuid`, `kind`, `who`, `created`, `old_data`, `new_data`)',
+              'VALUES (?, ?, ?, ?, ?, ?, NOW(), ?, ?)' ),
+            {},
+            $edit_id,
+            $old_edit_id,
+            $self->format_uuid($uuid),
+            $kind, $who,
+            JSON->new->allow_nonref->utf8->encode($old_data),
+            JSON->new->allow_nonref->utf8->encode($data)
+          );
+          my $next_id = $self->dbh->last_insert_id( undef, undef, undef, undef );
+          $kh->{put}( $self, $uuid, $data, $next_id );
+        }
+      }
+    );
+  }
+
+  sub undo {
+    my ( $self, $id ) = @_;
+    $self->transaction(
+      sub {
+        my $edit
+         = $self->dbh->selectrow_hashref(
+          'SELECT * FROM genome_editlog WHERE id=?',
+          {}, $id );
+        die unless $edit;
+
+        my $kh = $KIND{ $edit->{kind} } // die;
+
+        $kh->{put}(
+          $self, $edit->{uuid},
+          JSON->new->allow_nonref->utf8->decode( $edit->{old_data} ),
+          $edit->{prev_id}
+        );
+
+        $self->dbh->do( 'DELETE FROM genome_editlog WHERE id=?', {}, $id );
+      }
+    );
+  }
 }
 
 1;
