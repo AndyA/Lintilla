@@ -17,7 +17,7 @@ Lintilla::DB::Genome::Search - A Genome search
 
 use constant PASSTHRU => qw(
  q order adv media yf yt tf tt co
- sun mon tue wed thu fri sat svc
+ sun mon tue wed thu fri sat svc mf mt
 );
 
 # Based on ENUM values from DB
@@ -51,6 +51,8 @@ has q     => ( is => 'ro', isa => 'Str', required => 1, default => '' );
 has order =>
  ( is => 'ro', isa => 'Str', required => 1, default => 'rank' );
 
+has mf => ( is => 'ro', isa => 'Num', default => 1 );
+has mt => ( is => 'ro', isa => 'Num', default => 12 );
 has yf => ( is => 'ro', isa => 'Num', default => 1923 );
 has yt => ( is => 'ro', isa => 'Num', default => 2009 );
 
@@ -202,6 +204,15 @@ sub _day_filter {
   return \@set;
 }
 
+sub _month_filter {
+  my $self = shift;
+  my ( $mf, $mt ) = ( $self->mf, $self->mt );
+  return if $mf < 1 || $mf > 12 || $mt < 1 || $mt > 12;
+  return if $mf == 1 && $mt == 12;
+  return ( $mt + 1, $mf - 1, 1 ) if $mt < $mf;
+  return ( $mf, $mt, 0 );
+}
+
 sub _time_filter {
   my $self = shift;
   my ( $tfs, $tts ) = ( $self->tfs, $self->tts );
@@ -217,6 +228,8 @@ sub _set_filter {
   if ( $self->adv ) {
     $sph->SetFilterRange( year => $self->yf, $self->yt );
     $sph->SetFilter( weekday => $self->_day_filter );
+    my @mfilt = $self->_month_filter;
+    $sph->SetFilterRange( month => @mfilt ) if @mfilt;
     my @tfilt = $self->_time_filter;
     $sph->SetFilterRange( timeslot => @tfilt ) if @tfilt;
     given ( $self->media ) {
