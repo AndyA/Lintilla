@@ -200,9 +200,16 @@ sub submit {
 
 sub list_stash {
   my $self = shift;
-  return $self->dbh->selectall_arrayref(
+  my $st
+   = $self->dbh->selectall_arrayref(
     'SELECT * FROM genome_stash ORDER BY name',
     { Slice => {} } );
+
+  for my $rec (@$st) {
+    $rec->{stash} = JSON->new->utf8->allow_nonref->decode( $rec->{stash} );
+  }
+
+  return $st;
 }
 
 1;
