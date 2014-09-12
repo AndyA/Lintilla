@@ -295,19 +295,16 @@ sub _put_programme {
 
       my @f = sort keys %$data;
 
-      if (@f) {
-        my @b = @{$data}{@f};
+      my @b = @{$data}{@f};
 
-        $self->dbh->do(
-          join( ' ',
-            'UPDATE', "`genome_programmes_v2`", 'SET',
-            join( ', ', '`_modified`=NOW()', map { "`$_`=?" } '_edit_id', @f ),
-            'WHERE _uuid=? LIMIT 1' ),
-          {},
-          $edit_id, @b, $uuid
-        );
-      }
-
+      $self->dbh->do(
+        join( ' ',
+          'UPDATE', "`genome_programmes_v2`", 'SET',
+          join( ', ', '`_modified`=NOW()', map { "`$_`=?" } '_edit_id', @f ),
+          'WHERE _uuid=? LIMIT 1' ),
+        {},
+        $edit_id, @b, $uuid
+      );
     }
   );
 }
@@ -438,6 +435,32 @@ sub _deep_cmp {
       }
     );
   }
+}
+
+sub history {
+  my ( $self, $uuid ) = @_;
+  my $hist = $self->dbh->selectall_arrayref(
+    'SELECT * FROM genome_changelog WHERE uuid=?',
+    { Slice => {} },
+    $self->format_uuid($uuid)
+  );
+
+  return [] unless @$hist;
+
+  my ( %by_prev, @tx );
+  for my $itm (@$hist) {
+    my $pid = $itm->{prev_id};
+    if ( defined $pid ) { $by_prev{$pid} = $itm }
+    else                { push @tx, $itm }
+  }
+
+  while ( keys %by_prev ) {
+    my $next = delete $by_prev{ $tx[-1]{id} };
+    die unless $next;
+    push @tx, $next;
+  }
+
+  return \@tx;
 }
 
 1;
