@@ -187,7 +187,10 @@ sub submit {
   $self->transaction(
     sub {
       $dbh->do(
-        'INSERT INTO genome_edit (`parent`, `uuid`, `kind`, `data`, `state`) VALUES (?, ?, ?, ?, ?)',
+        join( ' ',
+          'INSERT INTO genome_edit',
+          '(`parent_id`, `uuid`, `kind`, `data`, `state`)',
+          'VALUES (?, ?, ?, ?, ?)' ),
         {},
         $parent,
         $self->format_uuid($uuid),
