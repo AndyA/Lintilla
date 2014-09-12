@@ -425,6 +425,10 @@ sub _deep_cmp {
 
         my $kh = $KIND{ $edit->{kind} } // die;
 
+        my $old_data = $kh->{get}( $self, $edit->{uuid} );
+        die "Edit ID mismatch"
+         unless defined $old_data->{_edit_id} && $old_data->{_edit_id} == $id;
+
         $kh->{put}(
           $self, $edit->{uuid},
           JSON->new->allow_nonref->utf8->decode( $edit->{old_data} ),
