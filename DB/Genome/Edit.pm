@@ -373,6 +373,8 @@ sub _deep_cmp {
     my ( $self, $kind, $uuid, $who, $data, $edit_id ) = @_;
 
     my ($next_id);
+    my $new_data = {%$data};
+
     $self->transaction(
       sub {
         my $kh = $KIND{$kind} // die;
@@ -383,15 +385,15 @@ sub _deep_cmp {
 
         # Only stash data that changes
         for my $ok ( keys %$old_data ) {
-          delete $old_data->{$ok} unless exists $data->{$ok};
-          if ( $self->_deep_cmp( $old_data->{$ok}, $data->{$ok} ) ) {
+          delete $old_data->{$ok} unless exists $new_data->{$ok};
+          if ( $self->_deep_cmp( $old_data->{$ok}, $new_data->{$ok} ) ) {
             delete $old_data->{$ok};
-            delete $data->{$ok};
+            delete $new_data->{$ok};
           }
         }
 
         # Update if necessary
-        if ( keys %$data ) {
+        if ( keys %$new_data ) {
           $self->dbh->do(
             join( ' ',
               'INSERT INTO genome_changelog',
@@ -403,10 +405,10 @@ sub _deep_cmp {
             $self->format_uuid($uuid),
             $kind, $who,
             JSON->new->allow_nonref->utf8->encode($old_data),
-            JSON->new->allow_nonref->utf8->encode($data)
+            JSON->new->allow_nonref->utf8->encode($new_data)
           );
           $next_id = $self->dbh->last_insert_id( undef, undef, undef, undef );
-          $kh->{put}( $self, $uuid, $data, $next_id );
+          $kh->{put}( $self, $uuid, $new_data, $next_id );
         }
       }
     );
