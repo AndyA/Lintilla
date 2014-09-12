@@ -413,7 +413,7 @@ sub _deep_cmp {
     return $next_id;
   }
 
-  sub undo {
+  sub _undo {
     my ( $self, $id ) = @_;
     $self->transaction(
       sub {
@@ -435,6 +435,25 @@ sub _deep_cmp {
       }
     );
   }
+}
+
+sub undo {
+  my ( $self, $id ) = @_;
+  $self->transaction(
+    sub {
+      my ($uuid)
+       = $self->dbh->selectrow_array(
+        'SELECT uuid FROM genome_changelog WHERE id=?',
+        {}, $id );
+      return unless defined $uuid;
+      my $hist = $self->history($uuid);
+      shift @$hist while @$hist && $hist->[0]{id} != $id;
+      while (@$hist) {
+        my $ch = pop @$hist;
+        $self->_undo( $ch->{id} );
+      }
+    }
+  );
 }
 
 sub history {
