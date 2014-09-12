@@ -2,6 +2,8 @@ package Lintilla::Role::DB;
 
 use Moose::Role;
 
+use Carp qw( confess );
+
 =head1 NAME
 
 Lintilla::Role::DB - Database trait
@@ -26,7 +28,7 @@ sub transaction {
     $self->in_transaction(0);
     if ( my $err = $@ ) {
       $dbh->do('ROLLBACK');
-      die $err;
+      confess $err;
     }
     $dbh->do('COMMIT');
   }

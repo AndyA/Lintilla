@@ -268,6 +268,7 @@ sub _put_contrib {
         {}, $fuuid );
       my %kk = ();
       %kk = ( %kk, %$_ ) for @$data;
+      delete $kk{_parent};    # override
       my @f = sort keys %kk;
       my $val = join ', ', ('?') x @f;
       $self->dbh->do(
@@ -300,11 +301,10 @@ sub _put_programme {
         $self->dbh->do(
           join( ' ',
             'UPDATE', "`genome_programmes_v2`", 'SET',
-            join( ', ', '`_modified`=NOW()`', map { "`$_`=?" } '_edit_id', @f ),
-            'WHERE _uuid=?',
-            'LIMIT 1' ),
+            join( ', ', '`_modified`=NOW()', map { "`$_`=?" } '_edit_id', @f ),
+            'WHERE _uuid=? LIMIT 1' ),
           {},
-          $edit_id, @b
+          $edit_id, @b, $uuid
         );
       }
 
@@ -375,6 +375,7 @@ sub _deep_cmp {
   sub apply {
     my ( $self, $kind, $uuid, $who, $data, $edit_id ) = @_;
 
+    my ($next_id);
     $self->transaction(
       sub {
         my $kh = $KIND{$kind} // die;
@@ -394,11 +395,11 @@ sub _deep_cmp {
 
         # Update if necessary
         if ( keys %$data ) {
-          my $self->dbh->do(
+          $self->dbh->do(
             join( ' ',
-              'INSERT INTO genome_editlog',
+              'INSERT INTO genome_changelog',
               '(`edit_id`, `prev_id`, `uuid`, `kind`, `who`, `created`, `old_data`, `new_data`)',
-              'VALUES (?, ?, ?, ?, ?, ?, NOW(), ?, ?)' ),
+              'VALUES (?, ?, ?, ?, ?, NOW(), ?, ?)' ),
             {},
             $edit_id,
             $old_edit_id,
@@ -407,11 +408,12 @@ sub _deep_cmp {
             JSON->new->allow_nonref->utf8->encode($old_data),
             JSON->new->allow_nonref->utf8->encode($data)
           );
-          my $next_id = $self->dbh->last_insert_id( undef, undef, undef, undef );
+          $next_id = $self->dbh->last_insert_id( undef, undef, undef, undef );
           $kh->{put}( $self, $uuid, $data, $next_id );
         }
       }
     );
+    return $next_id;
   }
 
   sub undo {
@@ -420,7 +422,7 @@ sub _deep_cmp {
       sub {
         my $edit
          = $self->dbh->selectrow_hashref(
-          'SELECT * FROM genome_editlog WHERE id=?',
+          'SELECT * FROM genome_changelog WHERE id=?',
           {}, $id );
         die unless $edit;
 
@@ -432,7 +434,7 @@ sub _deep_cmp {
           $edit->{prev_id}
         );
 
-        $self->dbh->do( 'DELETE FROM genome_editlog WHERE id=?', {}, $id );
+        $self->dbh->do( 'DELETE FROM genome_changelog WHERE id=?', {}, $id );
       }
     );
   }
