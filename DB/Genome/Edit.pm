@@ -462,6 +462,19 @@ sub undo {
   );
 }
 
+sub reset {
+  my ( $self, $uuid ) = @_;
+  $self->transaction(
+    sub {
+      my ($eid)
+       = $self->dbh->selectrow_array(
+        'SELECT id FROM genome_changelog WHERE uuid=? AND prev_id IS NULL',
+        {}, $self->format_uuid($uuid) );
+      $self->undo($eid) if defined $eid;
+    }
+  );
+}
+
 sub history {
   my ( $self, $uuid ) = @_;
   my $hist = $self->dbh->selectall_arrayref(
