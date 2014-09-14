@@ -4,6 +4,7 @@ use v5.10;
 
 use Moose;
 
+use Carp qw( confess );
 use Text::DeepDiff;
 use Text::HTMLCleaner;
 
@@ -79,6 +80,8 @@ sub _clean_html {
 
 sub _diff {
   my ( $self, $text, $html ) = @_;
+
+  $text //= '';    # NULL possible in db
 
   my $left  = $self->_clean_lines($text);
   my $right = $self->_clean_html($html);
