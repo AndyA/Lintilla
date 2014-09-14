@@ -207,7 +207,8 @@ sub submit {
 }
 
 sub ammend {
-  my ( $self, $edit_id, $who, $data, $state ) = @_;
+  my ( $self, $edit_id, $who, $state, $data ) = @_;
+  my $changed = 0;
   $self->transaction(
     sub {
       my $old
@@ -217,18 +218,38 @@ sub ammend {
 
       # Decode, encode to ensure comparison is stable
       $old->{data} = $self->_json->decode( $old->{data} );
+
+      # Default: unchanged
+      $data  //= $old->{data};
+      $state //= $old->{state};
+
       my $old_data = $self->_json->encode( $old->{data} );
       my $new_data = $self->_json->encode($data);
 
       return if $state eq $old->{state} && $old_data eq $new_data;
 
       $self->dbh->do( 'UPDATE genome_edit SET state=?, data=? WHERE id=?',
-        {}, $old->{state}, $edit_id );
+        {}, $state, $new_data, $edit_id );
 
       $self->audit( $edit_id, $who, $old->{state}, $state, $old_data,
         $new_data );
+      $changed++;
     }
   );
+  return $changed;
+}
+
+sub workflow {
+  my ( $self, $edit_id, $who, $action ) = @_;
+
+  my %ST = (
+    approve => 'approved',
+    reject  => 'rejected',
+    review  => 'review',
+  );
+
+  my $new_state = $ST{$action} // die "Bad action: $action";
+  return $self->ammend( $edit_id, $who, $new_state, undef );
 }
 
 sub list_stash {

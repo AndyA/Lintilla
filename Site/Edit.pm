@@ -28,6 +28,9 @@ prefix '/edit' => sub {
 };
 
 prefix '/admin' => sub {
+
+  # Data services
+  #
   get '/message/:serial' => sub {
     sleep 5;
     return { name => 'PING', serial => param('serial') + 1 };
@@ -48,6 +51,15 @@ prefix '/admin' => sub {
     return db->diff( param('id') );
   };
 
+  prefix '/edit' => sub {
+    post '/workflow/:id/:action' => sub {
+      db->workflow( param('id'), 'admin', param('action') );
+      return { status => 'OK' };
+    };
+  };
+
+  # Pages
+  #
   get '/' => sub {
     template 'admin/edits', { title => 'Genome Admin', scripts => ['edit'] },
      { layout => 'admin' };
