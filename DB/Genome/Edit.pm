@@ -19,16 +19,18 @@ with 'Lintilla::Role::DB';
 
 sub audit {
   my $self = shift;
-  my ( $edit_id, $who, $old_state, $new_state ) = @_;
+  my ( $edit_id, $who, $old_state, $new_state, $old_data, $new_data ) = @_;
   $self->dbh->do(
     join( ' ',
       'INSERT INTO genome_editlog',
-      '  (`edit_id`, `who`, `old_state`, `new_state`, `when`)',
-      '  VALUES (?, ?, ?, ?, NOW())' ),
+      '  (`edit_id`, `who`, `old_state`, `new_state`, `old_data`, `new_data`, `when`)',
+      '  VALUES (?, ?, ?, ?, ?, ?, NOW())' ),
     {},
     $edit_id, $who,
     $old_state,
-    $new_state
+    $new_state,
+    $self->_json->encode($old_data),
+    $self->_json->encode($new_data)
   );
 }
 
@@ -198,7 +200,7 @@ sub submit {
         $state
       );
       my $edit_id = $dbh->last_insert_id( undef, undef, undef, undef );
-      $self->audit( $edit_id, $who, undef, 'pending' );
+      $self->audit( $edit_id, $who, undef, 'pending', undef, $data );
     }
   );
 }
