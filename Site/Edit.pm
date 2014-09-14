@@ -49,12 +49,12 @@ prefix '/admin' => sub {
   };
 
   get '/' => sub {
-    template 'admin', { title => 'Genome Admin', scripts => ['edit'] },
+    template 'admin/edits', { title => 'Genome Admin', scripts => ['edit'] },
      { layout => 'admin' };
   };
 
   get '/copy' => sub {
-    template 'copy', { title => 'Genome Admin', scripts => ['copy'] },
+    template 'admin/copy', { title => 'Genome Admin', scripts => ['copy'] },
      { layout => 'admin' };
    }
 };
