@@ -647,7 +647,8 @@ sub undo_edit {
   $self->transaction(
     sub {
       my ($id)
-       = selectrow_array( 'SELECT id FROM genome_changelog WHERE edit_id=?',
+       = $self->dbh->selectrow_array(
+        'SELECT id FROM genome_changelog WHERE edit_id=?',
         {}, $edit_id );
       die "Unknown edit ID" unless defined $id;
       $self->safe_undo($id);
