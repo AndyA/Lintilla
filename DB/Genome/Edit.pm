@@ -71,12 +71,17 @@ sub _clean_lines {
   return $out;
 }
 
+sub _clean_html {
+  my ( $self, $html ) = @_;
+  return $self->_clean_lines(
+    Text::HTMLCleaner->new( html => $html )->text );
+}
+
 sub _diff {
   my ( $self, $text, $html ) = @_;
 
-  my $left = $self->_clean_lines($text);
-  my $right
-   = $self->_clean_lines( Text::HTMLCleaner->new( html => $html )->text );
+  my $left  = $self->_clean_lines($text);
+  my $right = $self->_clean_html($html);
 
   my $diff = Text::DeepDiff->new( left => $left, right => $right )->diff;
 
@@ -102,7 +107,8 @@ sub _contrib {
 
   my @rows = ();
   for my $rec (@$contrib) {
-    push @rows, join ': ', $rec->{type}, join ' ', $rec->{first_name},
+    push @rows, join ': ', ( $rec->{type} // 'Unknown' ), join ' ',
+     $rec->{first_name},
      $rec->{last_name};
   }
 
@@ -206,18 +212,22 @@ sub submit {
   );
 }
 
+sub load_edit {
+  my ( $self, $edit_id ) = @_;
+  my $edit
+   = $self->dbh->selectrow_hashref( 'SELECT * FROM genome_edit WHERE id=?',
+    {}, $edit_id );
+  die "Edit not found" unless defined $edit;
+  $edit->{data} = $self->_json->decode( $edit->{data} );
+  return $edit;
+}
+
 sub ammend {
   my ( $self, $edit_id, $who, $state, $data ) = @_;
   my $changed = 0;
   $self->transaction(
     sub {
-      my $old
-       = $self->dbh->selectrow_hashref( 'SELECT * FROM genome_edit WHERE id=?',
-        {}, $edit_id );
-      die "Edit not found" unless defined $old;
-
-      # Decode, encode to ensure comparison is stable
-      $old->{data} = $self->_json->decode( $old->{data} );
+      my $old = $self->load_edit($edit_id);
 
       # Default: unchanged
       $data  //= $old->{data};
@@ -243,13 +253,32 @@ sub workflow {
   my ( $self, $edit_id, $who, $action ) = @_;
 
   my %ST = (
-    approve => 'approved',
+    accept  => 'accepted',
+    pending => 'pending',
     reject  => 'rejected',
     review  => 'review',
   );
 
-  my $new_state = $ST{$action} // die "Bad action: $action";
-  return $self->ammend( $edit_id, $who, $new_state, undef );
+  $self->transaction(
+    sub {
+      my $new_state = $ST{$action} // die "Bad action: $action";
+
+      my $old
+       = $self->dbh->selectrow_hashref( 'SELECT * FROM genome_edit WHERE id=?',
+        {}, $edit_id );
+      die "Edit not found" unless defined $old;
+
+      # The only transitions that affect data are to and from accepted.
+      if ( $new_state eq 'accepted' && $old->{state} ne 'accepted' ) {
+        $self->do_edit( $edit_id, $who );
+      }
+      elsif ( $new_state ne 'accepted' && $old->{state} eq 'accepted' ) {
+        $self->undo_edit($edit_id);
+      }
+
+      $self->ammend( $edit_id, $who, $new_state, undef );
+    }
+  );
 }
 
 sub list_stash {
@@ -549,6 +578,41 @@ sub history {
   }
 
   return \@tx;
+}
+
+sub _parse_edit {
+  my ( $self, $edit ) = @_;
+  return {
+    title        => $self->_clean_html( $edit->{title} ),
+    synopsis     => $self->_clean_html( $edit->{synopsis} ),
+    contributors => $self->_parse_contributors(
+      $self->_clean_html( $edit->{contributors} )
+    ),
+  };
+}
+
+sub do_edit {
+  my ( $self, $edit_id, $who ) = @_;
+  $self->transaction(
+    sub {
+      my $edit = $self->load_edit($edit_id);
+      $self->apply( 'programme', $edit->{uuid}, $who,
+        $self->_parse_edit( $edit->{data} ), $edit_id );
+    }
+  );
+}
+
+sub undo_edit {
+  my ( $self, $edit_id ) = @_;
+  $self->transaction(
+    sub {
+      my ($id)
+       = selectrow_array( 'SELECT id FROM genome_changelog WHERE edit_id=?',
+        {}, $edit_id );
+      die "Unknown edit ID" unless defined $id;
+      $self->undo($id);
+    }
+  );
 }
 
 1;
