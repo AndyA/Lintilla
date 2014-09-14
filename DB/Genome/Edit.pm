@@ -495,7 +495,7 @@ sub _deep_cmp {
     return $next_id;
   }
 
-  sub _undo {
+  sub _undo_edit {
     my ( $self, $id ) = @_;
     $self->transaction(
       sub {
@@ -522,8 +522,8 @@ sub _deep_cmp {
   }
 }
 
-sub undo {
-  my ( $self, $id ) = @_;
+sub _undo {
+  my ( $self, $id, $safe ) = @_;
   $self->transaction(
     sub {
       my ($uuid)
@@ -533,12 +533,24 @@ sub undo {
       return unless defined $uuid;
       my $hist = $self->history($uuid);
       shift @$hist while @$hist && $hist->[0]{id} != $id;
+      # Only safe is this edit is the most recent
+      die "Can't undo edit" if $safe && @$hist > 1;
       while (@$hist) {
         my $ch = pop @$hist;
-        $self->_undo( $ch->{id} );
+        $self->_undo_edit( $ch->{id} );
       }
     }
   );
+}
+
+sub undo {
+  my ( $self, $id ) = @_;
+  $self->_undo( $id, 0 );
+}
+
+sub safe_undo {
+  my ( $self, $id ) = @_;
+  $self->_undo( $id, 1 );
 }
 
 sub reset {
@@ -610,7 +622,7 @@ sub undo_edit {
        = selectrow_array( 'SELECT id FROM genome_changelog WHERE edit_id=?',
         {}, $edit_id );
       die "Unknown edit ID" unless defined $id;
-      $self->undo($id);
+      $self->safe_undo($id);
     }
   );
 }
