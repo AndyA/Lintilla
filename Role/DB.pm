@@ -3,6 +3,7 @@ package Lintilla::Role::DB;
 use Moose::Role;
 
 use Carp qw( confess );
+use JSON;
 
 =head1 NAME
 
@@ -74,6 +75,8 @@ sub group_by {
   }
   return $hash;
 }
+
+sub _json { JSON->new->utf8->allow_nonref }
 
 1;
 

@@ -123,7 +123,7 @@ sub diff {
     undef, $id
   );
 
-  my $data = JSON->new->decode( delete $edit->{data} );
+  my $data = $self->_json->decode( delete $edit->{data} );
   $edit->{contributors} = $self->_contrib( $edit->{uuid} );
 
   return {
@@ -195,7 +195,7 @@ sub submit {
         $parent,
         $self->format_uuid($uuid),
         $kind,
-        JSON->new->utf8->allow_nonref->encode($data),
+        $self->_json->encode($data),
         $state
       );
       my $edit_id = $dbh->last_insert_id( undef, undef, undef, undef );
@@ -212,7 +212,7 @@ sub list_stash {
     { Slice => {} } );
 
   for my $rec (@$st) {
-    $rec->{stash} = JSON->new->utf8->allow_nonref->decode( $rec->{stash} );
+    $rec->{stash} = $self->_json->decode( $rec->{stash} );
   }
 
   return $st;
@@ -407,8 +407,8 @@ sub _deep_cmp {
             $old_edit_id,
             $self->format_uuid($uuid),
             $kind, $who,
-            JSON->new->allow_nonref->utf8->encode($old_data),
-            JSON->new->allow_nonref->utf8->encode($new_data)
+            $self->_json->encode($old_data),
+            $self->_json->encode($new_data)
           );
           $next_id = $self->dbh->last_insert_id( undef, undef, undef, undef );
           $kh->{put}( $self, $uuid, $new_data, $next_id );
@@ -435,8 +435,7 @@ sub _deep_cmp {
          unless defined $old_data->{_edit_id} && $old_data->{_edit_id} == $id;
 
         $kh->{put}(
-          $self, $edit->{uuid},
-          JSON->new->allow_nonref->utf8->decode( $edit->{old_data} ),
+          $self, $edit->{uuid}, $self->_json->decode( $edit->{old_data} ),
           $edit->{prev_id}
         );
 
