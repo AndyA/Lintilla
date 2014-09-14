@@ -2,7 +2,6 @@ package Lintilla::DB::Genome;
 
 use v5.10;
 
-#use JSON;
 use Dancer ':syntax';
 use HTML::Tiny;
 use Lintilla::DB::Genome::Search;
