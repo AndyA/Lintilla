@@ -115,6 +115,33 @@ sub _contrib {
   return join "\n", @rows;
 }
 
+sub edit_history {
+  my ( $self, $id ) = @_;
+
+  my $hist
+   = $self->dbh->selectall_arrayref(
+    'SELECT * FROM genome_editlog WHERE edit_id=? ORDER BY `when`',
+    { Slice => {} }, $id );
+  my @list = ();
+
+  for my $ev (@$hist) {
+    my @desc = ();
+
+    if ( ( $ev->{old_state} // '' ) ne $ev->{new_state} ) {
+      push @desc, join ' ', 'state changed',
+       ( defined $ev->{old_state} ? ( 'from', uc $ev->{old_state} ) : () ),
+       'to', uc $ev->{new_state};
+    }
+
+    push @desc, 'edited'
+     if ( $ev->{old_data} // '' ) ne ( $ev->{new_data} // '' );
+
+    delete @{$ev}{ 'old_data', 'new_data' };
+    push @list, { %$ev, description => join( ', ', @desc ), };
+  }
+  return \@list;
+}
+
 sub diff {
   my ( $self, $id ) = @_;
 
@@ -134,9 +161,10 @@ sub diff {
   $edit->{contributors} = $self->_contrib( $edit->{uuid} );
 
   return {
-    edit => $edit,
-    data => $data,
-    link => $self->strip_uuid( $edit->{uuid} ),
+    edit    => $edit,
+    data    => $data,
+    link    => $self->strip_uuid( $edit->{uuid} ),
+    history => $self->edit_history($id),
     ( map { $_ => $self->_diff( $edit->{$_}, $data->{$_} ) }
        qw( title synopsis contributors )
     ),
