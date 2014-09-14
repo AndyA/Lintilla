@@ -29,8 +29,8 @@ sub audit {
     $edit_id, $who,
     $old_state,
     $new_state,
-    $self->_json->encode($old_data),
-    $self->_json->encode($new_data)
+    $old_data,
+    $new_data
   );
 }
 
@@ -187,6 +187,7 @@ sub submit {
   $state //= 'pending';
   $self->transaction(
     sub {
+      my $new_data = $self->_json->encode($data);
       $dbh->do(
         join( ' ',
           'INSERT INTO genome_edit',
@@ -196,11 +197,36 @@ sub submit {
         $parent,
         $self->format_uuid($uuid),
         $kind,
-        $self->_json->encode($data),
+        $new_data,
         $state
       );
       my $edit_id = $dbh->last_insert_id( undef, undef, undef, undef );
-      $self->audit( $edit_id, $who, undef, 'pending', undef, $data );
+      $self->audit( $edit_id, $who, undef, 'pending', undef, $new_data );
+    }
+  );
+}
+
+sub ammend {
+  my ( $self, $edit_id, $who, $data, $state ) = @_;
+  $self->transaction(
+    sub {
+      my $old
+       = $self->dbh->selectrow_hashref( 'SELECT * FROM genome_edit WHERE id=?',
+        {}, $edit_id );
+      die "Edit not found" unless defined $old;
+
+      # Decode, encode to ensure comparison is stable
+      $old->{data} = $self->_json->decode( $old->{data} );
+      my $old_data = $self->_json->encode( $old->{data} );
+      my $new_data = $self->_json->encode($data);
+
+      return if $state eq $old->{state} && $old_data eq $new_data;
+
+      $self->dbh->do( 'UPDATE genome_edit SET state=?, data=? WHERE id=?',
+        {}, $old->{state}, $edit_id );
+
+      $self->audit( $edit_id, $who, $old->{state}, $state, $old_data,
+        $new_data );
     }
   );
 }
