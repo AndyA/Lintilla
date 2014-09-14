@@ -41,10 +41,13 @@ prefix '/admin' => sub {
   };
 
   get '/list/:kind/:state/:start/:size/:order' => sub {
-    return db->list(
-      param('kind'), param('state'), param('start'), param('size'),
-      param('order')
-    );
+    return {
+      list => db->list(
+        param('kind'), param('state'), param('start'), param('size'),
+        param('order'),
+      ),
+      count => db->edit_state_count
+    };
   };
 
   get '/diff/:id' => sub {

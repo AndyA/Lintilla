@@ -171,6 +171,18 @@ sub diff {
   };
 }
 
+sub edit_state_count {
+  my $self     = shift;
+  my $by_state = $self->group_by(
+    $self->dbh->selectall_arrayref(
+      'SELECT `state`, COUNT(*) AS `count` FROM genome_edit GROUP BY `state`',
+      { Slice => {} }
+    ),
+    'state'
+  );
+  return { map { $_ => $by_state->{$_}[0]{count} } keys %$by_state };
+}
+
 sub list {
   my ( $self, $kind, $state, $start, $size, $order ) = @_;
 
