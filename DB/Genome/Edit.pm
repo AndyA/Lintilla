@@ -4,7 +4,6 @@ use v5.10;
 
 use Moose;
 
-use JSON;
 use Text::DeepDiff;
 use Text::HTMLCleaner;
 
