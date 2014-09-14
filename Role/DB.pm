@@ -76,7 +76,7 @@ sub group_by {
   return $hash;
 }
 
-sub _json { JSON->new->utf8->allow_nonref }
+sub _json { JSON->new->utf8->allow_nonref->canonical }
 
 1;
 
