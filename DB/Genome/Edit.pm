@@ -296,10 +296,10 @@ sub workflow {
   my ( $self, $edit_id, $who, $action ) = @_;
 
   my %ST = (
-    accept  => 'accepted',
-    pending => 'pending',
-    reject  => 'rejected',
-    review  => 'review',
+    accepted => 'accepted',
+    pending  => 'pending',
+    rejected => 'rejected',
+    review   => 'review',
   );
 
   my $status = { status => 'OK' };
