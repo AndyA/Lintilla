@@ -265,7 +265,7 @@ sub load_edit {
   return $edit;
 }
 
-sub ammend {
+sub amend {
   my ( $self, $edit_id, $who, $state, $data ) = @_;
   my $changed = 0;
   $self->transaction(
@@ -319,7 +319,7 @@ sub workflow {
         $self->undo_edit($edit_id);
       }
 
-      $self->ammend( $edit_id, $who, $new_state, undef );
+      $self->amend( $edit_id, $who, $new_state, undef );
     }
   );
 }
