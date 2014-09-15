@@ -328,7 +328,9 @@ sub workflow {
         push @msg, 'Edit rolled back on live site.';
       }
 
-      $self->amend( $edit_id, $who, $new_state, undef );
+      unless ( $self->amend( $edit_id, $who, $new_state, undef ) ) {
+        @msg = ('Nothing to do.');
+      }
       $status->{message} = join ' ', @msg;
     }
   );
