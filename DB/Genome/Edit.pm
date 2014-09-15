@@ -160,7 +160,7 @@ sub diff {
     undef, $id
   );
 
-  my $data = $self->_json->decode( delete $edit->{data} );
+  my $data = $self->_decode( delete $edit->{data} );
   $edit->{contributors} = $self->_contrib( $edit->{uuid} );
 
   return {
@@ -236,7 +236,7 @@ sub submit {
   $state //= 'pending';
   $self->transaction(
     sub {
-      my $new_data = $self->_json->encode($data);
+      my $new_data = $self->_encode($data);
       $dbh->do(
         join( ' ',
           'INSERT INTO genome_edit',
@@ -261,7 +261,7 @@ sub load_edit {
    = $self->dbh->selectrow_hashref( 'SELECT * FROM genome_edit WHERE id=?',
     {}, $edit_id );
   die "Edit not found" unless defined $edit;
-  $edit->{data} = $self->_json->decode( $edit->{data} );
+  $edit->{data} = $self->_decode( $edit->{data} );
   return $edit;
 }
 
@@ -276,8 +276,8 @@ sub amend {
       $data  //= $old->{data};
       $state //= $old->{state};
 
-      my $old_data = $self->_json->encode( $old->{data} );
-      my $new_data = $self->_json->encode($data);
+      my $old_data = $self->_encode( $old->{data} );
+      my $new_data = $self->_encode($data);
 
       return if $state eq $old->{state} && $old_data eq $new_data;
 
@@ -344,7 +344,7 @@ sub list_stash {
     { Slice => {} } );
 
   for my $rec (@$st) {
-    $rec->{stash} = $self->_json->decode( $rec->{stash} );
+    $rec->{stash} = $self->_decode( $rec->{stash} );
   }
 
   return $st;
@@ -539,8 +539,8 @@ sub _deep_cmp {
             $old_edit_id,
             $self->format_uuid($uuid),
             $kind, $who,
-            $self->_json->encode($old_data),
-            $self->_json->encode($new_data)
+            $self->_encode($old_data),
+            $self->_encode($new_data)
           );
           $next_id = $self->dbh->last_insert_id( undef, undef, undef, undef );
           $kh->{put}( $self, $uuid, $new_data, $next_id );
@@ -567,7 +567,7 @@ sub _deep_cmp {
          unless defined $old_data->{_edit_id} && $old_data->{_edit_id} == $id;
 
         $kh->{put}(
-          $self, $edit->{uuid}, $self->_json->decode( $edit->{old_data} ),
+          $self, $edit->{uuid}, $self->_decode( $edit->{old_data} ),
           $edit->{prev_id}
         );
 

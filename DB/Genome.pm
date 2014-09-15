@@ -687,7 +687,7 @@ sub stash {
     'SELECT stash FROM genome_stash WHERE name=?',
     {}, $name );
   return unless @row;
-  return $self->_json->decode( $row[0] );
+  return $self->_decode( $row[0] );
 }
 
 sub _programme_query {
