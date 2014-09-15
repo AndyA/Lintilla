@@ -56,8 +56,7 @@ prefix '/admin' => sub {
 
   prefix '/edit' => sub {
     post '/workflow/:id/:action' => sub {
-      db->workflow( param('id'), 'admin', param('action') );
-      return { status => 'OK' };
+      return db->workflow( param('id'), 'admin', param('action') );
     };
   };
 

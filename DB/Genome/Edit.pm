@@ -302,6 +302,8 @@ sub workflow {
     review  => 'review',
   );
 
+  my $status = { status => 'OK' };
+
   $self->transaction(
     sub {
       my $new_state = $ST{$action} // die "Bad action: $action";
@@ -311,17 +313,27 @@ sub workflow {
         {}, $edit_id );
       die "Edit not found" unless defined $old;
 
+      my @msg = (
+        join ' ', 'Moved from', uc( $old->{state} ),
+        'to', uc($new_state) . '.'
+      );
+
       # The only transitions that affect data are to and from accepted.
       if ( $new_state eq 'accepted' && $old->{state} ne 'accepted' ) {
         $self->do_edit( $edit_id, $who );
+        push @msg, 'Edit applied to live site.';
       }
       elsif ( $new_state ne 'accepted' && $old->{state} eq 'accepted' ) {
         $self->undo_edit($edit_id);
+        push @msg, 'Edit rolled back on live site.';
       }
 
       $self->amend( $edit_id, $who, $new_state, undef );
+      $status->{message} = join ' ', @msg;
     }
   );
+
+  return $status;
 }
 
 sub list_stash {
