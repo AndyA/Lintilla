@@ -40,6 +40,10 @@ prefix '/admin' => sub {
     return db->list_stash;
   };
 
+  get '/list/comment/:state/:start/:size/:order' => sub {
+    return {};
+  };
+
   get '/list/:kind/:state/:start/:size/:order' => sub {
     return {
       list => db->list(
