@@ -75,7 +75,7 @@ prefix '/admin' => sub {
 
   get '/approve/**' => sub {
     template 'admin/approve',
-     { title => 'Genome Admin', scripts => ['app', 'approve'] },
+     { title => 'Genome Admin', scripts => ['app', 'adminapp', 'approve'] },
      { layout => 'admin' };
   };
 
