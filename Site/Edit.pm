@@ -32,7 +32,14 @@ prefix '/admin' => sub {
   # Data services
   #
   get '/message/:serial' => sub {
-    sleep 5;
+    if ( rand() < 0.1 ) {
+      return {
+        name   => 'CHANGE',
+        serial => param('serial') + 1,
+        data   => { path => 'edit.programme.pending' },
+      };
+    }
+    sleep 10;
     return { name => 'PING', serial => param('serial') + 1 };
   };
 
