@@ -66,10 +66,12 @@ prefix '/admin' => sub {
 
   # Pages
   #
-  get '/' => sub {
-    template 'admin/edits', { title => 'Genome Admin', scripts => ['edit'] },
-     { layout => 'admin' };
-  };
+  for my $path ( '/', '/detail/:id' ) {
+    get $path => sub {
+      template 'admin/edits', { title => 'Genome Admin', scripts => ['edit'] },
+       { layout => 'admin' };
+    };
+  }
 
   get '/copy' => sub {
     template 'admin/copy', { title => 'Genome Admin', scripts => ['copy'] },
