@@ -17,21 +17,29 @@ Lintilla::DB::Genome::Edit - Editing support
 our $VERSION = '0.1';
 
 with 'Lintilla::Role::DB';
+with 'Lintilla::Role::DataCounter';
 
 sub audit {
-  my $self = shift;
-  my ( $edit_id, $who, $old_state, $new_state, $old_data, $new_data ) = @_;
-  $self->dbh->do(
-    join( ' ',
-      'INSERT INTO genome_editlog',
-      '  (`edit_id`, `who`, `old_state`, `new_state`, `old_data`, `new_data`, `when`)',
-      '  VALUES (?, ?, ?, ?, ?, ?, NOW())' ),
-    {},
-    $edit_id, $who,
-    $old_state,
-    $new_state,
-    $old_data,
-    $new_data
+  my ( $self, $edit_id, $who, $kind, $old_state, $new_state, $old_data,
+    $new_data )
+   = @_;
+  $self->transaction(
+    sub {
+      $self->dbh->do(
+        join( ' ',
+          'INSERT INTO genome_editlog',
+          '  (`edit_id`, `who`, `old_state`, `new_state`, `old_data`, `new_data`, `when`)',
+          '  VALUES (?, ?, ?, ?, ?, ?, NOW())' ),
+        {},
+        $edit_id, $who,
+        $old_state,
+        $new_state,
+        $old_data,
+        $new_data
+      );
+      $self->bump( 'edits', $kind,
+        [$old_state eq $new_state ? ($old_state) : ( $old_state, $new_state )] );
+    }
   );
 }
 
@@ -250,7 +258,8 @@ sub submit {
         $state
       );
       my $edit_id = $dbh->last_insert_id( undef, undef, undef, undef );
-      $self->audit( $edit_id, $who, undef, 'pending', undef, $new_data );
+      $self->audit( $edit_id, $who, $kind, undef, 'pending', undef,
+        $new_data );
     }
   );
 }
@@ -284,8 +293,8 @@ sub amend {
       $self->dbh->do( 'UPDATE genome_edit SET state=?, data=? WHERE id=?',
         {}, $state, $new_data, $edit_id );
 
-      $self->audit( $edit_id, $who, $old->{state}, $state, $old_data,
-        $new_data );
+      $self->audit( $edit_id, $who, $old->{kind}, $old->{state}, $state,
+        $old_data, $new_data );
       $changed++;
     }
   );

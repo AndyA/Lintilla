@@ -16,7 +16,16 @@ Lintilla::Site::Edit - Editing endpoints
 
 our $VERSION = '0.1';
 
-sub db() { Lintilla::DB::Genome::Edit->new( dbh => database ) }
+sub db() {
+  my $db = Lintilla::DB::Genome::Edit->new( dbh => database );
+  $db->on_bump(
+    sub {
+      my $path = shift;
+      debug "Bumped $path";
+    }
+  );
+  return $db;
+}
 
 prefix '/edit' => sub {
   post '/programme/:uuid' => sub {
