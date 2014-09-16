@@ -73,10 +73,16 @@ prefix '/admin' => sub {
     };
   }
 
+  get '/approve/**' => sub {
+    template 'admin/approve',
+     { title => 'Genome Admin', scripts => ['app', 'approve'] },
+     { layout => 'admin' };
+  };
+
   get '/copy' => sub {
     template 'admin/copy', { title => 'Genome Admin', scripts => ['copy'] },
      { layout => 'admin' };
-   }
+  };
 };
 
 1;
