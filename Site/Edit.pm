@@ -66,16 +66,19 @@ prefix '/admin' => sub {
 
   # Pages
   #
-  for my $path ( '/', '/detail/:id' ) {
-    get $path => sub {
-      template 'admin/edits', { title => 'Genome Admin', scripts => ['edit'] },
-       { layout => 'admin' };
-    };
-  }
+  get '/' => sub {
+    delete request->env->{SCRIPT_NAME};   # don't include disptch.fcgi in URI
+    redirect '/admin/approve';
+  };
+
+  get '/approve' => sub {
+    delete request->env->{SCRIPT_NAME};   # don't include disptch.fcgi in URI
+    redirect '/admin/approve/queue/pending/1/-updated';
+  };
 
   get '/approve/**' => sub {
     template 'admin/approve',
-     { title => 'Genome Admin', scripts => ['app', 'adminapp', 'approve'] },
+     { title => 'Genome Admin', scripts => ['approve'] },
      { layout => 'admin' };
   };
 
