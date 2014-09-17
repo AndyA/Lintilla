@@ -50,6 +50,7 @@ prefix '/admin' => sub {
   get '/message/:serial' => sub {
 
     my $deadline = time + 10;
+    my $max      = 1;
 
     while () {
       my $dc     = db->get_data_counts;
@@ -65,6 +66,7 @@ prefix '/admin' => sub {
       }
 
       my $remain = $deadline - time;
+      $remain = $max if $remain > $max;
       last if $remain <= 0;
 
       debug "Serial not updated: $serial, waiting $remain";
