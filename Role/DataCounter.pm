@@ -4,7 +4,7 @@ use Moose::Role;
 
 =head1 NAME
 
-Lintilla::Role::DataCounter - do something
+Lintilla::Role::DataCounter - Hierarchical event counter
 
 =cut
 
