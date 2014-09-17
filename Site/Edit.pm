@@ -6,7 +6,10 @@ use Dancer ':syntax';
 
 use Dancer::Plugin::Database;
 use JSON qw();
+use Lintilla::Broadcast::Client;
+use Lintilla::Broadcast::Server;
 use Lintilla::DB::Genome::Edit;
+use Time::HiRes qw( time );
 
 =head1 NAME
 
@@ -16,12 +19,16 @@ Lintilla::Site::Edit - Editing endpoints
 
 our $VERSION = '0.1';
 
+my $CLIENT = Lintilla::Broadcast::Client->new;
+my $SERVER = Lintilla::Broadcast::Server->new->listen;
+
 sub db() {
   my $db = Lintilla::DB::Genome::Edit->new( dbh => database );
   $db->on_bump(
     sub {
       my $path = shift;
       debug "Bumped $path";
+      $CLIENT->send( { path => $path } );
     }
   );
   return $db;
@@ -41,15 +48,24 @@ prefix '/admin' => sub {
   # Data services
   #
   get '/message/:serial' => sub {
-    if ( rand() < 0.1 ) {
-      return {
-        name   => 'CHANGE',
-        serial => param('serial') + 1,
-        data   => { path => 'edit.programme.pending' },
-      };
+
+    my $deadline = time + 10;
+
+    while () {
+      my $dc     = db->get_data_counts;
+      my $serial = $dc->{ROOT};
+
+      return { name => 'CHANGE', serial => $serial, data => $dc, }
+       if $serial > param('serial');
+
+      my $remain = $deadline - time;
+      last if $remain <= 0;
+
+      my $msg = $SERVER->poll($remain);
     }
-    sleep 10;
-    return { name => 'PING', serial => param('serial') + 1 };
+
+    return { name => 'PING', serial => param('serial') };
+
   };
 
   get '/list/stash' => sub {
