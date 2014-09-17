@@ -19,6 +19,11 @@ our $VERSION = '0.1';
 with 'Lintilla::Role::DB';
 with 'Lintilla::Role::DataCounter';
 
+sub unique(@) {
+  my %seen = ();
+  grep { !$seen{$_}++ } @_;
+}
+
 sub audit {
   my ( $self, $edit_id, $who, $kind, $old_state, $new_state, $old_data,
     $new_data )
@@ -38,7 +43,7 @@ sub audit {
         $new_data
       );
       $self->bump( 'edits', $kind,
-        [$old_state eq $new_state ? ($old_state) : ( $old_state, $new_state )] );
+        [unique( grep { defined } $old_state, $new_state )] );
     }
   );
 }
