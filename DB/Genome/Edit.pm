@@ -42,7 +42,7 @@ sub audit {
         $old_data,
         $new_data
       );
-      $self->bump( 'edits', $kind,
+      $self->bump( 'edit', $kind,
         [unique( grep { defined } $old_state, $new_state )] );
     }
   );
