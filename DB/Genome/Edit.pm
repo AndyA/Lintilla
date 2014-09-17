@@ -17,6 +17,7 @@ Lintilla::DB::Genome::Edit - Editing support
 our $VERSION = '0.1';
 
 with 'Lintilla::Role::DB';
+with 'Lintilla::Role::JSON';
 with 'Lintilla::Role::DataCounter';
 
 sub unique(@) {

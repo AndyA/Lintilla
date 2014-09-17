@@ -20,6 +20,7 @@ use constant YEAR_END   => 2009;
 
 with 'Lintilla::Role::DB';
 with 'Lintilla::Role::Gatherer';
+with 'Lintilla::Role::JSON';
 
 has source => (
   is       => 'ro',

@@ -3,8 +3,6 @@ package Lintilla::Role::DB;
 use Moose::Role;
 
 use Carp qw( confess );
-use Encode qw( encode );
-use JSON;
 
 =head1 NAME
 
@@ -75,18 +73,6 @@ sub group_by {
     push @{ $slot->{ delete $rr->{$leaf} } }, $rr;
   }
   return $hash;
-}
-
-sub _json { JSON->new->utf8->allow_nonref->canonical }
-
-sub _encode {
-  my ( $self, $data ) = @_;
-  return $self->_json->encode($data);
-}
-
-sub _decode {
-  my ( $self, $data ) = @_;
-  return $self->_json->decode( encode( 'UTF-8', $data ) );
 }
 
 1;
