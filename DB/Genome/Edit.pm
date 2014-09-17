@@ -560,6 +560,7 @@ sub _deep_cmp {
           );
           $next_id = $self->dbh->last_insert_id( undef, undef, undef, undef );
           $kh->{put}( $self, $uuid, $new_data, $next_id );
+          $self->bump( 'change', $kind, 'apply' );
         }
       }
     );
@@ -588,6 +589,7 @@ sub _deep_cmp {
         );
 
         $self->dbh->do( 'DELETE FROM genome_changelog WHERE id=?', {}, $id );
+        $self->bump( 'change', $edit->{kind}, 'undo' );
       }
     );
   }
