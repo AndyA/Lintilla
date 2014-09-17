@@ -55,13 +55,22 @@ prefix '/admin' => sub {
       my $dc     = db->get_data_counts;
       my $serial = $dc->{ROOT};
 
-      return { name => 'CHANGE', serial => $serial, data => $dc, }
-       if $serial > param('serial');
+      if ( $serial > param('serial') ) {
+        debug "Serial updated: $serial";
+        return {
+          name   => 'CHANGE',
+          serial => $serial,
+          data   => $dc,
+        };
+      }
 
       my $remain = $deadline - time;
       last if $remain <= 0;
 
+      debug "Serial not updated: $serial, waiting $remain";
+
       my $msg = $SERVER->poll($remain);
+      debug "Got message: ", $msg if defined $msg;
     }
 
     return { name => 'PING', serial => param('serial') };
