@@ -7,7 +7,6 @@ use HTML::Tiny;
 use Lintilla::DB::Genome::Search;
 use Lintilla::Filter qw( cook );
 use Moose;
-use POSIX qw( strftime );
 
 =head1 NAME
 
@@ -18,9 +17,11 @@ Lintilla::DB::Genome - Genome model
 use constant YEAR_START => 1923;
 use constant YEAR_END   => 2009;
 
-with 'Lintilla::Role::DB';
-with 'Lintilla::Role::Gatherer';
 with 'Lintilla::Role::JSON';
+with 'Lintilla::Role::DB';
+with 'Lintilla::Role::Config';
+with 'Lintilla::Role::DateTime';
+with 'Lintilla::Role::Gatherer';
 
 has source => (
   is       => 'ro',
@@ -31,17 +32,6 @@ has source => (
 has years    => ( is => 'ro', lazy => 1, builder => '_build_years' );
 has decades  => ( is => 'ro', lazy => 1, builder => '_build_decades' );
 has services => ( is => 'ro', lazy => 1, builder => '_build_services' );
-
-my @DAY = qw(
- SUN MON TUE WED
- THU FRI SAT
-);
-
-my @MONTH = qw(
- January   February March    April
- May       June     July     August
- September October  November December
-);
 
 sub unique(@) {
   my %seen = ();
@@ -74,35 +64,6 @@ sub _build_decades {
   return [sort { $a <=> $b } keys %dec];
 }
 
-# If @years is supplied it's a list of hashes each of which contain a
-# year key.
-sub _decade_years {
-  my ( $self, $first, $last, @years ) = @_;
-
-  @years = map { { year => $_ } } ( $first .. $last ) unless @years;
-  my %byy = map { $_->{year} => $_ } @years;
-
-  my ( $fd, $ld ) = map { 10 * int( $_ / 10 ) } ( $first, $last );
-  my @dy = ();
-  for ( my $decade = $fd; $decade <= $ld; $decade += 10 ) {
-    push @dy,
-     {decade => sprintf( '%02d', $decade % 100 ),
-      years => [map { $byy{$_} } ( $decade .. $decade + 9 )] };
-  }
-  return \@dy;
-}
-
-sub month_names { \@MONTH }
-
-sub short_month_names {
-  return [map { substr $_, 0, 3 } @MONTH];
-}
-
-sub decade_years {
-  my $self = shift;
-  return $self->_decade_years( YEAR_START, YEAR_END );
-}
-
 sub service_years {
   my ( $self, $service ) = @_;
 
@@ -117,7 +78,7 @@ sub service_years {
     $service
   );
 
-  return $self->_decade_years( YEAR_START, YEAR_END, @$rs );
+  return $self->decade_list( YEAR_START, YEAR_END, @$rs );
 }
 
 sub service_months {
@@ -135,16 +96,11 @@ sub service_months {
     $service, $year
   );
 
-  my %bym
-   = map { $_->{month} => { %$_, name => $MONTH[$_->{month} - 1] } } @$rs;
+  my %bym = map {
+    $_->{month} => { %$_, name => $self->month_names->[$_->{month} - 1] }
+  } @$rs;
 
   return [map { $bym{$_} } ( 1 .. 12 )];
-}
-
-sub day_for_date {
-  my ( $self, $tm ) = @_;
-  my @tm = gmtime( $tm // 0 );
-  return ( day => $DAY[$tm[6]], mday => $tm[3] );
 }
 
 sub service_proximate_days {
@@ -241,8 +197,8 @@ sub resolve_service {
     short_title => $rec->{title},
     title       => join( ' ', @title ),
     path        => join( '/', @path ),
-    began       => $self->_pretty_date( $rec->{began} ),
-    ended       => $self->_pretty_date( $rec->{ended} ),
+    began       => $self->pretty_date( $rec->{began} ),
+    ended       => $self->pretty_date( $rec->{ended} ),
   };
 }
 
@@ -256,18 +212,6 @@ sub resolve_services {
     }
   }
   return $rec;
-}
-
-sub decode_date {
-  my ( $self, $date ) = @_;
-  die unless $date =~ /^(\d+)-(\d+)-(\d+)/;
-  return ( $1, $2, $3 );
-}
-
-sub decode_time {
-  my ( $self, $time ) = @_;
-  die unless $time =~ /(\d+):(\d+):(\d+)$/;
-  return ( $1, $2, $3 );
 }
 
 sub clean_id {
@@ -294,8 +238,9 @@ sub _add_programme_details {
     $row->{contrib} = $by_parent{ $row->{_uuid} } || [];
     $row->{time} = sprintf '%d.%02d', $self->decode_time( $row->{when} );
     $row->{link} = $self->clean_id( $row->{_uuid} );
-    $row->{pretty_date}
-     = $self->_pretty_date( @{$row}{ 'year', 'month', 'day' } );
+    $row->{pretty_date} = $self->pretty_date( $row->{date} );
+    $row->{pretty_broadcast_date}
+     = $self->pretty_date( $row->{broadcast_date} );
   }
   return $rows;
 }
@@ -361,11 +306,11 @@ sub _cook_issues {
          link              => $self->_issue_id($_),
          path              => $self->_issue_image_path($_),
          pdf               => $self->_issue_pdf_path($_),
-         month_name        => $MONTH[$_->{month} - 1],
-         pretty_date       => $self->_pretty_date( $_->{date} ),
-         pretty_start_date => $self->_pretty_date( $_->{start_date} ),
-         short_start_date  => $self->_short_date( $_->{start_date} ),
-         pretty_end_date   => $self->_pretty_date( $_->{end_date} ),
+         month_name        => $self->month_names->[$_->{month} - 1],
+         pretty_date       => $self->pretty_date( $_->{date} ),
+         pretty_start_date => $self->pretty_date( $_->{start_date} ),
+         short_start_date  => $self->short_date( $_->{start_date} ),
+         pretty_end_date   => $self->pretty_date( $_->{end_date} ),
       }
     } @$issues
   ];
@@ -406,22 +351,6 @@ sub annual_issues {
       'decade'
     )
   );
-}
-
-sub _short_date {
-  my ( $self, $y, $m, $d ) = @_;
-  return undef unless defined $y;
-  ( $y, $m, $d ) = $self->decode_date($y) unless defined $m;
-  return sprintf '%02d %s', $d, lc substr $MONTH[$m - 1], 0, 3;
-}
-
-sub _pretty_date {
-  my ( $self, $y, $m, $d ) = @_;
-  return undef unless defined $y;
-  ( $y, $m, $d ) = $self->decode_date($y) unless defined $m;
-  ( my $pd = strftime( "%d %B %Y", 0, 0, 0, $d, $m - 1, $y - 1900 ) )
-   =~ s/^0//;
-  return $pd;
 }
 
 sub _build_service_spiel {
@@ -474,7 +403,7 @@ sub listing_for_schedule {
    'SELECT * FROM genome_programmes_v2',
    'WHERE `source` = ?',
    'AND `service` = ?',
-   'AND `date` = ?',
+   'AND `broadcast_date` = ?',
    'ORDER BY `when` ASC';
 
   my $rows = $self->dbh->selectall_arrayref( $sql, { Slice => {} },
@@ -490,10 +419,10 @@ sub listing_for_schedule {
     issues         => $self->issues(@issues),
     listing        => $self->_add_programme_details($rows),
     month          => $month,
-    month_name     => $MONTH[$month - 1],
+    month_name     => $self->month_names->[$month - 1],
     outlet         => join( '/', @spec ),
     pages          => \@pages,
-    pretty_date    => $self->_pretty_date( $year, $month, $day ),
+    pretty_date    => $self->pretty_date( $year, $month, $day ),
     proximate_days => $self->service_proximate_days( $service, $date, 6 ),
     service        => $spec[0],
     service_months => $self->service_months( $service, $year ),
