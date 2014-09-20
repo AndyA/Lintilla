@@ -27,7 +27,7 @@ sub db() {
   $db->on_bump(
     sub {
       my $path = shift;
-      debug "Bumped $path";
+      #      debug "Bumped $path";
       $CLIENT->send( { path => $path } );
     }
   );
@@ -57,7 +57,7 @@ prefix '/admin' => sub {
       my $serial = $dc->{ROOT};
 
       if ( $serial > param('serial') ) {
-        debug "Serial updated: $serial";
+        #        debug "Serial updated: $serial";
         return {
           name   => 'CHANGE',
           serial => $serial,
@@ -69,10 +69,10 @@ prefix '/admin' => sub {
       $remain = $max if $remain > $max;
       last if $remain <= 0;
 
-      debug "Serial not updated: $serial, waiting $remain";
+      #      debug "Serial not updated: $serial, waiting $remain";
 
       my $msg = $SERVER->poll($remain);
-      debug "Got message: ", $msg if defined $msg;
+      #      debug "Got message: ", $msg if defined $msg;
     }
 
     return { name => 'PING', serial => param('serial') };

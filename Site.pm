@@ -104,6 +104,7 @@ get '/' => sub {
 sub safe_service_defaults {
   my ( $db, $service ) = @_;
   my @dflt = db->service_defaults( param('service') );
+  debug "safe_service_defaults: ", join( ' | ', @dflt );
   return '/schedules/missing' unless @dflt;
   return join( '/', '/schedules', $service, @dflt );
 }
@@ -120,9 +121,9 @@ get '/schedules/:service' => sub {
 get '/schedules/:service/:date' => sub {
   my $db = db;
   my @dflt = $db->service_defaults( param('service'), param('date') );
+  debug "service_defaults: ", join( ' | ', @dflt );
   if ( @dflt > 1 ) {
     delete request->env->{SCRIPT_NAME};
-    return '/schedules/missing' unless @dflt;
     redirect join '/', '/schedules', param('service'), @dflt;
     return;
   }

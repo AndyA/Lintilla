@@ -145,7 +145,10 @@ sub service_defaults {
   return unless defined $rec;
 
   # Simple case
-  return ( $rec->{date} ) unless $rec->{has_outlets} eq 'Y';
+  unless ( $rec->{has_outlets} eq 'Y' ) {
+    return ( $got[0] ) if @got;
+    return ( $rec->{date} );
+  }
 
   if ( @got < 1 ) {
     # Find default outlet
