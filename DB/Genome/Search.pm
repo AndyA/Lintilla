@@ -15,6 +15,8 @@ Lintilla::DB::Genome::Search - A Genome search
 
 =cut
 
+use constant MAX_MATCHES => 20_000;
+
 use constant PASSTHRU => qw(
  q order adv media yf yt tf tt co
  sun mon tue wed thu fri sat svc mf mt
@@ -262,7 +264,7 @@ sub _do_search {
     default       { die }
   }
 
-  $sph->SetLimits( $self->start, $self->size );
+  $sph->SetLimits( $self->start, $self->size, MAX_MATCHES );
 
   my $query
    = $self->adv && $self->co
