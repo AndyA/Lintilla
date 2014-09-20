@@ -228,7 +228,9 @@ sub _add_programme_details {
    . join( ', ', map '?', @uids )
    . ') ORDER BY _parent, `index` ASC';
   my $contrib
-   = $self->dbh->selectall_arrayref( $sql, { Slice => {} }, @uids );
+   = @uids
+   ? $self->dbh->selectall_arrayref( $sql, { Slice => {} }, @uids )
+   : [];
   my %by_parent = ();
   for my $co (@$contrib) {
     $co->{type} //= 'Unknown';
@@ -318,6 +320,8 @@ sub _cook_issues {
 
 sub issues {
   my ( $self, @uuid ) = @_;
+
+  return [] unless @uuid;
 
   return $self->_cook_issues(
     $self->dbh->selectall_arrayref(
