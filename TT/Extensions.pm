@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 use POSIX qw( strftime );
+use Set::IntSpan::Fast;
 use Template::Stash;
 
 =head1 NAME
@@ -49,15 +50,47 @@ sub _conj_list {
   return join " $conj ", join( ', ', @list ), $last;
 }
 
+sub _conj_range_list {
+  my ( $conj, @list ) = @_;
+
+  my ( @part, $set );
+
+  my $flush = sub {
+    return unless $set;
+    my $i = $set->iterate_runs;
+    while ( my ( $from, $to ) = $i->() ) {
+      push @part,
+         $from == $to ? ($from)
+       : $from + 1 == $to ? ( $from, $to )
+       :                    ("$from to $to");
+    }
+    undef $set;
+  };
+
+  for my $li (@list) {
+    if ( $li =~ /^-?\d+$/ ) {
+      $set //= Set::IntSpan::Fast->new;
+      $set->add($li);
+    }
+    else {
+      $flush->();
+      push @part, $li;
+    }
+  }
+  $flush->();
+
+  return _conj_list( $conj, @part );
+}
+
 sub _singular_or_plural {
   my ( $conj, $singular, $plural, @list ) = @_;
   return join ' ', $singular, @list if @list < 2;
-  return join ' ', $plural, _conj_list( $conj, @list );
+  return join ' ', $plural, _conj_range_list( $conj, @list );
 }
 
 for my $conj (qw( and or )) {
   $Template::Stash::LIST_OPS->{"${conj}_list"}
-   = sub { _conj_list( $conj, @{ $_[0] } ) };
+   = sub { _conj_range_list( $conj, @{ $_[0] } ) };
   $Template::Stash::LIST_OPS->{"${conj}_some"}
    = sub { _singular_or_plural( $conj, $_[1], $_[2], @{ $_[0] } ) };
 }
