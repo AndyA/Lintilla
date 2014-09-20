@@ -635,6 +635,8 @@ sub _programme_query {
   for my $prog (@$progs) {
     $prog->{outlet} = join '/',
      grep defined, @{$prog}{ 'root_service_key', 'subkey' };
+    $prog->{service_full} = join ' ',
+     grep defined, @{$prog}{ 'service_sub', 'service_name' };
   }
 
   return $progs;
