@@ -371,6 +371,13 @@ sub _format_contributors {
   my ( $self, $contrib ) = @_;
 }
 
+sub _parse_contributor_line {
+  my ( $self, $ln ) = @_;
+  return ( $1, $2 ) if $ln =~ m{^\s*([^:]+):\s*(.+?)\s*$};
+  return ( $1, $2 ) if $ln =~ m{^\s*(\S+)\s*(.+)$};    # handle Title Name
+  return ( 'Unknown', $ln );
+}
+
 sub _parse_contributors {
   my ( $self, $contrib ) = @_;
   return $contrib if ref $contrib;
@@ -378,8 +385,7 @@ sub _parse_contributors {
   my @row = ();
   for my $ln ( split /\n/, $contrib ) {
     next if $ln =~ m{^\s*$};
-    die unless $ln =~ m{^\s*([^:]+):\s*(.+?)\s*$};
-    my ( $type, $name ) = ( $1, $2 );
+    my ( $type, $name ) = $self->_parse_contributor_line($ln);
     $type = undef if $type eq 'Unknown';
     my @np    = split /\s+/, $name;
     my $last  = pop @np;
