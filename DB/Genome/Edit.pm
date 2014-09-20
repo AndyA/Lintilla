@@ -424,21 +424,23 @@ sub _put_contrib {
       my $fuuid = $self->format_uuid($uuid);
       $self->dbh->do( 'DELETE FROM genome_contributors WHERE _parent=?',
         {}, $fuuid );
-      my %kk = ();
-      %kk = ( %kk, %$_ ) for @$data;
-      delete $kk{_parent};    # override
-      my @f = sort keys %kk;
-      my $val = join ', ', ('?') x @f;
-      $self->dbh->do(
-        join( ' ',
-          'INSERT INTO genome_contributors',
-          '(',
-          join( ', ', map { "`$_`" } '_parent', @f ),
-          ') VALUES',
-          join( ', ', map { "( ?, $val )" } @$data ) ),
-        {},
-        map { $fuuid, @{$_}{@f} } @$data
-      );
+      if (@$data) {
+        my %kk = ();
+        %kk = ( %kk, %$_ ) for @$data;
+        delete $kk{_parent};    # override
+        my @f = sort keys %kk;
+        my $val = join ', ', ('?') x @f;
+        $self->dbh->do(
+          join( ' ',
+            'INSERT INTO genome_contributors',
+            '(',
+            join( ', ', map { "`$_`" } '_parent', @f ),
+            ') VALUES',
+            join( ', ', map { "( ?, $val )" } @$data ) ),
+          {},
+          map { $fuuid, @{$_}{@f} } @$data
+        );
+      }
     }
   );
 }
