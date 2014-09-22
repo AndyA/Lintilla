@@ -13,11 +13,6 @@ Lintilla::Site::Labs - Labs stuff
 our $VERSION = '0.1';
 
 prefix '/labs' => sub {
-  # Transitional
-  get '/coverage.html' => sub {
-    delete request->env->{SCRIPT_NAME};
-    redirect '/labs/coverage';
-  };
 
   get '/about' => sub {
     template 'labs/about',
@@ -36,6 +31,12 @@ prefix '/labs' => sub {
      },
      { layout => 'labs' };
   };
+
+  get '/*.html' => sub {
+    delete request->env->{SCRIPT_NAME};
+    my ($url) = splat;
+    redirect "/labs/$url";
+   }
 };
 
 1;
