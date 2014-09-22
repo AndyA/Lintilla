@@ -10,6 +10,7 @@ use Lintilla::Data::Static;
 use Lintilla::Site::Asset;
 use Lintilla::Site::Data;
 use Lintilla::Site::Edit;
+use Lintilla::Site::Labs;
 use Lintilla::TT::Extensions;
 use Path::Class;
 use URI;
