@@ -19,6 +19,15 @@ prefix '/labs' => sub {
     redirect '/labs/coverage';
   };
 
+  get '/about' => sub {
+    template 'labs/about',
+     {title   => 'About Genome Labs',
+      scripts => [],
+      css     => [],
+     },
+     { layout => 'labs' };
+  };
+
   get '/coverage' => sub {
     template 'labs/coverage',
      {title   => 'Genome Schedule Coverage',
