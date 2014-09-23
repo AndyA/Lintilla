@@ -713,7 +713,7 @@ sub search {
 
   my $srch = Lintilla::DB::Genome::Search->new(
     @params,
-    index  => 'prog_idx',
+    index  => 'genome3_idx',
     source => $self->_search_id( $self->source ),
   );
 
