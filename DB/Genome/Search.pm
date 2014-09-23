@@ -9,6 +9,8 @@ use URI;
 
 with 'Lintilla::Role::Gatherer';
 
+no if $] >= 5.018, warnings => "experimental::smartmatch";
+
 =head1 NAME
 
 Lintilla::DB::Genome::Search - A Genome search

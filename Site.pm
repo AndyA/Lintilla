@@ -17,6 +17,8 @@ use URI;
 
 our $VERSION = '0.1';
 
+no if $] >= 5.018, warnings => "experimental::smartmatch";
+
 use constant BOILERPLATE =>
  qw( services years decades decade_years month_names short_month_names );
 
