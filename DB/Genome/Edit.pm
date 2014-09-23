@@ -125,8 +125,7 @@ sub _contrib {
   my @rows = ();
   for my $rec (@$contrib) {
     push @rows, join ': ', ( $rec->{type} // 'Unknown' ), join ' ',
-     $rec->{first_name},
-     $rec->{last_name};
+     grep defined, $rec->{first_name}, $rec->{last_name};
   }
 
   return join "\n", @rows;
