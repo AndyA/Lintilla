@@ -168,7 +168,8 @@ get '/search' => sub {
   redirect $uri;
 };
 
-get '/help'  => sub { template 'help',  { boilerplate db } };
+get '/help'  => sub { template 'help',  { boilerplate db } }; # OLD
+get '/faqs'  => sub { template 'help',  { boilerplate db } };
 get '/about' => sub { template 'about', { boilerplate db } };
 
 get qr/\/([0-9a-f]{32})/i => sub {
