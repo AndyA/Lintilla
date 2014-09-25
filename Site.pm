@@ -52,7 +52,7 @@ sub boilerplate($) {
     visibility => vars->{visibility},
     stash      => sub { $db->stash(shift) },
     timelist   => sub { $srch->timelist },
-    title      => 'BBC Genome',
+    title      => $db->page_title,
     stations   => $STATIC->get('stations'),
     form       => $srch->form,
     switchview => {
