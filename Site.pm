@@ -113,10 +113,11 @@ sub safe_service_defaults {
 }
 
 get '/schedules/missing' => sub {
+  my $db = db;
   template 'schedule',
-   {boilerplate db,
+   {boilerplate $db,
     missing => 1,
-    title   => 'Listing Unavailable',
+    title   => $db->page_title('Listing Unavailable'),
    };
 };
 
