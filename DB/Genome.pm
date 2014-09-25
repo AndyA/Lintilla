@@ -103,31 +103,103 @@ sub service_months {
   return [map { $bym{$_} } ( 1 .. 12 )];
 }
 
-sub service_proximate_days {
-  my ( $self, $service, $date, $span ) = @_;
+sub _pad_by_offset {
+  my ( $self, $list ) = @_;
 
-  my $rs = $self->dbh->selectall_arrayref(
-    join( ' ',
-      'SELECT `date`,',
-      ' TO_DAYS(`date`) * 86400 - 62167219200 AS `epoch`, ',
-      ' DATEDIFF(`date`, ?) AS `offset`',
-      'FROM genome_service_dates',
-      'WHERE service = ?',
-      'AND `date` BETWEEN DATE_SUB(?, INTERVAL ? DAY) AND DATE_ADD(?, INTERVAL ? DAY)',
-      'ORDER BY `date`' ),
-    { Slice => {} },
-    $date, $service, $date, $span, $date, $span
-  );
-
-  my %ent = map { $_->{offset} => $_ } map {
-    { %$_, $self->day_for_date( $_->{epoch}, ) }
-  } @$rs;
+  my %ent = map { $_->{offset} => $_ } @$list;
+  my @ofs = sort { $a <=> $b } keys %ent;
 
   return [
     map {
       { %{ $ent{$_} || {} }, offset => $_ }
-    } ( -$span .. $span )
+    } ( $ofs[0] .. $ofs[-1] )
   ];
+}
+
+sub _add_date {
+  my ( $self, $list ) = @_;
+  return [
+    map {
+      { %$_, $self->day_for_date( $_->{epoch} ) }
+    } @$list
+  ];
+}
+
+sub service_proximate_days {
+  my ( $self, $service, $date, $span ) = @_;
+
+  my @sql = (
+    'SELECT `date`,',
+    ' TO_DAYS(`date`) * 86400 - 62167219200 AS `epoch`, ',
+    ' DATEDIFF(`date`, ?) AS `offset`',
+    'FROM genome_service_dates',
+    'WHERE service = ?',
+  );
+
+  my $rs = $self->_pad_by_offset(
+    $self->_add_date(
+      $self->dbh->selectall_arrayref(
+        join( ' ',
+          @sql,
+          'AND `date` BETWEEN DATE_SUB(?, INTERVAL ? DAY) AND DATE_ADD(?, INTERVAL ? DAY)',
+          'ORDER BY `date`' ),
+        { Slice => {} },
+        $date, $service, $date, $span, $date, $span
+      )
+    )
+  );
+
+  debug $rs;
+
+  my $min_ofs = $rs->[0]{offset};
+  my $max_ofs = $rs->[-1]{offset};
+
+  if ( $min_ofs > -$span ) {
+    my $need = $span + $min_ofs;
+    debug "need $need less ($min_ofs, $span)";
+    my $extra
+     = $need > 1
+     ? $self->_add_date(
+      $self->dbh->selectall_arrayref(
+        join( ' ', @sql, 'AND `date` < ? ORDER BY `date` DESC LIMIT ?' ),
+        { Slice => {} },
+        $date, $service, $rs->[0]{date}, $need - 1
+      )
+     )
+     : [];
+
+    if (@$extra) {
+      unshift @$rs, reverse(@$extra),
+       { gap => 1, offset => $min_ofs - 1 };
+      $need -= 1 + @$extra;
+    }
+
+    unshift @$rs, { offset => $rs->[0]{offset} - 1 } for 1 .. $need;
+  }
+
+  if ( $max_ofs < $span ) {
+    my $need = $span - $max_ofs;
+    debug "need $need more ($max_ofs, $span)";
+    my $extra
+     = $need > 1
+     ? $self->_add_date(
+      $self->dbh->selectall_arrayref(
+        join( ' ', @sql, 'AND `date` > ? ORDER BY `date` LIMIT ?' ),
+        { Slice => {} },
+        $date, $service, $rs->[-1]{date}, $need - 1
+      )
+     )
+     : [];
+
+    if (@$extra) {
+      push @$rs, { gap => 1, offset => $min_ofs - 1 }, @$extra;
+      $need -= 1 + @$extra;
+    }
+
+    push @$rs, { offset => $rs->[-1]{offset} + 1 } for 1 .. $need;
+  }
+
+  return $rs;
 }
 
 =head2 Dynamic Data
@@ -817,7 +889,6 @@ sub site_name { 'BBC Genome' }
 
 sub page_title {
   my ( $self, @title ) = @_;
-  return $self->site_name unless @title;
   return join ' - ', @title, $self->site_name;
 }
 
