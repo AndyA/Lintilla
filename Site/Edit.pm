@@ -39,7 +39,7 @@ prefix '/edit' => sub {
     my $uuid = param('uuid');
     my $data = JSON->new->decode( request->body );
     db->submit( $uuid, 'programme', 'anon', $data );
-    return { status => 'OK' };
+    return { status => 'OK', message => 'Successfully submitted' };
   };
 };
 

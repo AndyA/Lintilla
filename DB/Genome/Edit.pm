@@ -95,10 +95,8 @@ sub _clean_html {
 sub _diff {
   my ( $self, $text, $html ) = @_;
 
-  $text //= '';    # NULL possible in db
-
-  my $left  = $self->_clean_lines($text);
-  my $right = $self->_clean_html($html);
+  my $left = $self->_clean_lines( $text // '' );
+  my $right = defined $html ? $self->_clean_html($html) : $left;
 
   my $diff = Text::DeepDiff->new( left => $left, right => $right )->diff;
 
@@ -675,13 +673,16 @@ sub history {
 
 sub _parse_edit {
   my ( $self, $edit ) = @_;
-  return {
-    title        => $self->_clean_html( $edit->{title} ),
-    synopsis     => $self->_clean_html( $edit->{synopsis} ),
-    contributors => $self->_parse_contributors(
-      $self->_clean_html( $edit->{contributors} )
-    ),
-  };
+  my $rec = {};
+  $rec->{title} = $self->_clean_html( $edit->{title} )
+   if defined $edit->{title};
+  $rec->{synopsis} = $self->_clean_html( $edit->{synopsis} )
+   if defined $edit->{synopsis};
+  $rec->{contributors}
+   = $self->_parse_contributors(
+    $self->_clean_html( $edit->{contributors} ) )
+   if defined $edit->{contributors};
+  return $rec;
 }
 
 sub do_edit {
