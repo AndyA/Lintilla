@@ -343,6 +343,7 @@ sub annual_issues {
   my $self = shift;
 
   return (
+    title  => $self->page_title('Issues'),
     issues => $self->group_by(
       $self->_cook_issues(
         $self->dbh->selectall_arrayref(
@@ -419,6 +420,8 @@ sub listing_for_schedule {
   my @pages  = unique map { $_->{page} } @$rows;
   my @issues = unique map { $_->{issue} } @$rows;
 
+  my $pretty = $self->pretty_date( $year, $month, $day );
+
   return (
     about          => $rec,
     spiel          => $self->_build_service_spiel($rec),
@@ -429,14 +432,14 @@ sub listing_for_schedule {
     month_name     => $self->month_names->[$month - 1],
     outlet         => join( '/', @spec ),
     pages          => \@pages,
-    pretty_date    => $self->pretty_date( $year, $month, $day ),
+    pretty_date    => $pretty,
     proximate_days => $self->service_proximate_days( $service, $date, 6 ),
     service        => $spec[0],
     service_months => $self->service_months( $service, $year ),
     service_type   => $type,
     service_years  => $self->service_years($service),
     short_title    => $short_title,
-    title          => $title,
+    title          => $self->page_title( $title,       $pretty ),
     year           => $year,
   );
 }
@@ -505,7 +508,8 @@ sub issues_for_year {
   my $issues = $self->_issues_for_year($year);
 
   return (
-    year => $year,
+    title => $self->page_title("Issues for $year"),
+    year  => $year,
     issues   => $self->group_by( $issues, 'month' ),
     approved => $self->group_by( $issues, 'approved_year' ),
   );
@@ -611,6 +615,8 @@ sub issue_listing {
 
   $iss->{listing} = $self->group_by( $list, 'date' );
   return (
+    title =>
+     $self->page_title( "Issue " . $iss->{issue}, $iss->{pretty_date} ),
     issue     => $iss,
     proximate => $self->issue_proximate( $iss->{issue}, 6 ),
     monthly   => $self->_month_issues_for_year( $iss->{year} ),
@@ -763,6 +769,7 @@ sub search {
     programmes => $progs,
     services   => $self->_search_load_services( $srch, @sids ),
     pagination => $srch->pagination(5),
+    title      => $self->page_title('Search Results'),
   );
 }
 
@@ -800,7 +807,18 @@ sub programme {
     spiel     => $self->_build_service_spiel($rec),
     programme => $progs->[0],
     issue     => $issues->[0],
+    title     => $self->page_title(
+      @{ $progs->[0] }{ 'title', 'service_full', 'pretty_date' }
+    ),
   );
+}
+
+sub site_name { 'BBC Genome' }
+
+sub page_title {
+  my ( $self, @title ) = @_;
+  return $self->site_name unless @title;
+  return join ' - ', @title, $self->site_name;
 }
 
 1;

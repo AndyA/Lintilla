@@ -113,7 +113,11 @@ sub safe_service_defaults {
 }
 
 get '/schedules/missing' => sub {
-  template 'schedule', { boilerplate db, missing => 1, };
+  template 'schedule',
+   {boilerplate db,
+    missing => 1,
+    title   => 'Listing Unavailable',
+   };
 };
 
 get '/schedules/:service' => sub {
@@ -170,9 +174,21 @@ get '/search' => sub {
   redirect $uri;
 };
 
-get '/help'  => sub { template 'help',  { boilerplate db } }; # OLD
-get '/faqs'  => sub { template 'help',  { boilerplate db } };
-get '/about' => sub { template 'about', { boilerplate db } };
+get '/help' => sub {
+  my $db = db;
+  template 'help', { boilerplate $db, title => $db->page_title('FAQs') };
+};
+
+get '/faqs' => sub {
+  my $db = db;
+  template 'help', { boilerplate $db, title => $db->page_title('FAQs') };
+};
+
+get '/about' => sub {
+  my $db = db;
+  template 'about',
+   { boilerplate $db, title => $db->page_title('About this project') };
+};
 
 get qr/\/([0-9a-f]{32})/i => sub {
   my ($uuid) = splat;
