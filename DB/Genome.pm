@@ -239,10 +239,12 @@ sub _find_service_near {
    : $rel eq 'after'  ? ( '>=', 'ASC' )
    :                    die;
 
+  my $key = ( $service eq 'tv' || $service eq 'radio' ) ? 'type' : '_key';
+
   my $sql = join ' ',
-   'SELECT sd.date, s._uuid, s.has_outlets, s.default_outlet',
+   'SELECT sd.date, s._uuid, s.has_outlets, s.default_outlet, s._key',
    'FROM genome_service_dates AS sd, genome_services AS s',
-   'WHERE sd.service=s._uuid AND s._key=?',
+   "WHERE sd.service=s._uuid AND s.$key=?",
    "AND sd.date $oper ?",
    "ORDER BY date $sort LIMIT 1";
 
@@ -264,14 +266,14 @@ sub service_near {
 
   die unless $rec;    # ??
 
-  return ( $service, $rec->{date} ) unless $rec->{has_outlets} eq 'Y';
+  return ( $rec->{_key}, $rec->{date} ) unless $rec->{has_outlets} eq 'Y';
 
   my ($subkey)
    = $self->dbh->selectrow_array(
     'SELECT subkey FROM genome_services WHERE _uuid=?',
     {}, $rec->{default_outlet} );
 
-  return ( $service, $subkey, $rec->{date} );
+  return ( $rec->{_key}, $subkey, $rec->{date} );
 }
 
 sub resolve_service {
