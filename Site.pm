@@ -120,6 +120,12 @@ get '/schedules/missing' => sub {
    };
 };
 
+get '/schedules/:service/near/:date' => sub {
+  delete request->env->{SCRIPT_NAME};
+  redirect join '/', '/schedules',
+   db->service_near( param('service'), param('date') );
+};
+
 get '/schedules/:service' => sub {
   delete request->env->{SCRIPT_NAME};   # don't include disptch.fcgi in URI
   redirect safe_service_defaults( db, param('service') );

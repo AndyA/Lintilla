@@ -3,6 +3,7 @@ package Lintilla::Role::DateTime;
 use Moose::Role;
 
 use POSIX qw( strftime );
+use Time::Local;
 
 =head1 NAME
 
@@ -52,6 +53,12 @@ sub decode_time {
   my ( $self, $time ) = @_;
   die unless $time =~ /(\d+):(\d+):(\d+)$/;
   return ( $1, $2, $3 );
+}
+
+sub date2epoch {
+  my ( $self, $date ) = @_;
+  my ( $y, $m, $d ) = $self->decode_date($date);
+  return timegm 0, 0, 0, $d, $m - 1, $y;
 }
 
 sub day_for_date {

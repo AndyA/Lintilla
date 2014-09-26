@@ -166,8 +166,7 @@ sub service_proximate_days {
      : [];
 
     if (@$extra) {
-      unshift @$rs, reverse(@$extra),
-       { gap => 1, offset => $min_ofs - 1 };
+      unshift @$rs, reverse(@$extra), { gap => 1, offset => $min_ofs - 1 };
       $need -= 1 + @$extra;
     }
 
@@ -232,9 +231,47 @@ sub service_defaults {
   return @got;
 }
 
+sub _find_service_near {
+  my ( $self, $rel, $service, $date ) = @_;
+
+  my ( $oper, $sort )
+   = $rel eq 'before' ? ( '<',  'DESC' )
+   : $rel eq 'after'  ? ( '>=', 'ASC' )
+   :                    die;
+
+  my $sql = join ' ',
+   'SELECT sd.date, s._uuid, s.has_outlets, s.default_outlet',
+   'FROM genome_service_dates AS sd, genome_services AS s',
+   'WHERE sd.service=s._uuid AND s._key=?',
+   "AND sd.date $oper ?",
+   "ORDER BY date $sort LIMIT 1";
+
+  my $rs = $self->dbh->selectrow_hashref( $sql, {}, $service, $date );
+  return unless defined $rs;
+  my $dt = $self->date2epoch($date) - $self->date2epoch( $rs->{date} );
+  return { rec => $rs, delta => abs($dt) };
+}
+
 sub service_near {
-  my ($self, @spec) {
-  }
+  my ( $self, $service, $date ) = @_;
+
+  my $rec = (
+    sort { $a->{delta} <=> $b->{delta} } (
+      $self->_find_service_near( before => $service, $date ),
+      $self->_find_service_near( after  => $service, $date )
+    )
+  )[0]{rec};
+
+  die unless $rec;    # ??
+
+  return ( $service, $rec->{date} ) unless $rec->{has_outlets} eq 'Y';
+
+  my ($subkey)
+   = $self->dbh->selectrow_array(
+    'SELECT subkey FROM genome_services WHERE _uuid=?',
+    {}, $rec->{default_outlet} );
+
+  return ( $service, $subkey, $rec->{date} );
 }
 
 sub resolve_service {
@@ -498,10 +535,8 @@ sub listing_for_schedule {
   return (
     about          => $rec,
     spiel          => $self->_build_service_spiel($rec),
-    day            => $day,
     issues         => $self->issues(@issues),
     listing        => $self->_add_programme_details($rows),
-    month          => $month,
     month_name     => $self->month_names->[$month - 1],
     outlet         => join( '/', @spec ),
     pages          => \@pages,
@@ -514,6 +549,9 @@ sub listing_for_schedule {
     short_title    => $short_title,
     title          => $self->page_title( $title,       $pretty ),
     year           => $year,
+    month          => $month,
+    day            => $day,
+    date           => $date,
   );
 }
 
