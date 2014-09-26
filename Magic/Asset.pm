@@ -32,7 +32,6 @@ sub render {
     file($lockf)->parent->mkpath;
     open my $lh, '>>', $lockf or die "Can't write $lockf: $!\n";
     if ( flock( $lh, LOCK_EX | LOCK_NB ) ) {
-      debug "Rendering $fn";
       eval { $self->provider->create };
       my $err = $@;
       close $lh;

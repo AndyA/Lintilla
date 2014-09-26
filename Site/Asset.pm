@@ -82,8 +82,6 @@ sub cook_uri {
 get '/asset/var/*/**' => sub {
   my ( $recipe, $id ) = splat;
 
-  debug "recipe: $recipe, id: @$id";
-
   die "Bad recipe" unless $recipe =~ /^\w+$/;
   my $spec = $RECIPE{$recipe};
   die "Unknown recipe $recipe" unless defined $spec;
@@ -101,9 +99,6 @@ get '/asset/var/*/**' => sub {
   );
 
   my $out_file = file setting('public'), @p, @v, @name;
-
-  debug "in_url: $in_url";
-  debug "out_file: $out_file";
 
   my $sc = Lintilla::Image::Scaler->new(
     in_url   => $in_url,

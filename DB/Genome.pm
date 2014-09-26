@@ -149,14 +149,11 @@ sub service_proximate_days {
     )
   );
 
-  debug $rs;
-
   my $min_ofs = $rs->[0]{offset};
   my $max_ofs = $rs->[-1]{offset};
 
   if ( $min_ofs > -$span ) {
     my $need = $span + $min_ofs;
-    debug "need $need less ($min_ofs, $span)";
     my $extra
      = $need > 1
      ? $self->_add_date(
@@ -179,7 +176,6 @@ sub service_proximate_days {
 
   if ( $max_ofs < $span ) {
     my $need = $span - $max_ofs;
-    debug "need $need more ($max_ofs, $span)";
     my $extra
      = $need > 1
      ? $self->_add_date(
@@ -234,6 +230,11 @@ sub service_defaults {
 
   push @got, $rec->{date} if @got < 2;
   return @got;
+}
+
+sub service_near {
+  my ($self, @spec) {
+  }
 }
 
 sub resolve_service {
