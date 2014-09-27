@@ -277,6 +277,19 @@ sub load_edit {
   return $edit;
 }
 
+sub load_changes {
+  my ( $self, $since ) = @_;
+  my $changes
+   = $self->dbh->selectall_arrayref(
+    'SELECT * FROM genome_changelog WHERE id > ? ORDER BY id ASC',
+    { Slice => {} }, $since );
+  return [] unless $changes && @$changes;
+  for my $key ( 'old_data', 'new_data' ) {
+    $_->{$key} = $self->_decode( $_->{$key} ) for @$changes;
+  }
+  return { sequence => $changes->[-1]{id}, changes => $changes };
+}
+
 sub amend {
   my ( $self, $edit_id, $who, $state, $data ) = @_;
   my $changed = 0;

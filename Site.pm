@@ -11,6 +11,7 @@ use Lintilla::Site::Asset;
 use Lintilla::Site::Data;
 use Lintilla::Site::Edit;
 use Lintilla::Site::Labs;
+use Lintilla::Site::Sync;
 use Lintilla::TT::Extensions;
 use Path::Class;
 use URI;
