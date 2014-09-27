@@ -315,10 +315,16 @@ sub load_edits {
 
 sub load_changes {
   my ( $self, $since ) = @_;
-  my $changes
-   = $self->dbh->selectall_arrayref(
-    'SELECT * FROM genome_changelog WHERE id > ? ORDER BY id ASC',
-    { Slice => {} }, $since );
+  my $changes = $self->dbh->selectall_arrayref(
+    join( ' ',
+      'SELECT cl.*, e.hash',
+      'FROM genome_changelog AS cl, genome_edit AS e',
+      'WHERE cl.id > ?',
+      'AND cl.edit_id=e.id',
+      'ORDER BY cl.id ASC' ),
+    { Slice => {} },
+    $since
+  );
   return [] unless $changes && @$changes;
   for my $key ( 'old_data', 'new_data' ) {
     $_->{$key} = $self->_decode( $_->{$key} ) for @$changes;
