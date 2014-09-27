@@ -41,7 +41,7 @@ sub unique(@) {
 sub _build_services {
   my $self = shift;
   my $sql  = join ' ',
-   'SELECT * FROM `genome_002`.`genome_services` ',
+   'SELECT * FROM `genome_services` ',
    'WHERE `_parent` IS NULL ',
    'ORDER BY `order` IS NULL, `order` ASC, `title` ASC';
 
@@ -245,8 +245,10 @@ sub _find_service_near {
    'SELECT sd.date, s._uuid, s.has_outlets, s.default_outlet, s._key',
    'FROM genome_service_dates AS sd, genome_services AS s',
    "WHERE sd.service=s._uuid AND s.$key=?",
+   'AND s._parent IS NULL',
+   "AND s.hidden = 'N'",
    "AND sd.date $oper ?",
-   "ORDER BY date $sort LIMIT 1";
+   "ORDER BY date $sort, `order` IS NULL $sort, `order` $sort, `title` $sort LIMIT 1";
 
   my $rs = $self->dbh->selectrow_hashref( $sql, {}, $service, $date );
   return unless defined $rs;
@@ -257,14 +259,15 @@ sub _find_service_near {
 sub service_near {
   my ( $self, $service, $date ) = @_;
 
-  my $rec = (
+  my @best = (
     sort { $a->{delta} <=> $b->{delta} } (
       $self->_find_service_near( before => $service, $date ),
       $self->_find_service_near( after  => $service, $date )
     )
-  )[0]{rec};
+  );
 
-  die unless $rec;    # ??
+  return ('missing') unless @best;
+  my $rec = $best[0]{rec};
 
   return ( $rec->{_key}, $rec->{date} ) unless $rec->{has_outlets} eq 'Y';
 
