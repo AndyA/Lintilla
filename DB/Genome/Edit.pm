@@ -5,8 +5,10 @@ use v5.10;
 use Moose;
 
 use Carp qw( confess );
+use Digest::MD5 qw( md5_hex );
 use Text::DeepDiff;
 use Text::HTMLCleaner;
+use Time::HiRes qw( time );
 
 =head1 NAME
 
@@ -245,20 +247,32 @@ sub submit {
   my ( $self, $uuid, $kind, $who, $data, $state, $parent ) = @_;
   my $dbh = $self->dbh;
   $state //= 'pending';
+  my $hash = md5_hex(
+    $self->_encode(
+      { uuid   => $uuid,
+        kind   => $kind,
+        who    => $who,
+        data   => $data,
+        state  => $state,
+        parent => $parent,
+        now    => time,
+      }
+    )
+  );
   $self->transaction(
     sub {
       my $new_data = $self->_encode($data);
       $dbh->do(
         join( ' ',
           'INSERT INTO genome_edit',
-          '(`parent_id`, `uuid`, `kind`, `data`, `state`)',
-          'VALUES (?, ?, ?, ?, ?)' ),
+          '(`parent_id`, `uuid`, `kind`, `data`, `state`, `hash`)',
+          'VALUES (?, ?, ?, ?, ?, ?)' ),
         {},
         $parent,
         $self->format_uuid($uuid),
         $kind,
         $new_data,
-        $state
+        $state, $hash
       );
       my $edit_id = $dbh->last_insert_id( undef, undef, undef, undef );
       $self->audit( $edit_id, $who, $kind, undef, 'pending', undef,
@@ -281,7 +295,7 @@ sub load_edits {
   my ( $self, $since ) = @_;
   my $edits = $self->dbh->selectall_arrayref(
     join( ' ',
-      'SELECT el.*, e.parent_id, e.uuid, e.kind',
+      'SELECT el.*, e.parent_id, e.uuid, e.kind, e.hash',
       'FROM genome_editlog AS el, genome_edit AS e',
       'WHERE el.edit_id=e.id',
       'AND el.id > ?',
