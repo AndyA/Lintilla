@@ -20,6 +20,7 @@ sub _encode {
 
 sub _decode {
   my ( $self, $data ) = @_;
+  return undef unless $data;
   return $self->_json->decode( encode( 'UTF-8', $data ) );
 }
 

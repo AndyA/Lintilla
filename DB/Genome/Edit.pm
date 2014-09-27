@@ -277,6 +277,28 @@ sub load_edit {
   return $edit;
 }
 
+sub load_edits {
+  my ( $self, $since ) = @_;
+  my $edits = $self->dbh->selectall_arrayref(
+    join( ' ',
+      'SELECT el.*, e.parent_id, e.uuid, e.kind',
+      'FROM genome_editlog AS el, genome_edit AS e',
+      'WHERE el.edit_id=e.id',
+      'AND el.id > ?',
+      'ORDER BY el.id' ),
+    { Slice => {} },
+    $since
+  );
+  return [] unless $edits && @$edits;
+  for my $key ( 'old_data', 'new_data' ) {
+    for my $ch (@$edits) {
+      $ch->{$key} = $self->_decode( $ch->{$key} );
+      $ch->{$key}{type} //= 'html' if defined $ch->{$key};
+    }
+  }
+  return { sequence => $edits->[-1]{id}, edits => $edits };
+}
+
 sub load_changes {
   my ( $self, $since ) = @_;
   my $changes

@@ -22,6 +22,10 @@ prefix '/sync' => sub {
     db->load_changes( param('since') );
   };
 
+  get '/edits/:since' => sub {
+    db->load_edits( param('since') );
+  };
+
   post '/edits' => sub {
   };
 };
