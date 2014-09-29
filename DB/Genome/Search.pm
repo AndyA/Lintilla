@@ -2,6 +2,7 @@ package Lintilla::DB::Genome::Search;
 
 use v5.10;
 
+use Dancer qw( config );
 use List::Util qw( min max );
 use Moose;
 use Sphinx::Search;
@@ -71,6 +72,7 @@ has svc => ( is => 'ro', isa => 'Maybe[Str]' );
 has ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] =>
  ( is => 'ro', isa => 'Bool', default => 0 );
 
+has _sphinx => ( is => 'ro', lazy => 1, builder => '_build_sphinx' );
 has _search => ( is => 'ro', lazy => 1, builder => '_do_search' );
 
 sub _cmp {
@@ -245,9 +247,19 @@ sub _set_filter {
   }
 }
 
-sub _do_search {
+sub _build_sphinx {
   my $self = shift;
   my $sph  = Sphinx::Search->new();
+
+  my $host = config->{sphinx_host} // 'localhost';
+  my $port = config->{sphinx_port} // '9312';
+
+  $sph->SetServer( $host, $port );
+}
+
+sub _do_search {
+  my $self = shift;
+  my $sph  = $self->_sphinx;
   $sph->Open;
   $sph->SetMatchMode(SPH_MATCH_EXTENDED);
   $sph->SetSortMode(SPH_SORT_RELEVANCE);
