@@ -70,13 +70,14 @@ filter issues => sub {
 };
 
 sub cook_uri {
-  my $uri = shift;
+  my $u = URI->new(shift);
   if ( defined( my $base_host = config->{base_host} ) ) {
-    my $u = URI->new($uri);
     $u->host($base_host);
-    return $u;
   }
-  return $uri;
+  if ( defined( my $base_port = config->{base_port} ) ) {
+    $u->port($base_port);
+  }
+  return $u;
 }
 
 get '/asset/var/*/**' => sub {
