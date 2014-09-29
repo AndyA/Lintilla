@@ -71,21 +71,29 @@ sub to_internal {
   my $uri  = URI->new(shift);
   my $host = $uri->host;
   $host =~ s/^ext\.//;
+  $host =~ s/^genome-ext\./genome-int./;
   $uri->host($host);
   return "$uri";
 }
 
 sub to_external {
-  my $uri = URI->new( to_internal(shift) );
-  $uri->host( 'ext.' . $uri->host );
+  my $uri  = URI->new( to_internal(shift) );
+  my $host = $uri->host;
+  if ( $host =~ /^genome-int/ ) {
+    $host =~ s/^genome-int\./genome-ext./;
+  }
+  else {
+    $host = 'ext.' . $host;
+  }
+  $uri->host($host);
   return "$uri";
 }
 
 {
   my @HOSTENV = (
-    { m => qr{^ext\.}, e => 'external' },
-    { m => qr{^int\.}, e => 'internal' },
-    { m => qr{.},      e => 'internal' },
+    { m => qr{^(?:genome-)?ext\.}, e => 'external' },
+    { m => qr{^(?:genome-)?int\.}, e => 'internal' },
+    { m => qr{.},                  e => 'internal' },
   );
 
   sub env_for_host {
