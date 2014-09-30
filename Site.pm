@@ -47,20 +47,17 @@ sub barlesque {
 sub boilerplate($) {
   my $db   = shift;
   my $srch = Lintilla::DB::Genome::Search->new;
-  my $self = self();
+  my $pe   = vars->{personality};
   return (
     $db->gather(BOILERPLATE),
     barlesque  => barlesque->parts,
-    visibility => vars->{visibility},
+    visibility => $pe->personality,
     stash      => sub { $db->stash(shift) },
     timelist   => sub { $srch->timelist },
     title      => $db->page_title,
     stations   => $STATIC->get('stations'),
     form       => $srch->form,
-    switchview => {
-      internal => to_internal($self),
-      external => to_external($self),
-    },
+    switchview => $pe->switcher,
   );
 }
 
@@ -68,46 +65,7 @@ sub self {
   return request->scheme . '://' . request->host . request->request_uri;
 }
 
-sub to_internal {
-  my $uri  = URI->new(shift);
-  my $host = $uri->host;
-  $host =~ s/^ext\.//;
-  $host =~ s/^genome-ext\./genome-int./;
-  $uri->host($host);
-  return "$uri";
-}
-
-sub to_external {
-  my $uri  = URI->new( to_internal(shift) );
-  my $host = $uri->host;
-  if ( $host =~ /^genome-int/ ) {
-    $host =~ s/^genome-int\./genome-ext./;
-  }
-  else {
-    $host = 'ext.' . $host;
-  }
-  $uri->host($host);
-  return "$uri";
-}
-
-{
-  my @HOSTENV = (
-    { m => qr{^(?:genome-)?ext\.}, e => 'external' },
-    { m => qr{^(?:genome-)?int\.}, e => 'internal' },
-    { m => qr{.},                  e => 'internal' },
-  );
-
-  sub env_for_host {
-    my $hn = shift;
-    for my $he (@HOSTENV) {
-      return $he->{e} if $hn =~ $he->{m};
-    }
-    die;
-  }
-}
-
 hook 'before' => sub {
-  var visibility  => env_for_host( request->host );
   var personality => Lintilla::Personality->new(
     url   => self(),
     rules => $STATIC->get('switcher')
