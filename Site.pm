@@ -68,9 +68,11 @@ sub self {
 }
 
 hook 'before' => sub {
+  my $vis = request->env->{HTTP_X_VISIBILITY} // 'external';
+  my $rules = "switcher-$vis";
   var personality => Lintilla::Personality->new(
     url   => self(),
-    rules => $STATIC->get('switcher')
+    rules => $STATIC->get($rules)
   );
 };
 
