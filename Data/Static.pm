@@ -50,7 +50,7 @@ sub _load_json {
 
 sub _file_for_key {
   my ( $self, $key ) = @_;
-  die "Bad key" unless $key =~ /^\w+$/;
+  die "Bad key" unless $key =~ /^[\w-]+$/;
   return file $self->store, "$key.json";
 }
 
