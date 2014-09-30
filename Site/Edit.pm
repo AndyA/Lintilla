@@ -42,88 +42,127 @@ prefix '/edit' => sub {
   };
 };
 
+sub check_vis {
+  my ( $need, $cb ) = @_;
+  return sub {
+    my $vis = vars->{personality}->personality;
+    if   ( $vis eq $need ) { $cb->(@_); }
+    else                   { send_error( "Not allowed", 403 ); }
+  };
+}
+
 prefix '/admin' => sub {
 
   # Data services
   #
-  get '/message/:serial' => sub {
+  get '/message/:serial' => check_vis(
+    'internal',
+    sub {
 
-    my $deadline = time + 10;
-    my $max      = 1;
+      my $deadline = time + 10;
+      my $max      = 1;
 
-    while () {
-      my $dc     = db->get_data_counts;
-      my $serial = $dc->{ROOT};
+      while () {
+        my $dc     = db->get_data_counts;
+        my $serial = $dc->{ROOT};
 
-      if ( $serial > param('serial') ) {
-        return {
-          name   => 'CHANGE',
-          serial => $serial,
-          data   => $dc,
-        };
+        if ( $serial > param('serial') ) {
+          return {
+            name   => 'CHANGE',
+            serial => $serial,
+            data   => $dc,
+          };
+        }
+
+        my $remain = $deadline - time;
+        $remain = $max if $remain > $max;
+        last if $remain <= 0;
+
+        my $msg = $SERVER->poll($remain);
       }
 
-      my $remain = $deadline - time;
-      $remain = $max if $remain > $max;
-      last if $remain <= 0;
+      return { name => 'PING', serial => param('serial') };
 
-      my $msg = $SERVER->poll($remain);
     }
+  );
 
-    return { name => 'PING', serial => param('serial') };
+  get '/list/stash' => check_vis(
+    'internal',
+    sub {
+      return db->list_stash;
+    }
+  );
 
-  };
+  get '/list/comment/:state/:start/:size/:order' => check_vis(
+    'internal',
+    sub {
+      return {};
+    }
+  );
 
-  get '/list/stash' => sub {
-    return db->list_stash;
-  };
+  get '/list/:kind/:state/:start/:size/:order' => check_vis(
+    'internal',
+    sub {
+      return {
+        list => db->list(
+          param('kind'), param('state'), param('start'), param('size'),
+          param('order'),
+        ),
+        count => db->edit_state_count
+      };
+    }
+  );
 
-  get '/list/comment/:state/:start/:size/:order' => sub {
-    return {};
-  };
-
-  get '/list/:kind/:state/:start/:size/:order' => sub {
-    return {
-      list => db->list(
-        param('kind'), param('state'), param('start'), param('size'),
-        param('order'),
-      ),
-      count => db->edit_state_count
-    };
-  };
-
-  get '/diff/:id' => sub {
-    return db->diff( param('id') );
-  };
+  get '/diff/:id' => check_vis(
+    'internal',
+    sub {
+      return db->diff( param('id') );
+    }
+  );
 
   prefix '/edit' => sub {
-    post '/workflow/:id/:action' => sub {
-      return db->workflow( param('id'), 'admin', param('action') );
-    };
+    post '/workflow/:id/:action' => check_vis(
+      'internal',
+      sub {
+        return db->workflow( param('id'), 'admin', param('action') );
+      }
+    );
   };
 
   # Pages
   #
-  get '/' => sub {
-    delete request->env->{SCRIPT_NAME};   # don't include disptch.fcgi in URI
-    redirect '/admin/approve';
-  };
+  get '/' => check_vis(
+    'internal',
+    sub {
+      delete request->env->{SCRIPT_NAME};   # don't include disptch.fcgi in URI
+      redirect '/admin/approve';
+    }
+  );
 
-  get '/approve' => sub {
-    delete request->env->{SCRIPT_NAME};   # don't include disptch.fcgi in URI
-    redirect '/admin/approve/queue/pending/1/-updated';
-  };
+  get '/approve' => check_vis(
+    'internal',
+    sub {
+      delete request->env->{SCRIPT_NAME};   # don't include disptch.fcgi in URI
+      redirect '/admin/approve/queue/pending/1/-updated';
+    }
+  );
 
-  get '/approve/**' => sub {
-    template 'admin/approve',
-     { title => 'Genome Admin', scripts => ['approve'] },
-     { layout => 'admin' };
-  };
+  get '/approve/**' => check_vis(
+    'internal',
+    sub {
+      template 'admin/approve',
+       { title => 'Genome Admin', scripts => ['approve'] },
+       { layout => 'admin' };
+    }
+  );
 
-  get '/copy' => sub {
-    template 'admin/copy', { title => 'Genome Admin', scripts => ['copy'] },
-     { layout => 'admin' };
-  };
+  get '/copy' => check_vis(
+    'internal',
+    sub {
+      template 'admin/copy', { title => 'Genome Admin', scripts => ['copy'] },
+       { layout => 'admin' };
+    }
+  );
 };
 
 1;
