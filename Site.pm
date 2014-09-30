@@ -7,6 +7,7 @@ use Barlesque::Client;
 use Dancer::Plugin::Database;
 use Lintilla::DB::Genome;
 use Lintilla::Data::Static;
+use Lintilla::Personality;
 use Lintilla::Site::Asset;
 use Lintilla::Site::Data;
 use Lintilla::Site::Edit;
@@ -106,7 +107,11 @@ sub to_external {
 }
 
 hook 'before' => sub {
-  var visibility => env_for_host( request->host );
+  var visibility  => env_for_host( request->host );
+  var personality => Lintilla::Personality->new(
+    url   => self(),
+    rules => $STATIC->get('switcher')
+  );
 };
 
 get '/' => sub {
