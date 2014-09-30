@@ -38,7 +38,7 @@ sub _wild {
 
 sub _b_current {
   my $self = shift;
-  my $host = $self->_uri->host;
+  my $host = $self->_host;
   for my $rule ( @{ $self->rules } ) {
     my $for = $rule->{for};
     for my $hp ( ref $for ? @$for : $for ) {
@@ -59,12 +59,12 @@ sub _b_host_map {
 }
 
 sub _uri { URI->new( shift->url ) }
+sub _host { my $hn = shift->_uri->host; $hn =~ s/\.$//; return $hn }
 
 sub _b_personality {
   my $self = shift;
   my $hm   = $self->_host_map;
-  my $u    = $self->_uri;
-  return $hm->{ $u->host } // $self->default;
+  return $hm->{ $self->_host } // $self->default;
 }
 
 sub _b_switcher {
