@@ -59,7 +59,6 @@ sub boilerplate($) {
     stations   => $STATIC->get('stations'),
     form       => $srch->form,
     switchview => $pe->switcher,
-    self       => self(),
   );
 }
 
