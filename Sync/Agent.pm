@@ -42,9 +42,7 @@ sub _b_json { JSON->new->utf8 }
 
 sub _get {
   my ( $self, @part ) = @_;
-  my $url  = $self->_endpoint(@part);
-  print "$url\n";
-  my $resp = $self->_ua->get($url);
+  my $resp = $self->_ua->get( $self->_endpoint(@part) );
   die $resp->status_line if $resp->is_error;
   return $self->_json->decode( $resp->content );
 }

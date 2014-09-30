@@ -307,7 +307,8 @@ sub load_edits {
     $since,
     SYNC_PAGE
   );
-  return [] unless $edits && @$edits;
+  return { sequence => $since, edits => [] }
+   unless $edits && @$edits;
   for my $key ( 'old_data', 'new_data' ) {
     for my $ch (@$edits) {
       $ch->{$key} = $self->_decode( $ch->{$key} );
@@ -331,7 +332,8 @@ sub load_changes {
     $since,
     SYNC_PAGE
   );
-  return [] unless $changes && @$changes;
+  return { sequence => $since, changes => [] }
+   unless $changes && @$changes;
   for my $key ( 'old_data', 'new_data' ) {
     $_->{$key} = $self->_decode( $_->{$key} ) for @$changes;
   }
@@ -767,6 +769,39 @@ sub undo_edit {
         {}, $edit_id );
       die "Unknown edit ID" unless defined $id;
       $self->safe_undo($id);
+    }
+  );
+}
+
+sub get_sequence {
+  my ( $self, $kind ) = @_;
+  my ($seq)
+   = $self->dbh->selectrow_array(
+    'SELECT hwm FROM genome_sequence WHERE kind=?',
+    {}, $kind );
+  return $seq // 0;
+}
+
+sub set_sequence {
+  my ( $self, $kind, $hwm ) = @_;
+  $self->dbh->do(
+    join( ' ',
+      'INSERT INTO genome_sequence ( kind, hwm ) VALUES (?, ?)',
+      'ON DUPLICATE KEY UPDATE hwm=?' ),
+    {},
+    $kind, $hwm, $hwm
+  );
+}
+
+sub apply_batch {
+  my ( $self, $batch ) = @_;
+  my $next_seq = $batch->{sequence} // die "Missing sequence in batch";
+  $self->transaction(
+    sub {
+      for my $ch ( @{ $batch->{changes} } ) {
+        $self->apply( @{$ch}{ 'kind', 'uuid', 'who', 'new_data', 'edit_id' } );
+      }
+      $self->set_sequence( 'changelog', $next_seq );
     }
   );
 }
