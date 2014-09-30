@@ -22,6 +22,8 @@ with 'Lintilla::Role::DB';
 with 'Lintilla::Role::JSON';
 with 'Lintilla::Role::DataCounter';
 
+use constant SYNC_PAGE => 20;
+
 sub unique(@) {
   my %seen = ();
   grep { !$seen{$_}++ } @_;
@@ -299,9 +301,11 @@ sub load_edits {
       'FROM genome_editlog AS el, genome_edit AS e',
       'WHERE el.edit_id=e.id',
       'AND el.id > ?',
-      'ORDER BY el.id' ),
+      'ORDER BY el.id',
+      'LIMIT ?' ),
     { Slice => {} },
-    $since
+    $since,
+    SYNC_PAGE
   );
   return [] unless $edits && @$edits;
   for my $key ( 'old_data', 'new_data' ) {
@@ -321,9 +325,11 @@ sub load_changes {
       'FROM genome_changelog AS cl, genome_edit AS e',
       'WHERE cl.id > ?',
       'AND cl.edit_id=e.id',
-      'ORDER BY cl.id ASC' ),
+      'ORDER BY cl.id ASC',
+      'LIMIT ?' ),
     { Slice => {} },
-    $since
+    $since,
+    SYNC_PAGE
   );
   return [] unless $changes && @$changes;
   for my $key ( 'old_data', 'new_data' ) {

@@ -31,18 +31,27 @@ sub _endpoint {
 sub _b_ua {
   my $self = shift;
   my $ua   = LWP::UserAgent->new;
-  $ua->credentials( $self->_netloc, 'RT Infax Bridge', $self->sync_user,
-    $self->sync_pass );
+  $ua->credentials(
+    $self->_netloc,   'RT Infax Bridge',
+    $self->sync_user, $self->sync_pass
+  ) if defined $self->sync_user || defined $self->sync_pass;
   return $ua;
 }
 
 sub _b_json { JSON->new->utf8 }
 
-sub get_changes {
-  my ( $self, $since ) = @_;
-  my $resp = $self->_ua->get( $self->_endpoint( changes => $since ) );
+sub _get {
+  my ( $self, @part ) = @_;
+  my $url  = $self->_endpoint(@part);
+  print "$url\n";
+  my $resp = $self->_ua->get($url);
   die $resp->status_line if $resp->is_error;
   return $self->_json->decode( $resp->content );
+}
+
+sub get_changes {
+  my ( $self, $since ) = @_;
+  return $self->_get( changes => $since );
 }
 
 1;
