@@ -399,6 +399,8 @@ sub workflow {
         push @msg, 'Edit applied to live site.';
       }
       elsif ( $new_state ne 'accepted' && $old->{state} eq 'accepted' ) {
+        # FIXME do the undo semantics still work when every change is a
+        # forward edit?
         $self->undo_edit($edit_id);
         push @msg, 'Edit rolled back on live site.';
       }
