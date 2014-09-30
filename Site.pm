@@ -53,12 +53,13 @@ sub boilerplate($) {
     $db->gather(BOILERPLATE),
     barlesque  => barlesque->parts,
     visibility => $pe->personality,
-    stash      => sub { $db->stash(shift) },
-    timelist   => sub { $srch->timelist },
-    title      => $db->page_title,
-    stations   => $STATIC->get('stations'),
-    form       => $srch->form,
-    switchview => $pe->switcher,
+    stash         => sub { $db->stash(shift) },
+    timelist      => sub { $srch->timelist },
+    title         => $db->page_title,
+    stations      => $STATIC->get('stations'),
+    form          => $srch->form,
+    switchview    => $pe->switcher,
+    show_external => !config->{disable_external},
   );
 }
 
