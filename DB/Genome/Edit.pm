@@ -657,6 +657,7 @@ sub _deep_cmp {
           $edit->{prev_id}
         );
 
+        # FIXME this prevents propagation of rolled back edits
         $self->dbh->do( 'DELETE FROM genome_changelog WHERE id=?', {}, $id );
         $self->bump( 'change', $edit->{kind}, 'undo' );
       }
