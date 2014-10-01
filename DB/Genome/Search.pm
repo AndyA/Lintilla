@@ -145,6 +145,8 @@ sub pagination {
   my $cur   = $self->page;
   my $first = max( $cur - int( $window / 2 ), 0 );
   my $last  = min( $first + $window, $self->pages ) - 1;
+  my $from  = $self->start + 1;
+  my $to    = min( $from + $self->size - 1, $self->total );
   return {
     ( $cur > 0
       ? (
@@ -167,6 +169,7 @@ sub pagination {
       : ()
     ),
     order => { map { $_ => $self->order_link($_) } qw( rank asc desc ) },
+    info  => { from => $from, to => $to },
     pages => [
       map {
         { page   => $_ + 1,
