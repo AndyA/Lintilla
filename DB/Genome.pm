@@ -884,7 +884,7 @@ sub search {
     results    => $results,
     programmes => $progs,
     services   => $self->_search_load_services( $srch, @sids ),
-    pagination => $srch->pagination(5),
+    pagination => $srch->pagination(10),
     title      => $self->page_title('Search Results'),
   );
 }
