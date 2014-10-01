@@ -399,6 +399,8 @@ sub workflow {
         push @msg, 'Edit applied to live site.';
       }
       elsif ( $new_state ne 'accepted' && $old->{state} eq 'accepted' ) {
+        # FIXME do the undo semantics still work when every change is a
+        # forward edit?
         $self->undo_edit($edit_id);
         push @msg, 'Edit rolled back on live site.';
       }
@@ -589,8 +591,8 @@ sub _deep_cmp {
     }
   );
 
-  sub apply {
-    my ( $self, $kind, $uuid, $who, $data, $edit_id ) = @_;
+  sub _apply {
+    my ( $self, $kind, $uuid, $who, $data, $edit_id, $bump ) = @_;
 
     my ($next_id);
     my $new_data = {%$data};
@@ -629,7 +631,7 @@ sub _deep_cmp {
           );
           $next_id = $self->dbh->last_insert_id( undef, undef, undef, undef );
           $kh->{put}( $self, $uuid, $new_data, $next_id );
-          $self->bump( 'change', $kind, 'apply' );
+          $self->bump( 'change', $kind, $bump );
         }
       }
     );
@@ -646,23 +648,19 @@ sub _deep_cmp {
           {}, $id );
         die unless $edit;
 
-        my $kh = $KIND{ $edit->{kind} } // die;
-
-        my $old_data = $kh->{get}( $self, $edit->{uuid} );
-        die "Edit ID mismatch"
-         unless defined $old_data->{_edit_id} && $old_data->{_edit_id} == $id;
-
-        $kh->{put}(
-          $self, $edit->{uuid}, $self->_decode( $edit->{old_data} ),
-          $edit->{prev_id}
+        $self->_apply(
+          @{$edit}{ 'kind', 'uuid', 'who' },
+          $self->_decode( $edit->{old_data} ),
+          $edit->{edit_id}, 'undo'
         );
-
-        # FIXME this prevents propagation of rolled back edits
-        $self->dbh->do( 'DELETE FROM genome_changelog WHERE id=?', {}, $id );
-        $self->bump( 'change', $edit->{kind}, 'undo' );
       }
     );
   }
+}
+
+sub apply {
+  my $self = shift;
+  return $self->_apply( @_, 'apply' );
 }
 
 sub _undo {
@@ -694,19 +692,6 @@ sub undo {
 sub safe_undo {
   my ( $self, $id ) = @_;
   $self->_undo( $id, 1 );
-}
-
-sub reset {
-  my ( $self, $uuid ) = @_;
-  $self->transaction(
-    sub {
-      my ($eid)
-       = $self->dbh->selectrow_array(
-        'SELECT id FROM genome_changelog WHERE uuid=? AND prev_id IS NULL',
-        {}, $self->format_uuid($uuid) );
-      $self->undo($eid) if defined $eid;
-    }
-  );
 }
 
 sub history {
