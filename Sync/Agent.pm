@@ -46,9 +46,18 @@ sub _decode {
   return $self->_json->decode( $resp->content );
 }
 
+sub _cb {
+  my ( $self, $uri ) = @_;
+  my $u = URI->new($uri);
+  my $q = $u->query_form;
+  $q->{_cb} = time();
+  $u->query_form($q);
+  return "$u";
+}
+
 sub _get {
   my $self = shift;
-  $self->_decode( $self->_ua->get( $self->_endpoint(@_) ) );
+  $self->_decode( $self->_ua->get( $self->_cb( $self->_endpoint(@_) ) ) );
 }
 
 sub _post {
