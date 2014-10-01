@@ -43,7 +43,6 @@ sub _b_json { JSON->new->utf8 }
 sub _decode {
   my ( $self, $resp ) = @_;
   die $resp->status_line if $resp->is_error;
-  print $resp->as_string, "\n";
   return $self->_json->decode( $resp->content );
 }
 
@@ -60,7 +59,6 @@ sub _post {
   my $req  = HTTP::Request->new( 'POST', $uri );
   $req->header( 'Content-Type' => 'application/json' );
   $req->content($body);
-  print $req->as_string, "\n";
   return $self->_decode( $self->_ua->request($req) );
 }
 
