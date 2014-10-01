@@ -27,6 +27,10 @@ prefix '/sync' => sub {
   };
 
   post '/edits' => sub {
+    my $db    = db;
+    my $edits = $db->_decode( request->body );
+    $db->import_edits($edits);
+    return { status => 'OK', sequence => $edits->{sequence} };
   };
 };
 

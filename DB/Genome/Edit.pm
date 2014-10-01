@@ -245,24 +245,16 @@ sub list {
   return $res;
 }
 
-sub submit {
-  my ( $self, $uuid, $kind, $who, $data, $state, $parent ) = @_;
+sub _submit {
+  my ( $self, $uuid, $kind, $who, $data, $state, $parent, $hash ) = @_;
   my $dbh = $self->dbh;
-  $state //= 'pending';
-  my $hash = md5_hex(
-    $self->_encode(
-      { uuid   => $uuid,
-        kind   => $kind,
-        who    => $who,
-        data   => $data,
-        state  => $state,
-        parent => $parent,
-        now    => time,
-      }
-    )
-  );
   $self->transaction(
     sub {
+      my ($got)
+       = $dbh->selectrow_array(
+        'SELECT COUNT(hash) FROM genome_edit WHERE hash=?',
+        {}, $hash );
+      return if $got;
       my $new_data = $self->_encode($data);
       $dbh->do(
         join( ' ',
@@ -281,6 +273,39 @@ sub submit {
         $new_data );
     }
   );
+}
+
+sub submit {
+  my ( $self, $uuid, $kind, $who, $data, $state, $parent ) = @_;
+  $state //= 'pending';
+  my $hash = md5_hex(
+    $self->_encode(
+      { uuid   => $uuid,
+        kind   => $kind,
+        who    => $who,
+        data   => $data,
+        state  => $state,
+        parent => $parent,
+        now    => time,
+      }
+    )
+  );
+  return $self->_submit( $uuid, $kind, $who, $data, $state, $parent,
+    $hash );
+}
+
+sub import_edits {
+  my ( $self, $batch ) = @_;
+  for my $edit ( @{ $batch->{edits} } ) {
+    # Only allow new, pending edits
+    next if defined $edit->{old_state};
+    next unless defined $edit->{new_state};
+    next unless $edit->{new_state} eq 'pending';
+
+    $self->_submit(
+      @{$edit}{ 'uuid', 'kind', 'who', 'new_data', 'new_state' },
+      undef, $edit->{hash} );
+  }
 }
 
 sub load_edit {

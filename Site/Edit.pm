@@ -36,8 +36,9 @@ sub db() {
 prefix '/edit' => sub {
   post '/programme/:uuid' => sub {
     my $uuid = param('uuid');
-    my $data = JSON->new->decode( request->body );
-    db->submit( $uuid, 'programme', 'anon', $data );
+    my $db   = db;
+    my $data = $db->_decode( request->body );
+    $db->submit( $uuid, 'programme', 'anon', $data );
     return { status => 'OK', message => 'Successfully submitted' };
   };
 };

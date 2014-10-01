@@ -40,16 +40,38 @@ sub _b_ua {
 
 sub _b_json { JSON->new->utf8 }
 
-sub _get {
-  my ( $self, @part ) = @_;
-  my $resp = $self->_ua->get( $self->_endpoint(@part) );
+sub _decode {
+  my ( $self, $resp ) = @_;
   die $resp->status_line if $resp->is_error;
+  print $resp->as_string, "\n";
   return $self->_json->decode( $resp->content );
+}
+
+sub _get {
+  my $self = shift;
+  $self->_decode( $self->_ua->get( $self->_endpoint(@_) ) );
+}
+
+sub _post {
+  my ( $self, @part ) = @_;
+  my $data = pop @part;
+  my $uri  = $self->_endpoint(@part);
+  my $body = $self->_json->encode($data);
+  my $req  = HTTP::Request->new( 'POST', $uri );
+  $req->header( 'Content-Type' => 'application/json' );
+  $req->content($body);
+  print $req->as_string, "\n";
+  return $self->_decode( $self->_ua->request($req) );
 }
 
 sub get_changes {
   my ( $self, $since ) = @_;
   return $self->_get( changes => $since );
+}
+
+sub put_edits {
+  my ( $self, $edits ) = @_;
+  return $self->_post( 'edits', $edits );
 }
 
 1;
