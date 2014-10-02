@@ -357,7 +357,9 @@ sub _add_programme_details {
   for my $row (@$rows) {
     $row->{contrib} = $by_parent{ $row->{_uuid} } || [];
     $row->{time} = sprintf '%d.%02d', $self->decode_time( $row->{when} );
-    $row->{link} = $self->clean_id( $row->{_uuid} );
+    $row->{full_time} = sprintf '%02d:%02d:%02d',
+     $self->decode_time( $row->{when} );
+    $row->{link}        = $self->clean_id( $row->{_uuid} );
     $row->{pretty_date} = $self->pretty_date( $row->{date} );
     $row->{pretty_broadcast_date}
      = $self->pretty_date( $row->{broadcast_date} );
