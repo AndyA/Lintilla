@@ -60,6 +60,7 @@ sub boilerplate($) {
     form          => $srch->form,
     switchview    => $pe->switcher,
     show_external => !config->{disable_external},
+    debug_script  => config->{debug_script},
   );
 }
 
