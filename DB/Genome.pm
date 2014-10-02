@@ -33,6 +33,12 @@ has years    => ( is => 'ro', lazy => 1, builder => '_build_years' );
 has decades  => ( is => 'ro', lazy => 1, builder => '_build_decades' );
 has services => ( is => 'ro', lazy => 1, builder => '_build_services' );
 
+has _pseudo_map => (
+  is      => 'ro',
+  isa     => 'HashRef',
+  default => sub { {} },
+);
+
 sub unique(@) {
   my %seen = ();
   grep { !$seen{$_}++ } @_;
@@ -480,7 +486,7 @@ sub annual_issues {
 
 sub _build_service_spiel {
   my ( $self, $rec ) = @_;
-  my %case = ( tv => 'television', radio => 'radio' );
+  my %case = ( tv => 'television', radio => 'radio', pseudo => 'radio' );
   my $svc  = $rec->{svc};
   my @para = ();
 
@@ -642,15 +648,15 @@ sub lookup_uuid {
   return $row[0];
 }
 
-sub services_for_ids {
-  my ( $self, @ids ) = @_;
+sub _services_for_thing {
+  my ( $self, $thing, @ids ) = @_;
   @ids = unique @ids;
   return [] unless @ids;
   return $self->dbh->selectall_arrayref(
     join( ' ',
       'SELECT *',
       'FROM genome_services',
-      'WHERE _uuid IN (',
+      "WHERE $thing IN (",
       join( ', ', map '?', @ids ),
       ')' ),
     { Slice => {} },
@@ -658,10 +664,49 @@ sub services_for_ids {
   );
 }
 
+sub services_for_ids {
+  my ( $self, @ids ) = @_;
+  return [] unless @ids;
+  my $svcs = $self->_services_for_thing( _uuid => @ids );
+
+  $_->{data} = $self->_decode( $_->{data} ) for @$svcs;
+
+  my @inc = (
+    map { @{ $_->{data}{incorporates} } }
+     grep { 'HASH' eq ref $_->{data} && exists $_->{data}{incorporates} }
+     @$svcs
+  );
+
+  my $inc
+   = $self->stash_by( $self->_services_for_thing( _key => @inc ), '_key' );
+
+  my @out = ();
+  my $pm  = $self->_pseudo_map;
+
+  for my $svc (@$svcs) {
+    my $data = $svc->{data};
+    if ( 'HASH' eq ref $data && exists $data->{incorporates} ) {
+      my @sm = ();
+      for my $i ( @{ $data->{incorporates} } ) {
+        my $isvc = $inc->{$i} // die;
+        push @out, @$isvc;
+        push @sm, $_->{_uuid} for @$isvc;
+      }
+      $pm->{ $svc->{_uuid} } = [@sm];
+    }
+    else {
+      push @out, $svc;
+    }
+  }
+
+  return \@out;
+}
+
 sub service_info {
   my ( $self, @ids ) = @_;
 
   my $svcs = $self->services_for_ids(@ids);
+  debug "svcs: ", $svcs;
   my @parent = grep defined $_, map { $_->{_parent} } @$svcs;
   if (@parent) {
     my $parents = $self->service_info(@parent);
@@ -682,6 +727,23 @@ sub _walk_down {
   return ( $service->{$key} ) unless $service->{parent};
   return ( $self->_walk_down( $service->{parent}, $key ),
     $service->{$key} );
+}
+
+sub _explode_listing {
+  my ( $self, $list ) = @_;
+  my $pm  = $self->_pseudo_map;
+  my @out = ();
+  for my $li (@$list) {
+    if ( my $sm = $pm->{ $li->{service} } ) {
+      for my $svc (@$sm) {
+        push @out, { %$li, service => $svc };
+      }
+    }
+    else {
+      push @out, $li;
+    }
+  }
+  return \@out;
 }
 
 sub issue_listing {
@@ -709,6 +771,7 @@ sub issue_listing {
 
   my @services = unique map { $_->{service} } @$list;
   my $svc_info = $self->service_info(@services);
+  @services = keys %$svc_info;
 
   my $svc_dates = $self->group_by(
     $self->dbh->selectall_arrayref(
@@ -726,19 +789,22 @@ sub issue_listing {
     'service'
   );
 
+  $list = $self->_explode_listing($list);
+
   for my $i (@$list) {
     $i->{service_info}  = $svc_info->{ $i->{service} };
     $i->{service_dates} = $svc_dates->{ $i->{service} };
   }
 
   $iss->{listing} = $self->group_by( $list, 'date' );
-  return (
+  my @rv = (
     title =>
      $self->page_title( "Issue " . $iss->{issue}, $iss->{pretty_date} ),
     issue     => $iss,
     proximate => $self->issue_proximate( $iss->{issue}, 6 ),
     monthly   => $self->_month_issues_for_year( $iss->{year} ),
   );
+  return @rv;
 }
 
 sub stash {
