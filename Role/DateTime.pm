@@ -31,7 +31,7 @@ sub short_date {
   my ( $self, $y, $m, $d ) = @_;
   return undef unless defined $y;
   ( $y, $m, $d ) = $self->decode_date($y) unless defined $m;
-  return sprintf '%02d %s', $d, lc substr $MONTH[$m - 1], 0, 3;
+  return sprintf '%02d %s', $d, substr $MONTH[$m - 1], 0, 3;
 }
 
 sub pretty_date {
