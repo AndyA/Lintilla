@@ -1,7 +1,5 @@
 package Lintilla::Site::Labs;
 
-use utf8;
-
 use Moose;
 
 use Dancer ':syntax';
@@ -10,7 +8,6 @@ use Dancer::Plugin::Database;
 use Encode qw( decode encode );
 use JSON ();
 use Lintilla::DB::Genome::Pages;
-use Lintilla::Site::JSON;
 
 =head1 NAME
 
@@ -23,16 +20,6 @@ our $VERSION = '0.1';
 sub db() { Lintilla::DB::Genome::Pages->new( dbh => database ) }
 
 prefix '/labs' => sub {
-
-  get '/utf8' => sub {
-    my $magic = '😡 😤 😱 👿 👮 🙆 💚 ';
-
-    #    open my $fh, '>', '/tmp/magic';
-    #    print $fh $magic;
-
-    content_type 'application/json';
-    return Lintilla::Site::JSON->new->_encode( { magic => $magic } );
-  };
 
   get '/about' => sub {
     template 'labs/about',
