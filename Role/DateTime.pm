@@ -17,8 +17,7 @@ use constant YEAR_START => 1923;
 use constant YEAR_END   => 2009;
 
 my @DAY = qw(
- SUN MON TUE WED
- THU FRI SAT
+ Sun Mon Tue Wed Thu Fri Sat
 );
 
 my @MONTH = qw(
