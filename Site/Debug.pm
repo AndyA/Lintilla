@@ -12,6 +12,8 @@ Lintilla::Site::Debug - Debug info
 
 our $VERSION = '0.1';
 
+return 1 unless config->{debug_script};
+
 sub non_ref {
   my $v = shift;
   return $v unless ref $v;
