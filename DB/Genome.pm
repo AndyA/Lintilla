@@ -33,6 +33,7 @@ has years    => ( is => 'ro', lazy => 1, builder => '_build_years' );
 has decades  => ( is => 'ro', lazy => 1, builder => '_build_decades' );
 has services => ( is => 'ro', lazy => 1, builder => '_build_services' );
 
+# Slightly beastly gack
 has _pseudo_map => (
   is      => 'ro',
   isa     => 'HashRef',

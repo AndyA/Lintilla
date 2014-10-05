@@ -3,6 +3,8 @@ package Lintilla::Site::Debug;
 use Moose;
 
 use Dancer ':syntax';
+use Dancer::Plugin::Database;
+use Lintilla::DB::Genome::Debug;
 
 =head1 NAME
 
@@ -14,6 +16,11 @@ our $VERSION = '0.1';
 
 return 1 unless config->{debug_script};
 
+sub db() {
+  my $dbh = database;
+  Lintilla::DB::Genome::Debug->new( dbh => $dbh );
+}
+
 sub non_ref {
   my $v = shift;
   return $v unless ref $v;
@@ -23,12 +30,9 @@ sub non_ref {
   return "$v";
 }
 
-prefix '/peek' => sub {
-  get '/request' => sub {
-    return {
-      env     => non_ref( request->env ),
-      headers => request->{headers}->as_string,
-    };
+prefix '/debug' => sub {
+  get '/stash' => sub {
+     db->debug_stash;
   };
 };
 
