@@ -32,7 +32,14 @@ sub non_ref {
 
 prefix '/debug' => sub {
   get '/stash' => sub {
-     db->debug_stash;
+    db->debug_stash;
+  };
+  get '/utf8' => sub {
+    template 'db/utf8',
+     {title => 'UTF8 Test',
+      stash => db->debug_stash,
+     },
+     { layout => 'debug' };
   };
 };
 
