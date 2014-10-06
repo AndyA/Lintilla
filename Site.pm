@@ -11,6 +11,7 @@ use Lintilla::Personality;
 use Lintilla::Site::Asset;
 use Lintilla::Site::Data;
 use Lintilla::Site::Debug;
+use Lintilla::Site::Diagnostic;
 use Lintilla::Site::Edit;
 use Lintilla::Site::Labs;
 use Lintilla::Site::Sync;

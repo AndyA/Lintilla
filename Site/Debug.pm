@@ -21,15 +21,6 @@ sub db() {
   Lintilla::DB::Genome::Debug->new( dbh => $dbh );
 }
 
-sub non_ref {
-  my $v = shift;
-  return $v unless ref $v;
-  return [map { non_ref($_) } @$v] if 'ARRAY' eq ref $v;
-  return { map { $_ => non_ref( $v->{$_} ) } keys %$v }
-   if 'HASH' eq ref $v;
-  return "$v";
-}
-
 prefix '/debug' => sub {
   get '/stash' => sub {
     db->debug_stash;
