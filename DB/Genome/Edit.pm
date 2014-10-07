@@ -219,7 +219,7 @@ sub list {
   my $res = $self->_cook_list(
     $self->dbh->selectall_arrayref(
       join( ' ',
-        'SELECT e.`id`, e.`uuid`, e.`kind`, e.`state`,  p.`title`,',
+        'SELECT e.`id`, e.`uuid`, e.`kind`, e.`state`, e.`data`, p.`title`,',
         '  MIN(el.`when`) AS `created`, MAX(el.`when`) AS `updated`,',
         "  IF(s2.`title` IS NULL, s.`title`, CONCAT_WS(' ', s2.`title`, s.`title`)) AS service",
         'FROM genome_edit AS e, genome_editlog AS el, genome_programmes_v2 AS p, genome_services AS s',
@@ -238,6 +238,7 @@ sub list {
 
   for my $rc (@$res) {
     $rc->{link} = $self->strip_uuid( $rc->{uuid} );
+    $rc->{data} = $self->_decode( $rc->{data} );
   }
 
   return $self->group_by( $res, @group ) if @group;
