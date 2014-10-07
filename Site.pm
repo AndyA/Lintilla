@@ -185,9 +185,15 @@ get qr/\/([0-9a-f]{32})/i => sub {
       template 'programme', { boilerplate $db, $db->programme($uuid) };
     }
     default {
-      die;
+      pass;
     }
   }
+};
+
+# Must be last
+any qr{.*} => sub {
+  status 'not_found';
+  template 'error404', { boilerplate db, path => request->path };
 };
 
 true;
