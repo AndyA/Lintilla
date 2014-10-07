@@ -262,7 +262,11 @@ sub _build_sphinx {
 
 sub _do_search {
   my $self = shift;
-  my $sph  = $self->_sphinx;
+
+  return { qq => {}, svc => {}, kws => [] }
+   unless length $self->q;
+
+  my $sph = $self->_sphinx;
   $sph->Open;
   $sph->SetMatchMode(SPH_MATCH_EXTENDED);
   $sph->SetSortMode(SPH_SORT_RELEVANCE);
