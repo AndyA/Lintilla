@@ -7,6 +7,7 @@ use HTML::Tiny;
 use Lintilla::DB::Genome::Search;
 use Lintilla::Filter qw( cook );
 use Moose;
+use Text::Highlight;
 
 =head1 NAME
 
@@ -946,6 +947,16 @@ sub search {
    : [];
 
   my $ssvc = $srch->services;
+  my $kw   = $srch->keywords;
+
+  my $hl = Text::Highlight->new( words => $kw );
+  for my $prog (@$progs) {
+    for my $key ( 'title', 'synopsis' ) {
+      $prog->{"${key}_html"} = $hl->highlight( $prog->{$key} )
+       if exists $prog->{$key};
+    }
+  }
+
   my @sids = map { $_->{service_id} } @{ $ssvc->{matches} || [] };
 
   return (
@@ -955,6 +966,7 @@ sub search {
     services   => $self->_search_load_services( $srch, @sids ),
     pagination => $srch->pagination(10),
     title      => $self->page_title('Search Results'),
+    keywords   => $kw,
   );
 }
 

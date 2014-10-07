@@ -290,6 +290,8 @@ sub _do_search {
 
   my $qq = $sph->Query( $query, $self->index );
   die $sph->GetLastError unless $qq;
+  my $kws = $sph->BuildKeywords( $query, $self->index, 0 );
+  die $sph->GetLastError unless $kws;
 
   $sph->ResetFilters;
   $self->_set_filter($sph);
@@ -304,11 +306,18 @@ sub _do_search {
 
   $sph->Close;
 
-  return { qq => $qq, svc => $svc };
+  return { qq => $qq, svc => $svc, kws => $kws };
 }
 
 sub search   { shift->_search->{qq} }
 sub services { shift->_search->{svc} }
+
+sub keywords {
+  my $self = shift;
+  my $kws  = $self->_search->{kws};
+  my $kwm  = { map { $_->{normalized} => $_->{tokenized} } @$kws };
+  return [map { $kwm->{$_} } keys %{ $self->search->{words} }];
+}
 
 1;
 
