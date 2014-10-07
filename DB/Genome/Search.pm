@@ -100,7 +100,7 @@ sub persist {
   return $out;
 }
 
-sub total { shift->search->{total_found} }
+sub total { shift->search->{total_found} // 0 }
 
 sub pages {
   my $self = shift;
