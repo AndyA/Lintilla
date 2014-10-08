@@ -316,11 +316,10 @@ sub _do_search {
 sub search   { shift->_search->{qq} }
 sub services { shift->_search->{svc} }
 
-sub keywords {
+sub keyword_map {
   my $self = shift;
   my $kws  = $self->_search->{kws};
-  my $kwm  = { map { $_->{normalized} => $_->{tokenized} } @$kws };
-  return [map { $kwm->{$_} } keys %{ $self->search->{words} }];
+  return { map { $_->{normalized} => $_->{tokenized} } @$kws };
 }
 
 1;

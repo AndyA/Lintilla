@@ -901,6 +901,28 @@ sub _search_load_services {
   return \@osvc;
 }
 
+sub unstem {
+  my ( $self, $dflt, @words ) = @_;
+  my $rs = $self->dbh->selectall_hashref(
+    join( ' ',
+      'SELECT *',
+      'FROM genome_unstem',
+      'WHERE stem IN (',
+      join( ', ', map "?", @words ), ')' ),
+    'stem',
+    {},
+    @words
+  );
+
+  my @out = ();
+  for my $word (@words) {
+    push @out, split /,/, $rs->{$word}{words} if $rs->{$word};
+    push @out, $dflt->{$word} if defined $dflt->{$word};
+    push @out, $word;
+  }
+  return @out;
+}
+
 sub search {
   my ( $self, @params ) = @_;
 
@@ -948,9 +970,11 @@ sub search {
    : [];
 
   my $ssvc = $srch->services;
-  my $kw   = $srch->keywords;
+  my $kwm  = $srch->keyword_map;
+  my @kw   = $self->unstem( $kwm, keys %{ $results->{words} } );
+  #  my $kw   = $srch->keywords;
 
-  my $hl = Text::Highlight->new( words => $kw );
+  my $hl = Text::Highlight->new( words => \@kw );
   for my $prog (@$progs) {
     for my $key ( 'title', 'synopsis' ) {
       $prog->{"${key}_html"} = $hl->highlight( $prog->{$key} )
@@ -967,7 +991,6 @@ sub search {
     services   => $self->_search_load_services( $srch, @sids ),
     pagination => $srch->pagination(10),
     title      => $self->page_title('Search Results'),
-    keywords   => $kw,
   );
 }
 
