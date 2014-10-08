@@ -50,7 +50,7 @@ sub check_vis {
   };
 }
 
-#return 1 unless config->{admin_mode};
+return 1 unless config->{admin_mode};
 
 prefix '/admin' => sub {
 
