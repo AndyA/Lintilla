@@ -1,7 +1,5 @@
 package Lintilla::Site::Debug;
 
-use Moose;
-
 use Dancer ':syntax';
 use Dancer::Plugin::Database;
 use Lintilla::DB::Genome::Debug;

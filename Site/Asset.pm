@@ -4,7 +4,6 @@ use Dancer ':syntax';
 use Lintilla::Filter qw( filter );
 use Lintilla::Image::Scaler;
 use Lintilla::Magic::Asset;
-use Moose;
 use Path::Class;
 use URI;
 

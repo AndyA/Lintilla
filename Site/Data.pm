@@ -1,7 +1,5 @@
 package Lintilla::Site::Data;
 
-use Moose;
-
 use Dancer ':syntax';
 
 use Dancer::Plugin::Database;
