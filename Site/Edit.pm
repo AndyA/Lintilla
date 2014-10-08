@@ -1,7 +1,5 @@
 package Lintilla::Site::Edit;
 
-use Moose;
-
 use Dancer ':syntax';
 
 use Dancer::Plugin::Database;
@@ -51,6 +49,8 @@ sub check_vis {
     else                   { send_error( "Not allowed", 403 ); }
   };
 }
+
+#return 1 unless config->{admin_mode};
 
 prefix '/admin' => sub {
 

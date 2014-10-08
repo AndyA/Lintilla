@@ -26,12 +26,14 @@ prefix '/sync' => sub {
     db->load_edits( param('since') );
   };
 
-  post '/edits' => sub {
-    my $db    = db;
-    my $edits = $db->_decode( request->body );
-    $db->import_edits($edits);
-    return { status => 'OK', sequence => $edits->{sequence} };
-  };
+  if ( config->{admin_mode} ) {
+    post '/edits' => sub {
+      my $db    = db;
+      my $edits = $db->_decode( request->body );
+      $db->import_edits($edits);
+      return { status => 'OK', sequence => $edits->{sequence} };
+    };
+  }
 };
 
 1;
