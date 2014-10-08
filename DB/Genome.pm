@@ -439,8 +439,9 @@ sub _cook_issues {
          month_name        => $self->month_names->[$_->{month} - 1],
          pretty_date       => $self->pretty_date( $_->{date} ),
          pretty_start_date => $self->pretty_date( $_->{start_date} ),
-         short_start_date  => $self->short_date( $_->{start_date} ),
          pretty_end_date   => $self->pretty_date( $_->{end_date} ),
+         short_date        => $self->short_date( $_->{date} ),
+         short_start_date  => $self->short_date( $_->{start_date} ),
       }
     } @$issues
   ];
