@@ -5,6 +5,7 @@ use Dancer ':syntax';
 
 use Barlesque::Client;
 use Dancer::Plugin::Database;
+use Lintilla::DB::Genome::Edit;
 use Lintilla::DB::Genome;
 use Lintilla::Data::Static;
 use Lintilla::Personality;
@@ -48,12 +49,14 @@ sub barlesque {
 
 sub boilerplate($) {
   my $db   = shift;
+  my $dbe  = Lintilla::DB::Genome::Edit->new( dbh => $db->dbh );
   my $srch = Lintilla::DB::Genome::Search->new;
   my $pe   = vars->{personality};
   return (
     $db->gather(BOILERPLATE),
     barlesque  => barlesque->parts,
     visibility => $pe->personality,
+    edit_count => $dbe->edit_state_count,
     stash         => sub { $db->stash(shift) },
     timelist      => sub { $srch->timelist },
     title         => $db->page_title,

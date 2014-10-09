@@ -39,6 +39,7 @@ prefix '/edit' => sub {
     $db->submit( $uuid, 'programme', 'anon', $data );
     return { status => 'OK', message => 'Successfully submitted' };
   };
+  get '/count' => sub { db->edit_state_count };
 };
 
 sub check_vis {
