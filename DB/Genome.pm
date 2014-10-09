@@ -903,6 +903,7 @@ sub _search_load_services {
 
 sub unstem {
   my ( $self, $dflt, @words ) = @_;
+  return () unless @words;
   my $rs = $self->dbh->selectall_hashref(
     join( ' ',
       'SELECT *',
