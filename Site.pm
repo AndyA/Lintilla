@@ -54,9 +54,9 @@ sub boilerplate($) {
   my $pe   = vars->{personality};
   return (
     $db->gather(BOILERPLATE),
-    barlesque  => barlesque->parts,
-    visibility => $pe->personality,
-    edit_count => $dbe->edit_state_count,
+    barlesque    => barlesque->parts,
+    visibility   => $pe->personality,
+    change_count => $dbe->change_count,
     stash         => sub { $db->stash(shift) },
     timelist      => sub { $srch->timelist },
     title         => $db->page_title,

@@ -189,6 +189,13 @@ sub diff {
   };
 }
 
+sub change_count {
+  my $self = shift;
+  my ($count)
+   = $self->dbh->selectrow_array('SELECT COUNT(*) FROM genome_changelog');
+  return $count;
+}
+
 sub edit_state_count {
   my $self     = shift;
   my $by_state = $self->group_by(
