@@ -398,7 +398,7 @@ sub _issue_pdf_path {
 sub _issue_image_path {
   my ( $self, $issue ) = @_;
   my $key = $self->_issue_key($issue);
-  return join '/', $issue->{decade}, $issue->{year}, $key, $key . '-0.png';
+  return join '/', $issue->{decade}, $issue->{year}, $key, $key . '-0.jpg';
 }
 
 sub _make_public {
