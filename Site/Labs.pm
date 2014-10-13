@@ -5,6 +5,7 @@ use Dancer ':syntax';
 use Dancer::Plugin::Database;
 use Encode qw( decode encode );
 use JSON ();
+use Lintilla::DB::Genome::Edit;
 use Lintilla::DB::Genome::Pages;
 
 =head1 NAME
@@ -15,7 +16,8 @@ Lintilla::Site::Labs - Labs stuff
 
 our $VERSION = '0.1';
 
-sub db() { Lintilla::DB::Genome::Pages->new( dbh => database ) }
+sub dbp() { Lintilla::DB::Genome::Pages->new( dbh => database ) }
+sub dbe() { Lintilla::DB::Genome::Edit->new( dbh => database ) }
 
 prefix '/labs' => sub {
 
@@ -37,6 +39,22 @@ prefix '/labs' => sub {
      { layout => 'labs' };
   };
 
+  get '/livestats' => sub {
+    template 'labs/livestats',
+     {title        => 'Genome Live Stats',
+      scripts      => ['livestats'],
+      css          => ['livestats'],
+      change_count => dbe->change_count,
+     },
+     { layout => 'labs' };
+  };
+
+  prefix '/livestats' => sub {
+    get '/count' => sub {
+      return { change_count => dbe->change_count };
+    };
+  };
+
   get '/pages' => sub {
     delete request->env->{SCRIPT_NAME};
     redirect "/labs/pages/";
@@ -44,9 +62,9 @@ prefix '/labs' => sub {
 
   prefix '/pages' => sub {
     prefix '/data' => sub {
-      get '/:issue' => sub { return db->pages( param('issue') ) };
+      get '/:issue' => sub { return dbp->pages( param('issue') ) };
       get '/:issue/:page' =>
-       sub { return db->page( param('issue'), param('page') ) };
+       sub { return dbp->page( param('issue'), param('page') ) };
     };
 
     get '/**' => sub {
