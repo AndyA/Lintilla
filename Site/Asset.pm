@@ -98,6 +98,8 @@ get '/asset/var/*/**' => sub {
     )
   );
 
+  $in_url =~ s/\.[^.]+$/.png/;
+
   my $out_file = file setting('public'), @p, @v, @name;
 
   my $sc = Lintilla::Image::Scaler->new(

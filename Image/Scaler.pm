@@ -32,8 +32,10 @@ sub _find_source {
 
   my $in_url = $self->in_url;
   die "No source specified" unless defined $in_url;
+  die "No extension" unless $in_url =~ m{\.([^/]+)$};
+  my $ext = $1;
 
-  my $tmp = file( Path::Class::tempdir, 'tmp.jpg' );
+  my $tmp = file( Path::Class::tempdir, "tmp.$ext" );
 
   my $rs = LWP::UserAgent->new->get( $in_url, ':content_file' => "$tmp" );
   die $rs->status_line if $rs->is_error;
