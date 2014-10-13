@@ -5,6 +5,7 @@ use v5.10;
 use Dancer qw( config );
 use List::Util qw( min max );
 use Moose;
+use Scalar::Util qw( looks_like_number );
 use Sphinx::Search;
 use URI;
 
@@ -58,8 +59,8 @@ has order =>
 
 has mf => ( is => 'ro', isa => 'Num', default => 1 );
 has mt => ( is => 'ro', isa => 'Num', default => 12 );
-has yf => ( is => 'ro', isa => 'Num', default => 1923 );
-has yt => ( is => 'ro', isa => 'Num', default => 2009 );
+has yf => ( is => 'ro', default => 1923 );
+has yt => ( is => 'ro', default => 2009 );
 
 has ['tf', 'tt'] => ( is => 'ro', isa => 'Str', default => '00:00' );
 
@@ -264,6 +265,8 @@ sub _is_valid {
   my $self = shift;
   return unless length $self->q;
   if ( $self->adv ) {
+    return unless looks_like_number( $self->yf );
+    return unless looks_like_number( $self->yt );
     return unless $self->yf <= $self->yt;
   }
   return 1;
