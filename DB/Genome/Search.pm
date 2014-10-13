@@ -260,11 +260,20 @@ sub _build_sphinx {
   $sph->SetServer( $host, $port );
 }
 
+sub _is_valid {
+  my $self = shift;
+  return unless length $self->q;
+  if ( $self->adv ) {
+    return unless $self->yf <= $self->yt;
+  }
+  return 1;
+}
+
 sub _do_search {
   my $self = shift;
 
   return { qq => {}, svc => {}, kws => [] }
-   unless length $self->q;
+   unless $self->_is_valid;
 
   my $sph = $self->_sphinx;
   $sph->Open;
