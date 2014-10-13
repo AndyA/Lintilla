@@ -79,6 +79,14 @@ sub cook_uri {
   return $u;
 }
 
+sub in_path {
+  my ( $spec, $p, @name ) = @_;
+  return join( '/', @$p, var => $spec->{base}, @name )
+   if defined $spec->{base};
+  $name[-1] =~ s/\.[^.]+$/.png/;
+  return join( '/', @$p, @name );
+}
+
 get '/asset/var/*/**' => sub {
   my ( $recipe, $id ) = splat;
 
@@ -92,13 +100,7 @@ get '/asset/var/*/**' => sub {
   my @p = ('asset');
   my @v = ( var => $recipe );
 
-  my $in_url = cook_uri(
-    our_uri_for(
-      @p, ( defined $spec->{base} ? ( var => $spec->{base} ) : () ), @name
-    )
-  );
-
-  $in_url =~ s/\.[^.]+$/.png/;
+  my $in_url = cook_uri( our_uri_for( in_path( $spec, \@p, @name ) ) );
 
   my $out_file = file setting('public'), @p, @v, @name;
 
