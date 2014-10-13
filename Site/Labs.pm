@@ -42,7 +42,7 @@ prefix '/labs' => sub {
   get '/livestats' => sub {
     template 'labs/livestats',
      {title        => 'Genome Live Stats',
-      scripts      => ['livestats'],
+      scripts      => ['onstopped', 'livestats'],
       css          => ['livestats'],
       change_count => dbe->change_count,
      },
