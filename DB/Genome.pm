@@ -114,6 +114,8 @@ sub service_months {
 sub _pad_by_offset {
   my ( $self, $list ) = @_;
 
+  return [] unless @$list;
+
   my %ent = map { $_->{offset} => $_ } @$list;
   my @ofs = sort { $a <=> $b } keys %ent;
 
@@ -157,8 +159,8 @@ sub service_proximate_days {
     )
   );
 
-  my $min_ofs = $rs->[0]{offset};
-  my $max_ofs = $rs->[-1]{offset};
+  my $min_ofs = $rs->[0]{offset}  // 0;
+  my $max_ofs = $rs->[-1]{offset} // 0;
 
   if ( $min_ofs > -$span ) {
     my $need = $span + $min_ofs;
@@ -178,7 +180,7 @@ sub service_proximate_days {
       $need -= 1 + @$extra;
     }
 
-    unshift @$rs, { offset => $rs->[0]{offset} - 1 } for 1 .. $need;
+    unshift @$rs, { offset => ( $rs->[0]{offset} // 0 ) - 1 } for 1 .. $need;
   }
 
   if ( $max_ofs < $span ) {
@@ -199,7 +201,7 @@ sub service_proximate_days {
       $need -= 1 + @$extra;
     }
 
-    push @$rs, { offset => $rs->[-1]{offset} + 1 } for 1 .. $need;
+    push @$rs, { offset => ( $rs->[-1]{offset} // 0 ) + 1 } for 1 .. $need;
   }
 
   return $rs;
