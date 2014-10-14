@@ -478,6 +478,7 @@ sub annual_issues {
             'FROM genome_issues ',
             "WHERE approved_year='Y'",
             'AND _parent IS NULL',
+            "AND hidden = 'N'",
             'ORDER BY `year`' ),
           { Slice => {} }
         )
@@ -578,7 +579,9 @@ sub issue_proximate {
     $self->dbh->selectall_arrayref(
       join( ' ',
         'SELECT * FROM genome_issues',
-        'WHERE issue <= ? AND _parent IS NULL',
+        'WHERE issue <= ?',
+        'AND _parent IS NULL',
+        "AND hidden = 'N'",
         'ORDER BY issue DESC LIMIT ?' ),
       { Slice => {} },
       $issue,
@@ -590,7 +593,9 @@ sub issue_proximate {
     $self->dbh->selectall_arrayref(
       join( ' ',
         'SELECT * FROM genome_issues',
-        'WHERE issue > ? AND _parent IS NULL',
+        'WHERE issue > ?',
+        'AND _parent IS NULL',
+        "AND hidden = 'N'",
         'ORDER BY issue ASC LIMIT ?' ),
       { Slice => {} },
       $issue, $span
@@ -615,6 +620,7 @@ sub _issues_for_year {
           'ON ic._uuid=ip.default_child',
           'WHERE ip.`year`=?',
           'AND ip.`_parent` IS NULL',
+          "AND ip.`hidden` = 'N'",
           'ORDER BY `issue` ASC' ),
         { Slice => {} },
         $year
