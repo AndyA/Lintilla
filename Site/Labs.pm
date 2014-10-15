@@ -44,12 +44,16 @@ prefix '/labs' => sub {
      {title        => 'Genome Live Stats',
       scripts      => ['onstopped', 'livestats'],
       css          => ['livestats'],
+      edit_counts  => dbe->edit_state_count,
       change_count => dbe->change_count,
      },
      { layout => 'labs' };
   };
 
   prefix '/livestats' => sub {
+    get '/edit_counts' => sub {
+      return { edit_counts => dbe->edit_state_count };
+    };
     get '/count' => sub {
       return { change_count => dbe->change_count };
     };
