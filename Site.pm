@@ -47,10 +47,17 @@ sub barlesque {
   );
 }
 
+sub clean_word {
+  ( my $w = shift ) =~ s/\W//g;
+  return 'unknown' unless length $w;
+  return $w;
+}
+
 sub echo_key {
   my @path = @_;
   my $pe   = vars->{personality};
-  return join '.', 'genome', $pe->personality, @path, 'page';
+  return join '.', map { clean_word($_) } 'genome', $pe->personality,
+   @path, 'page';
 }
 
 sub boilerplate($) {
