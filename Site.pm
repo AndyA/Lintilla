@@ -155,6 +155,7 @@ get '/schedules/:service/:outlet/:date' => sub {
 
 get '/years/:year' => sub {
   my $db = db;
+  pass unless param('year') =~ /^\d+$/;
   template 'year',
    {boilerplate $db,
     echo_key => echo_key( 'year', param('year') ),
