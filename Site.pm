@@ -47,6 +47,12 @@ sub barlesque {
   );
 }
 
+sub echo_key {
+  my @path = @_;
+  my $pe   = vars->{personality};
+  return join '.', 'genome', $pe->personality, @path, 'page';
+}
+
 sub boilerplate($) {
   my $db   = shift;
   my $dbe  = Lintilla::DB::Genome::Edit->new( dbh => $db->dbh );
@@ -65,6 +71,7 @@ sub boilerplate($) {
     switchview    => $pe->switcher,
     show_external => !config->{disable_external},
     debug_script  => config->{debug_script},
+    echo_key      => echo_key(),
   );
 }
 
@@ -96,8 +103,9 @@ get '/schedules/missing' => sub {
   my $db = db;
   template 'schedule',
    {boilerplate $db,
-    missing => 1,
-    title   => $db->page_title('Listing Unavailable'),
+    missing  => 1,
+    title    => $db->page_title('Listing Unavailable'),
+    echo_key => echo_key('missing'),
    };
 };
 
@@ -122,6 +130,7 @@ get '/schedules/:service/:date' => sub {
   }
   template 'schedule',
    {boilerplate $db,
+    echo_key => echo_key( 'schedule', param('service') ),
     $db->listing_for_schedule( param('service'), param('date') ),
    };
 };
@@ -130,6 +139,7 @@ get '/schedules/:service/:outlet/:date' => sub {
   my $db = db;
   template 'schedule',
    {boilerplate $db,
+    echo_key => echo_key( 'schedule', param('service') ),
     $db->listing_for_schedule(
       param('service'), param('outlet'), param('date')
     ),
@@ -139,17 +149,27 @@ get '/schedules/:service/:outlet/:date' => sub {
 get '/years/:year' => sub {
   my $db = db;
   template 'year',
-   { boilerplate $db, $db->issues_for_year( param('year') ), };
+   {boilerplate $db,
+    echo_key => echo_key( 'year', param('year') ),
+    $db->issues_for_year( param('year') ),
+   };
 };
 
 get '/issues' => sub {
   my $db = db;
-  template 'issues', { boilerplate $db, $db->annual_issues };
+  template 'issues',
+   {boilerplate $db,
+    echo_key => echo_key('issues'),
+    $db->annual_issues
+   };
 };
 
 get '/search/:start/:size' => sub {
   my $db = db;
-  template 'search', { boilerplate $db, $db->search(params) };
+  template 'search',
+   {boilerplate $db,
+    echo_key => echo_key('search'),
+    $db->search(params) };
 };
 
 get '/search' => sub {
@@ -162,18 +182,26 @@ get '/search' => sub {
 
 get '/help' => sub {
   my $db = db;
-  template 'help', { boilerplate $db, title => $db->page_title('FAQs') };
+  template 'help',
+   {boilerplate $db,
+    echo_key => echo_key('help'),
+    title    => $db->page_title('FAQs') };
 };
 
 get '/faqs' => sub {
   my $db = db;
-  template 'help', { boilerplate $db, title => $db->page_title('FAQs') };
+  template 'help',
+   {boilerplate $db,
+    echo_key => echo_key('faqs'),
+    title    => $db->page_title('FAQs') };
 };
 
 get '/about' => sub {
   my $db = db;
   template 'about',
-   { boilerplate $db, title => $db->page_title('About this project') };
+   {boilerplate $db,
+    echo_key => echo_key('about'),
+    title    => $db->page_title('About this project') };
 };
 
 get qr/\/([0-9a-f]{32})/i => sub {
@@ -182,10 +210,16 @@ get qr/\/([0-9a-f]{32})/i => sub {
   my $thing  = $db->lookup_uuid($uuid);
   given ( $thing->{kind} ) {
     when ('issue') {
-      template 'issue', { boilerplate $db, $db->issue_listing($uuid) };
+      template 'issue',
+       {boilerplate $db,
+        echo_key => echo_key('issue'),
+        $db->issue_listing($uuid) };
     }
     when ('programme') {
-      template 'programme', { boilerplate $db, $db->programme($uuid) };
+      template 'programme',
+       {boilerplate $db,
+        echo_key => echo_key('programme'),
+        $db->programme($uuid) };
     }
     default {
       pass;
@@ -196,7 +230,11 @@ get qr/\/([0-9a-f]{32})/i => sub {
 # Must be last
 any qr{.*} => sub {
   status 'not_found';
-  template 'error404', { boilerplate db, path => request->path };
+  template 'error404',
+   {boilerplate db,
+    echo_key => echo_key('404'),
+    path     => request->path
+   };
 };
 
 true;
