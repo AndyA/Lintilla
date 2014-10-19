@@ -993,7 +993,8 @@ sub _import_log {
 sub _sync_change {
   my ( $self, $edit_id, $edit, @log ) = @_;
   $self->_import_log( $edit_id, @log );
-  $self->apply( @{$edit}{ 'kind', 'uuid', 'who', 'thing' }, $edit_id );
+  $self->apply( @{$edit}{ 'kind', 'uuid' },
+    'sync agent', $edit->{thing}, $edit_id );
 }
 
 sub _create_edit {
