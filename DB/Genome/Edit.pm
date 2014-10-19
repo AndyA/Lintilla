@@ -381,29 +381,29 @@ sub _add_thing {
 
 sub load_edit_history {
   my ( $self, $since ) = @_;
-  my $edits = $self->_decode_data(
-    $self->dbh->selectall_arrayref(
-      'SELECT * FROM genome_edit WHERE id > ? ORDER BY id ASC LIMIT ?',
-      { Slice => {} },
-      $since, SYNC_PAGE
-    )
+  my $changes = $self->dbh->selectall_arrayref(
+    'SELECT id, edit_id FROM genome_editlog WHERE id > ? ORDER BY id ASC LIMIT ?',
+    { Slice => {} }, $since, SYNC_PAGE
   );
+
   return { sequence => $since, edits => [] }
-   unless $edits && @$edits;
-  $self->_add_edit_log($edits);
+   unless $changes && @$changes;
+
+  my $edits = $self->load_edits_by_id( map { $_->{edit_id} } @$changes );
   $self->_add_thing($edits);
-  return { sequence => $edits->[-1]{id}, edits => $edits };
+  return { sequence => $changes->[-1]{id}, edits => $edits };
 }
 
 sub load_edits_by_id {
-  my ( $self, @things ) = @_;
+  my $self   = shift;
+  my @things = unique(@_);
   return [] unless @things;
   my @hash = grep { 32 == length } @things;
   my @id   = grep { 32 > length } @things;
   my @term = ();
   push @term, join '', 'hash IN (', join( ', ', map "?", @hash ), ')'
    if @hash;
-  push @term, join '', 'id IN (', join( ', ', map "?", @hash ), ')'
+  push @term, join '', 'id IN (', join( ', ', map "?", @id ), ')'
    if @id;
   my $edits = $self->_decode_data(
     $self->dbh->selectall_arrayref(
