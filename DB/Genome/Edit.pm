@@ -368,7 +368,7 @@ sub _load_editlog {
 sub _add_edit_log {
   my ( $self, $edits ) = @_;
   my $log = $self->_load_editlog( map { $_->{id} } @$edits );
-  $_->{log} = $log->{ $_->{id} } for @$edits;
+  $_->{log} = $log->{ $_->{id} } // [] for @$edits;
 }
 
 sub _add_thing {
