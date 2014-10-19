@@ -76,6 +76,11 @@ sub get_changes {
   return $self->_get( changes => $since );
 }
 
+sub get_history {
+  my ( $self, $since ) = @_;
+  return $self->_get( history => $since );
+}
+
 sub put_edits {
   my ( $self, $edits ) = @_;
   return $self->_post( 'edits', $edits );
