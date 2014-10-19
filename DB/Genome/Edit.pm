@@ -7,6 +7,7 @@ use Dancer qw( :syntax );
 
 use Carp qw( confess );
 use Digest::MD5 qw( md5_hex );
+use Storable qw( freeze );
 use Text::DeepDiff;
 use Text::HTMLCleaner;
 use Time::HiRes qw( time );
@@ -317,6 +318,24 @@ sub import_edits {
   }
 }
 
+sub _decode_data {
+  my ( $self, $hash ) = @_;
+
+  return [map { $self->_decode_data($_) } @$hash]
+   if 'ARRAY' eq ref $hash;
+
+  my $out = {};
+  for my $key ( keys %$hash ) {
+    $out->{$key}
+     = $key =~ /^(?:\w+_)?data$/
+     ? defined $hash->{$key}
+       ? $self->_decode( $hash->{$key} )
+       : undef
+     : $hash->{$key};
+  }
+  return $out;
+}
+
 sub load_edit {
   my ( $self, $edit_id ) = @_;
   my $edit
@@ -327,29 +346,71 @@ sub load_edit {
   return $edit;
 }
 
-sub load_edit_history {
-  my ( $self, $since ) = @_;
-  my $edits = $self->dbh->selectall_arrayref(
-    'SELECT * FROM genome_edit WHERE id > ? ORDER BY id ASC LIMIT ?',
-    { Slice => {} },
-    $since, SYNC_PAGE
-  );
-  my @eids = map { $_->{id} } @$edits;
-  my $log = $self->group_by(
-    @eids
-    ? $self->dbh->selectall_arrayref(
-      join( ' ',
-        'SELECT * FROM genome_editlog WHERE edit_id IN (',
-        join( ', ', map "?", @eids ),
-        ')', 'ORDER BY id ASC' ),
-      { Slice => {} },
-      @eids
-     )
-    : [],
+sub _load_editlog {
+  my ( $self, @eids ) = @_;
+  return {} unless @eids;
+
+  return $self->group_by(
+    $self->_decode_data(
+      $self->dbh->selectall_arrayref(
+        join( ' ',
+          'SELECT * FROM genome_editlog WHERE edit_id IN (',
+          join( ', ', map "?", @eids ),
+          ')', 'ORDER BY id ASC' ),
+        { Slice => {} },
+        @eids
+      )
+    ),
     'edit_id'
   );
+}
+
+sub _add_edit_log {
+  my ( $self, $edits ) = @_;
+  my $log = $self->_load_editlog( map { $_->{id} } @$edits );
   $_->{log} = $log->{ $_->{id} } for @$edits;
+}
+
+sub _add_thing {
+  my ( $self, $edits ) = @_;
+  for my $edit (@$edits) {
+    $edit->{thing} = $self->_load_thing( $edit->{kind}, $edit->{uuid} );
+  }
+}
+
+sub load_edit_history {
+  my ( $self, $since ) = @_;
+  my $edits = $self->_decode_data(
+    $self->dbh->selectall_arrayref(
+      'SELECT * FROM genome_edit WHERE id > ? ORDER BY id ASC LIMIT ?',
+      { Slice => {} },
+      $since, SYNC_PAGE
+    )
+  );
+  $self->_add_edit_log($edits);
+  $self->_add_thing($edits);
   return { sequence => $edits->[-1]{id}, edits => $edits };
+}
+
+sub load_edits_by_id {
+  my ( $self, @things ) = @_;
+  return [] unless @things;
+  my @hash = grep { 32 == length } @things;
+  my @id   = grep { 32 > length } @things;
+  my @term = ();
+  push @term, join '', 'hash IN (', join( ', ', map "?", @hash ), ')'
+   if @hash;
+  push @term, join '', 'id IN (', join( ', ', map "?", @hash ), ')'
+   if @id;
+  my $edits = $self->_decode_data(
+    $self->dbh->selectall_arrayref(
+      join( ' ', 'SELECT * FROM genome_edit WHERE ', join( ' OR ', @term ) ),
+      { Slice => {} },
+      @hash, @id
+    )
+  );
+  $self->_add_edit_log($edits);
+  return $edits;
 }
 
 sub load_edits {
@@ -650,6 +711,18 @@ sub _deep_cmp {
     }
   );
 
+  sub _load_thing {
+    my ( $self, $kind, $uuid ) = @_;
+    my $kh = $KIND{$kind} // die;
+    return $kh->{get}( $self, $uuid );
+  }
+
+  sub _save_thing {
+    my ( $self, $kind, $uuid, $data, $edit_id ) = @_;
+    my $kh = $KIND{$kind} // die;
+    return $kh->{out}( $self, $uuid, $data, $edit_id );
+  }
+
   sub _apply {
     my ( $self, $kind, $uuid, $who, $data, $edit_id, $bump ) = @_;
 
@@ -847,6 +920,120 @@ sub apply_batch {
         $self->apply( @{$ch}{ 'kind', 'uuid', 'who', 'new_data', 'edit_id' } );
       }
       $self->set_sequence( 'changelog', $next_seq );
+    }
+  );
+}
+
+sub _eq {
+  my ( $a, $b ) = @_;
+  return 1 unless defined $a || defined $b;
+  return 0 unless defined $a && defined $b;
+  return $a eq $b unless ref $a || ref $b;
+  return 0 unless ref $a && ref $b && ref $a eq ref $b;
+  local $Storable::canonical = 1;
+  return freeze($a) eq freeze($b);
+}
+
+sub _eq_log {
+  my ( $la, $lb ) = @_;
+  for my $key (qw( old_state new_state old_data new_data )) {
+    return 0 unless _eq( $la->{$key}, $lb->{$key} );
+  }
+  return 1;
+}
+
+sub _editlog_remove {
+  my ( $self, @id ) = @_;
+  return unless @id;
+  $self->dbh->do(
+    join( ' ',
+      'DELETE FROM genome_editlog WHERE id IN (',
+      join( ', ', map "?", @id ), ')' ),
+    {},
+    @id
+  );
+}
+
+sub _append_log {
+  my ( $self, $edit_id, @log ) = @_;
+  return unless @log;
+  $self->dbh->do(
+    join( ' ',
+      'INSERT INTO genome_editlog (edit_id, who, when, old_state, new_state, old_data, new_data) VALUES',
+      join( ', ', ('(?, ?, ?, ?, ?, ?, ?)') x @log ) ),
+    {},
+    map {
+      ( $edit_id,
+        @{$_}{ 'who', 'when', 'old_state', 'new_state' },
+        $self->_encode( $_->{old_data} ),
+        $self->_encode( $_->{new_data} )
+       )
+    } @log
+  );
+}
+
+sub _update_edit {
+  my ( $self, $edit_id, $ev ) = @_;
+  $self->dbh->do( 'UPDATE genome_edit SET state=?, data=? WHERE id=?',
+    {}, $ev->{new_state}, $self->_encode( $ev->{new_data} ), $edit_id );
+}
+
+sub _import_log {
+  my ( $self, $edit_id, @log ) = @_;
+  return unless @log;
+  $self->_append_log( $edit_id, @log );
+  $self->_update_edit( $edit_id, $log[-1] );
+}
+
+sub _create_edit {
+  my ( $self, $edit ) = @_;
+  $self->dbh->do(
+    join( ' ',
+      'INSERT INTO genome_edit (hash, parent_id, uuid, kind, data, state)',
+      'VALUES (?, ?, ?, ?, ?, ?)' ),
+    {},
+    $edit->{hash},
+    $edit->{parent_id},
+    $edit->{uuid},
+    $edit->{kind},
+    $self->_encode( $edit->{data} ),
+    $edit->{state}
+  );
+}
+
+sub _import_edit {
+  my ( $self, $edit ) = @_;
+  my ($curr) = @{ $self->load_edits_by_id( $edit->{hash} ) };
+  if ($curr) {
+    # Consume common history
+    my @old = @{ $curr->{log} };
+    my @new = @{ $edit->{log} };
+    while ( @old && @new ) {
+      last unless _eq_log( $old[0], $new[0] );
+      shift @old;
+      shift @new;
+    }
+    # Anything left in the old list is BAD HISTORY
+    $self->_editlog_remove( map { $_->{id} } @old );
+    $self->_import_log( $curr->{id}, @new );
+    $self->_save_thing( $edit->{kind}, $edit->{data}, $curr->{id} );
+  }
+  else {
+    my $id = $self->_create_edit($edit);
+    $self->_import_log( $id, @{ $edit->{log} } );
+    $self->_save_thing( $edit->{kind}, $edit->{data}, $id );
+  }
+}
+
+sub import_history {
+  my ( $self, $history ) = @_;
+  my $next_seq = $history->{sequence} // die "Missing sequence in history";
+  $self->transaction(
+    sub {
+      for my $edit ( @{ $history->{edits} } ) {
+        $self->_import_edit($edit);
+      }
+      $self->set_sequence( 'edit_history', $next_seq );
     }
   );
 }
