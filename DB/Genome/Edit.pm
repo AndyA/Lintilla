@@ -387,6 +387,8 @@ sub load_edit_history {
       $since, SYNC_PAGE
     )
   );
+  return { sequence => $since, edits => [] }
+   unless $edits && @$edits;
   $self->_add_edit_log($edits);
   $self->_add_thing($edits);
   return { sequence => $edits->[-1]{id}, edits => $edits };
