@@ -24,6 +24,10 @@ prefix '/sync' => sub {
     db->load_edits( param('since') );
   };
 
+  get '/history/:since' => sub {
+    db->load_edit_history( param('since') );
+  };
+
   if ( config->{admin_mode} ) {
     post '/edits' => sub {
       my $db    = db;

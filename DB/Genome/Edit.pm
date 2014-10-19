@@ -3,6 +3,7 @@ package Lintilla::DB::Genome::Edit;
 use v5.10;
 
 use Moose;
+use Dancer qw( :syntax );
 
 use Carp qw( confess );
 use Digest::MD5 qw( md5_hex );
@@ -324,6 +325,31 @@ sub load_edit {
   die "Edit not found" unless defined $edit;
   $edit->{data} = $self->_decode( $edit->{data} );
   return $edit;
+}
+
+sub load_edit_history {
+  my ( $self, $since ) = @_;
+  my $edits = $self->dbh->selectall_arrayref(
+    'SELECT * FROM genome_edit WHERE id > ? ORDER BY id ASC LIMIT ?',
+    { Slice => {} },
+    $since, SYNC_PAGE
+  );
+  my @eids = map { $_->{id} } @$edits;
+  my $log = $self->group_by(
+    @eids
+    ? $self->dbh->selectall_arrayref(
+      join( ' ',
+        'SELECT * FROM genome_editlog WHERE edit_id IN (',
+        join( ', ', map "?", @eids ),
+        ')', 'ORDER BY id ASC' ),
+      { Slice => {} },
+      @eids
+     )
+    : [],
+    'edit_id'
+  );
+  $_->{log} = $log->{ $_->{id} } for @$edits;
+  return { sequence => $edits->[-1]{id}, edits => $edits };
 }
 
 sub load_edits {
