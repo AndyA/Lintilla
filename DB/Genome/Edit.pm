@@ -740,6 +740,7 @@ sub _deep_cmp {
         my $old_data = $kh->{get}( $self, $uuid );
         my ( $old_modified, $old_edit_id )
          = delete @{$old_data}{ '_modified', '_edit_id' };
+        delete @{$new_data}{ '_modified', '_edit_id' };
 
         # Only stash data that changes
         for my $ok ( keys %$old_data ) {
