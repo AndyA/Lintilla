@@ -988,6 +988,13 @@ sub _import_log {
   $self->_update_edit( $edit_id, $log[-1] );
 }
 
+sub _sync_change {
+  my ( $self, $edit_id, $edit, @log ) = @_;
+  $self->_import_log( $edit_id, @log );
+  $self->_apply( @{$edit}{ 'kind', 'uuid', 'who', 'thing' },
+    $edit_id, 'sync' );
+}
+
 sub _create_edit {
   my ( $self, $edit ) = @_;
   $self->dbh->do(
@@ -1018,14 +1025,11 @@ sub _import_edit {
     }
     # Anything left in the old list is BAD HISTORY
     $self->_editlog_remove( map { $_->{id} } @old );
-    $self->_import_log( $curr->{id}, @new );
-    $self->_save_thing( $edit->{kind}, $edit->{uuid}, $edit->{thing},
-      $curr->{id} );
+    $self->_sync_change( $curr->{id}, $edit, @new );
   }
   else {
     my $id = $self->_create_edit($edit);
-    $self->_import_log( $id, @{ $edit->{log} } );
-    $self->_save_thing( $edit->{kind}, $edit->{uuid}, $edit->{thing}, $id );
+    $self->_sync_change( $id, $edit, @{ $edit->{log} } );
   }
 }
 
