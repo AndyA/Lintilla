@@ -720,7 +720,7 @@ sub _deep_cmp {
   sub _save_thing {
     my ( $self, $kind, $uuid, $data, $edit_id ) = @_;
     my $kh = $KIND{$kind} // die;
-    return $kh->{out}( $self, $uuid, $data, $edit_id );
+    return $kh->{put}( $self, $uuid, $data, $edit_id );
   }
 
   sub _apply {
@@ -959,7 +959,8 @@ sub _append_log {
   return unless @log;
   $self->dbh->do(
     join( ' ',
-      'INSERT INTO genome_editlog (edit_id, who, when, old_state, new_state, old_data, new_data) VALUES',
+      'INSERT INTO genome_editlog',
+      '(`edit_id`, `who`, `when`, `old_state`, `new_state`, `old_data`, `new_data`) VALUES',
       join( ', ', ('(?, ?, ?, ?, ?, ?, ?)') x @log ) ),
     {},
     map {
@@ -1016,12 +1017,13 @@ sub _import_edit {
     # Anything left in the old list is BAD HISTORY
     $self->_editlog_remove( map { $_->{id} } @old );
     $self->_import_log( $curr->{id}, @new );
-    $self->_save_thing( $edit->{kind}, $edit->{data}, $curr->{id} );
+    $self->_save_thing( $edit->{kind}, $edit->{uuid}, $edit->{thing},
+      $curr->{id} );
   }
   else {
     my $id = $self->_create_edit($edit);
     $self->_import_log( $id, @{ $edit->{log} } );
-    $self->_save_thing( $edit->{kind}, $edit->{data}, $id );
+    $self->_save_thing( $edit->{kind}, $edit->{uuid}, $edit->{thing}, $id );
   }
 }
 
