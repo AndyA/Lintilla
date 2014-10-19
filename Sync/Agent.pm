@@ -42,7 +42,7 @@ sub _b_json { JSON->new->utf8 }
 
 sub _decode {
   my ( $self, $resp ) = @_;
-  die $resp->status_line if $resp->is_error;
+  die $resp->status_line, $resp->content if $resp->is_error;
   return $self->_json->decode( $resp->content );
 }
 
