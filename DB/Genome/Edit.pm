@@ -423,6 +423,7 @@ sub load_edits {
       'SELECT el.*, e.parent_id, e.uuid, e.kind, e.hash',
       'FROM genome_editlog AS el, genome_edit AS e',
       'WHERE el.edit_id=e.id',
+      "AND e.alien='N'",
       'AND el.id > ?',
       'ORDER BY el.id',
       'LIMIT ?' ),
@@ -999,8 +1000,8 @@ sub _create_edit {
   my ( $self, $edit ) = @_;
   $self->dbh->do(
     join( ' ',
-      'INSERT INTO genome_edit (hash, parent_id, uuid, kind, data, state)',
-      'VALUES (?, ?, ?, ?, ?, ?)' ),
+      'INSERT INTO genome_edit (hash, parent_id, uuid, kind, data, state, alien)',
+      "VALUES (?, ?, ?, ?, ?, ?, 'Y')" ),
     {},
     $edit->{hash},
     $edit->{parent_id},
