@@ -993,7 +993,7 @@ sub _sync_change {
   my ( $self, $edit_id, $edit, @log ) = @_;
   $self->_import_log( $edit_id, @log );
   $self->_apply( @{$edit}{ 'kind', 'uuid', 'who', 'thing' },
-    $edit_id, 'sync' );
+    $edit_id, 'apply' );
 }
 
 sub _create_edit {
@@ -1010,6 +1010,7 @@ sub _create_edit {
     $self->_encode( $edit->{data} ),
     $edit->{state}
   );
+  return $self->dbh->last_insert_id( undef, undef, undef, undef );
 }
 
 sub _import_edit {
