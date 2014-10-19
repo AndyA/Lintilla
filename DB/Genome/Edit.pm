@@ -24,7 +24,8 @@ with 'Lintilla::Role::DB';
 with 'Lintilla::Role::JSON';
 with 'Lintilla::Role::DataCounter';
 
-use constant SYNC_PAGE => 100;
+use constant SYNC_PAGE  => 100;
+use constant SYNC_EDITS => 10;
 
 sub unique(@) {
   my %seen = ();
@@ -427,7 +428,7 @@ sub load_edits {
       'LIMIT ?' ),
     { Slice => {} },
     $since,
-    SYNC_PAGE
+    SYNC_EDITS
   );
   return { sequence => $since, edits => [] }
    unless $edits && @$edits;
