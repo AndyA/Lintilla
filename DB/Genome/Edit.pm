@@ -36,6 +36,7 @@ sub audit {
   my ( $self, $edit_id, $who, $kind, $old_state, $new_state, $old_data,
     $new_data )
    = @_;
+  my ($log_id);
   $self->transaction(
     sub {
       $self->dbh->do(
@@ -50,10 +51,12 @@ sub audit {
         $old_data,
         $new_data
       );
+      $log_id = $self->dbh->last_insert_id( undef, undef, undef, undef );
       $self->bump( 'edit', $kind,
         [unique( grep { defined } $old_state, $new_state )] );
     }
   );
+  return $log_id;
 }
 
 sub _cook_order {
@@ -466,7 +469,7 @@ sub load_changes {
 
 sub amend {
   my ( $self, $edit_id, $who, $state, $data ) = @_;
-  my $changed = 0;
+  my ($editlog_id);
   $self->transaction(
     sub {
       my $old = $self->load_edit($edit_id);
@@ -483,12 +486,12 @@ sub amend {
       $self->dbh->do( 'UPDATE genome_edit SET state=?, data=? WHERE id=?',
         {}, $state, $new_data, $edit_id );
 
-      $self->audit( $edit_id, $who, $old->{kind}, $old->{state}, $state,
+      $editlog_id
+       = $self->audit( $edit_id, $who, $old->{kind}, $old->{state}, $state,
         $old_data, $new_data );
-      $changed++;
     }
   );
-  return $changed;
+  return $editlog_id;
 }
 
 sub workflow {
@@ -517,9 +520,14 @@ sub workflow {
         'to', uc($new_state) . '.'
       );
 
+      my $editlog_id = $self->amend( $edit_id, $who, $new_state, undef );
+      unless ($editlog_id) {
+        @msg = ('Nothing to do.');
+      }
+
       # The only transitions that affect data are to and from accepted.
       if ( $new_state eq 'accepted' && $old->{state} ne 'accepted' ) {
-        $self->do_edit( $edit_id, $who );
+        $self->do_edit( [$edit_id, $editlog_id], $who );
         push @msg, 'Edit applied to live site.';
       }
       elsif ( $new_state ne 'accepted' && $old->{state} eq 'accepted' ) {
@@ -530,9 +538,6 @@ sub workflow {
         push @msg, 'Edit rolled back on live site.';
       }
 
-      unless ( $self->amend( $edit_id, $who, $new_state, undef ) ) {
-        @msg = ('Nothing to do.');
-      }
       $status->{message} = join ' ', @msg;
     }
   );
@@ -881,12 +886,13 @@ sub _parse_edit {
 }
 
 sub do_edit {
-  my ( $self, $edit_id, $who ) = @_;
+  my ( $self, $txn_id, $who ) = @_;
+  my ( $edit_id, $editlog_id ) = @$txn_id;
   $self->transaction(
     sub {
       my $edit = $self->load_edit($edit_id);
       $self->apply( 'programme', $edit->{uuid}, $who,
-        $self->_parse_edit( $edit->{data} ), $edit_id );
+        $self->_parse_edit( $edit->{data} ), $txn_id );
     }
   );
 }
