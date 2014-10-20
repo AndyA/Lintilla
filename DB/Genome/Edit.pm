@@ -727,8 +727,15 @@ sub _deep_cmp {
     return $kh->{put}( $self, $uuid, $data, $edit_id );
   }
 
+  sub _unpack_id {
+    my ( $self, $id ) = @_;
+    return @$id if ref $id;
+    return ( $id, undef );
+  }
+
   sub _apply {
-    my ( $self, $kind, $uuid, $who, $data, $edit_id, $bump ) = @_;
+    my ( $self, $kind, $uuid, $who, $data, $eid, $bump ) = @_;
+    my ( $edit_id, $editlog_id ) = $self->_unpack_id($eid);
 
     my ($next_id);
     my $new_data = {%$data};
@@ -756,10 +763,11 @@ sub _deep_cmp {
           $self->dbh->do(
             join( ' ',
               'INSERT INTO genome_changelog',
-              '(`edit_id`, `prev_id`, `uuid`, `kind`, `who`, `created`, `old_data`, `new_data`)',
-              'VALUES (?, ?, ?, ?, ?, NOW(), ?, ?)' ),
+              '(`edit_id`, `editlog_id`, `prev_id`, `uuid`, `kind`, `who`, `created`, `old_data`, `new_data`)',
+              'VALUES (?, ?, ?, ?, ?, ?, NOW(), ?, ?)' ),
             {},
             $edit_id,
+            $editlog_id,
             $old_edit_id,
             $self->format_uuid($uuid),
             $kind, $who,
