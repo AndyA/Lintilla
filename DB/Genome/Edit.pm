@@ -781,6 +781,17 @@ sub _deep_cmp {
             $self->_encode($new_data)
           );
           $next_id = $self->dbh->last_insert_id( undef, undef, undef, undef );
+        }
+
+        # Always update programme on undo - to change _edit_id
+        if ( defined $next_id || $bump eq 'undo' ) {
+          my $new_edit_id = $next_id;
+          if ( $bump eq 'undo' ) {
+            ($new_edit_id)
+             = $self->dbh->selectrow_array(
+              'SELECT prev_id FROM genome_changelog WHERE id=?',
+              {}, $old_edit_id );
+          }
           $kh->{put}( $self, $uuid, $new_data, $next_id );
           $self->bump( 'change', $kind, $bump );
         }
@@ -793,16 +804,16 @@ sub _deep_cmp {
     my ( $self, $id ) = @_;
     $self->transaction(
       sub {
-        my $edit
+        my $change
          = $self->dbh->selectrow_hashref(
           'SELECT * FROM genome_changelog WHERE id=?',
           {}, $id );
-        die unless $edit;
+        die unless $change;
 
         $self->_apply(
-          @{$edit}{ 'kind', 'uuid', 'who' },
-          $self->_decode( $edit->{old_data} ),
-          $edit->{edit_id}, 'undo'
+          @{$change}{ 'kind', 'uuid', 'who' },
+          $self->_decode( $change->{old_data} ),
+          [$change->{edit_id}, $change->{editlog_id}], 'undo'
         );
       }
     );
@@ -823,9 +834,9 @@ sub _undo {
         'SELECT uuid FROM genome_changelog WHERE id=?',
         {}, $id );
       return unless defined $uuid;
-      my $hist = $self->history($uuid);
+      my $hist = $self->history( $uuid, $id );
       shift @$hist while @$hist && $hist->[0]{id} != $id;
-      # Only safe is this edit is the most recent
+      # Only safe if this edit is the most recent
       die "Can't undo edit" if $safe && @$hist > 1;
       while (@$hist) {
         my $ch = pop @$hist;
@@ -835,6 +846,7 @@ sub _undo {
   );
 }
 
+# Currently unused
 sub undo {
   my ( $self, $id ) = @_;
   $self->_undo( $id, 0 );
@@ -846,29 +858,22 @@ sub safe_undo {
 }
 
 sub history {
-  my ( $self, $uuid ) = @_;
-  my $hist = $self->dbh->selectall_arrayref(
-    'SELECT * FROM genome_changelog WHERE uuid=?',
-    { Slice => {} },
-    $self->format_uuid($uuid)
-  );
-
-  return [] unless @$hist;
-
-  my ( %by_prev, @tx );
-  for my $itm (@$hist) {
-    my $pid = $itm->{prev_id};
-    if ( defined $pid ) { $by_prev{$pid} = $itm }
-    else                { push @tx, $itm }
+  my ( $self, $uuid, $stopat ) = @_;
+  my ($next)
+   = $self->dbh->selectrow_array(
+    'SELECT _edit_id FROM genome_programmes_v2 WHERE _uuid=?',
+    {}, $uuid );
+  my @hist = ();
+  while ( defined $next ) {
+    my $ev
+     = $self->dbh->selectrow_hashref(
+      'SELECT * FROM genome_changelog WHERE id=?',
+      {}, $next );
+    push @hist, $ev;
+    last if defined $stopat && $stopat == $next;
+    $next = $ev->{prev_id};
   }
-
-  while ( keys %by_prev ) {
-    my $next = delete $by_prev{ $tx[-1]{id} };
-    die unless $next;
-    push @tx, $next;
-  }
-
-  return \@tx;
+  return \@hist;
 }
 
 sub _parse_edit {
@@ -901,6 +906,7 @@ sub undo_edit {
   my ( $self, $edit_id ) = @_;
   $self->transaction(
     sub {
+      # TODO clearly wrong - multiple 1-to-N
       my ($id)
        = $self->dbh->selectrow_array(
         'SELECT id FROM genome_changelog WHERE edit_id=?',
