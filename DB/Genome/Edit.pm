@@ -531,9 +531,6 @@ sub workflow {
         push @msg, 'Edit applied to live site.';
       }
       elsif ( $new_state ne 'accepted' && $old->{state} eq 'accepted' ) {
-        # FIXME do the undo semantics still work when every change is a
-        # forward edit?
-        # I THINK NOT
         $self->undo_edit($edit_id);
         push @msg, 'Edit rolled back on live site.';
       }
@@ -906,11 +903,16 @@ sub undo_edit {
   my ( $self, $edit_id ) = @_;
   $self->transaction(
     sub {
-      # TODO clearly wrong - multiple 1-to-N
-      my ($id)
-       = $self->dbh->selectrow_array(
-        'SELECT id FROM genome_changelog WHERE edit_id=?',
-        {}, $edit_id );
+      my ($id) = $self->dbh->selectrow_array(
+        join( ' ',
+          'SELECT id',
+          'FROM genome_changelog',
+          'WHERE edit_id=?',
+          'ORDER BY id DESC',
+          'LIMIT 1' ),
+        {},
+        $edit_id
+      );
       die "Unknown edit ID" unless defined $id;
       $self->safe_undo($id);
     }
