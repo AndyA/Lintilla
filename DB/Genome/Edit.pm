@@ -789,7 +789,7 @@ sub _deep_cmp {
               'SELECT prev_id FROM genome_changelog WHERE id=?',
               {}, $old_edit_id );
           }
-          $kh->{put}( $self, $uuid, $new_data, $next_id );
+          $kh->{put}( $self, $uuid, $new_data, $new_edit_id );
           $self->bump( 'change', $kind, $bump );
         }
       }
