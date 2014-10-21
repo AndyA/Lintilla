@@ -807,6 +807,7 @@ sub _deep_cmp {
           {}, $id );
         die unless $change;
 
+        # TODO should also roll back the associated edits
         $self->_apply(
           @{$change}{ 'kind', 'uuid', 'who' },
           $self->_decode( $change->{old_data} ),
