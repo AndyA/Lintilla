@@ -737,7 +737,7 @@ sub _deep_cmp {
   }
 
   sub _apply {
-    my ( $self, $kind, $uuid, $who, $data, $eid, $bump ) = @_;
+    my ( $self, $kind, $uuid, $who, $data, $eid, $bump, $hash ) = @_;
     my ( $edit_id, $editlog_id ) = $self->_unpack_id($eid);
 
     my ($next_id);
@@ -761,13 +761,17 @@ sub _deep_cmp {
           }
         }
 
+        # It'd probably be bad (for sync) to change the way this
+        # hash is computed.
+        my $data_hash = $self->data_hash( $old_data, $new_data );
+
         # Update if necessary
         if ( keys %$new_data ) {
           $self->dbh->do(
             join( ' ',
               'INSERT INTO genome_changelog',
-              '(`edit_id`, `editlog_id`, `prev_id`, `uuid`, `kind`, `who`, `created`, `old_data`, `new_data`)',
-              'VALUES (?, ?, ?, ?, ?, ?, NOW(), ?, ?)' ),
+              '(`edit_id`, `editlog_id`, `prev_id`, `uuid`, `kind`, `who`, `created`, `old_data`, `new_data`, `data_hash`)',
+              'VALUES (?, ?, ?, ?, ?, ?, NOW(), ?, ?, ?)' ),
             {},
             $edit_id,
             $editlog_id,
@@ -775,7 +779,8 @@ sub _deep_cmp {
             $self->format_uuid($uuid),
             $kind, $who,
             $self->_encode($old_data),
-            $self->_encode($new_data)
+            $self->_encode($new_data),
+            $data_hash,
           );
           $next_id = $self->dbh->last_insert_id( undef, undef, undef, undef );
         }
