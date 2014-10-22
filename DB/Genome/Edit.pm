@@ -42,14 +42,15 @@ sub audit {
       $self->dbh->do(
         join( ' ',
           'INSERT INTO genome_editlog',
-          '  (`edit_id`, `who`, `old_state`, `new_state`, `old_data`, `new_data`, `when`)',
-          '  VALUES (?, ?, ?, ?, ?, ?, NOW())' ),
+          '  (`edit_id`, `who`, `old_state`, `new_state`, `old_data`, `new_data`, `when`, `data_hash`)',
+          '  VALUES (?, ?, ?, ?, ?, ?, NOW(), ?)' ),
         {},
         $edit_id, $who,
         $old_state,
         $new_state,
         $old_data,
-        $new_data
+        $new_data,
+        $self->data_hash( $old_state, $new_state, $old_data, $new_data )
       );
       $log_id = $self->dbh->last_insert_id( undef, undef, undef, undef );
       $self->bump( 'edit', $kind,
@@ -273,14 +274,15 @@ sub _submit {
       $dbh->do(
         join( ' ',
           'INSERT INTO genome_edit',
-          '(`parent_id`, `uuid`, `kind`, `data`, `state`, `hash`)',
-          'VALUES (?, ?, ?, ?, ?, ?)' ),
+          '(`parent_id`, `uuid`, `kind`, `data`, `state`, `hash`, `data_hash`)',
+          'VALUES (?, ?, ?, ?, ?, ?, ?)' ),
         {},
         $parent,
         $self->format_uuid($uuid),
         $kind,
         $new_data,
-        $state, $hash
+        $state, $hash,
+        $self->data_hash( $state, $new_data )
       );
       my $edit_id = $dbh->last_insert_id( undef, undef, undef, undef );
       $self->audit( $edit_id, $who, $kind, undef, 'pending', undef,
@@ -1031,15 +1033,16 @@ sub _create_edit {
   my ( $self, $edit ) = @_;
   $self->dbh->do(
     join( ' ',
-      'INSERT INTO genome_edit (hash, parent_id, uuid, kind, data, state, alien)',
-      "VALUES (?, ?, ?, ?, ?, ?, 'Y')" ),
+      'INSERT INTO genome_edit (hash, parent_id, uuid, kind, data, state, alien, data_hash)',
+      "VALUES (?, ?, ?, ?, ?, ?, 'Y', ?)" ),
     {},
     $edit->{hash},
     $edit->{parent_id},
     $edit->{uuid},
     $edit->{kind},
     $self->_encode( $edit->{data} ),
-    $edit->{state}
+    $edit->{state},
+    $self->data_hash( $edit->{state}, $edit->{data} )
   );
   return $self->dbh->last_insert_id( undef, undef, undef, undef );
 }
