@@ -17,7 +17,13 @@ Lintilla::Sync::ErrorLog - Log errors
 has _errors => ( is => 'ro', isa => 'HashRef', default => sub { {} } );
 has _stats  => ( is => 'ro', isa => 'HashRef', default => sub { {} } );
 
-my @LVL_NUM_TO_NAME = qw( FATAL ERROR WARN NOTE DEBUG );
+has _level => (
+  is      => 'rw',
+  isa     => 'Int',
+  default => 0,
+);
+
+my @LVL_NUM_TO_NAME = qw( DEBUG NOTE WARN ERROR FATAL);
 my %LVL_NAME_TO_NUM
  = map { $LVL_NUM_TO_NAME[$_] => $_ } 0 .. $#LVL_NUM_TO_NAME;
 my $MAX_LVL = max map length, @LVL_NUM_TO_NAME;
@@ -27,6 +33,12 @@ my $MAX_LVL = max map length, @LVL_NUM_TO_NAME;
     no strict 'refs';
     *{ lc $level } = sub { shift->_report( $level, @_ ) };
   }
+}
+
+sub level {
+  my $self = shift;
+  return $self->_level unless @_;
+  return $self->_level( $self->_level_num(@_) );
 }
 
 sub _path_as_array {
@@ -63,18 +75,18 @@ sub _pretty {
 
 sub _add {
   my ( $self, $path, $thing, $msg ) = @_;
-  my $nlevel = $msg->{level};
-  $self->_stats->{$nlevel}++;
+  $self->_stats->{ $msg->{level} }++;
   $self->_put( $msg, $self->_errors, @$path, $thing );
   return $self;
 }
 
 sub _report {
   my ( $self, $level, $path, $thing, @msg ) = @_;
-  my @ln     = split /\n/, join '', map { $self->_pretty($_) } @msg;
-  my @path   = $self->_path_as_array($path);
   my $nlevel = $self->_level_num($level);
-  $self->_add(
+  return if $nlevel < $self->level;
+  my @ln = split /\n/, join '', map { $self->_pretty($_) } @msg;
+  my @path = $self->_path_as_array($path);
+  return $self->_add(
     \@path,
     $thing,
     { level      => $nlevel,
@@ -83,7 +95,6 @@ sub _report {
       type       => 'message',
     }
   );
-  return $self;
 }
 
 sub got {
@@ -94,7 +105,7 @@ sub got {
 sub at_least {
   my ( $self, $level ) = @_;
   my $total = 0;
-  for my $ln ( 0 .. $self->_level_num($level) ) {
+  for my $ln ( $self->_level_num($level) .. $#LVL_NUM_TO_NAME ) {
     $total += $self->got($ln);
   }
   return $total;
@@ -235,8 +246,8 @@ sub merge {
 }
 
 sub status_line {
-  my $self  = shift;
-  join ', ', map { join ': ', $_, $self->got($_) } reverse @LVL_NUM_TO_NAME;
+  my $self = shift;
+  join ', ', map { join ': ', $_, $self->got($_) } @LVL_NUM_TO_NAME;
 }
 
 1;
