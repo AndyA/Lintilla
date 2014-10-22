@@ -11,6 +11,8 @@ Lintilla::Versions::ChangeLog - Construct versions from changelog, data
 
 =cut
 
+with 'Lintilla::Role::ErrorLog';
+
 has data => ( is => 'ro', isa => 'HashRef',  required => 1 );
 has log  => ( is => 'ro', isa => 'ArrayRef', required => 1 );
 
@@ -68,9 +70,14 @@ sub _eq {
 sub _b_sane {
   my $self = shift;
   my (%cur);
+
   for my $ev ( @{ $self->log } ) {
     while ( my ( $k, $v ) = each %{ $ev->{old_data} } ) {
-      return 0 if exists $cur{$k} && !_eq( $cur{$k}, $v );
+      if ( exists $cur{$k} && !_eq( $cur{$k}, $v ) ) {
+        $self->error( 'changelog.sanity', 'History',
+          "new_data <=> old_data mismatch for $k, new_data: ",
+          $cur{$k}, ', old_data: ', $v );
+      }
     }
     %cur = ( %cur, %{ $ev->{new_data} } );
   }
@@ -81,10 +88,17 @@ sub _b_sane {
   my $ref  = $dv == 0 ? $log->[0]{old_data} : $log->[$dv - 1]{new_data};
 
   while ( my ( $k, $v ) = each %$ref ) {
-    return 0 unless _eq( $v, $data->{$k} );
+    unless ( _eq( $v, $data->{$k} ) ) {
+      $self->error(
+        'changelog.sanity',
+        'Programme Data',
+        "data <=> patch mismatch for $k, data: ",
+        $data->{$k}, ', patch: ', $v
+      );
+    }
   }
 
-  return 1;
+  return !$self->error_log->at_least('ERROR');
 }
 
 sub _check_sane { shift->_sane || confess "Inconsitent state" }
