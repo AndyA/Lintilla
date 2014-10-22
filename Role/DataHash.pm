@@ -11,8 +11,6 @@ Lintilla::Role::DataHash - Compute hash of data structure
 
 =cut
 
-#requires '_decode';
-
 sub data_hash {
   my $self = shift;
   local $Storable::canonical = 1;
