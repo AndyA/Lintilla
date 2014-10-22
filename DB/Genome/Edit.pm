@@ -324,10 +324,10 @@ sub import_edits {
   }
 }
 
-sub _decode_data {
+sub decode_data {
   my ( $self, $hash ) = @_;
 
-  return [map { $self->_decode_data($_) } @$hash]
+  return [map { $self->decode_data($_) } @$hash]
    if 'ARRAY' eq ref $hash;
 
   my $out = {};
@@ -357,7 +357,7 @@ sub _load_editlog {
   return {} unless @eids;
 
   return $self->group_by(
-    $self->_decode_data(
+    $self->decode_data(
       $self->dbh->selectall_arrayref(
         join( ' ',
           'SELECT * FROM genome_editlog WHERE edit_id IN (',
@@ -380,7 +380,7 @@ sub _add_edit_log {
 sub _add_thing {
   my ( $self, $edits ) = @_;
   for my $edit (@$edits) {
-    $edit->{thing} = $self->_load_thing( $edit->{kind}, $edit->{uuid} );
+    $edit->{thing} = $self->load_thing( $edit->{kind}, $edit->{uuid} );
   }
 }
 
@@ -410,7 +410,7 @@ sub load_edits_by_id {
    if @hash;
   push @term, join '', 'id IN (', join( ', ', map "?", @id ), ')'
    if @id;
-  my $edits = $self->_decode_data(
+  my $edits = $self->decode_data(
     $self->dbh->selectall_arrayref(
       join( ' ', 'SELECT * FROM genome_edit WHERE ', join( ' OR ', @term ) ),
       { Slice => {} },
@@ -720,13 +720,13 @@ sub _deep_cmp {
     }
   );
 
-  sub _load_thing {
+  sub load_thing {
     my ( $self, $kind, $uuid ) = @_;
     my $kh = $KIND{$kind} // die;
     return $kh->{get}( $self, $uuid );
   }
 
-  sub _save_thing {
+  sub save_thing {
     my ( $self, $kind, $uuid, $data, $edit_id ) = @_;
     my $kh = $KIND{$kind} // die;
     return $kh->{put}( $self, $uuid, $data, $edit_id );
