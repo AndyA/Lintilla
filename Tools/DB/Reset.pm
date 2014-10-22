@@ -9,7 +9,7 @@ Lintilla::Tools::DB::Reset - Reset database
 =cut
 
 with 'Lintilla::Tools::Role::EditDB';
-with 'Lintilla::Tools::Role::ErrorLog';
+with 'Lintilla::Role::ErrorLog';
 
 sub load_changes {
   my ( $self, $uuid, $head ) = @_;
