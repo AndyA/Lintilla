@@ -234,6 +234,11 @@ sub merge {
   return $self;
 }
 
+sub status_line {
+  my $self  = shift;
+  join ', ', map { join ': ', $_, $self->got($_) } reverse @LVL_NUM_TO_NAME;
+}
+
 1;
 
 # vim:ts=2:sw=2:sts=2:et:ft=perl
