@@ -2,6 +2,7 @@ package Lintilla::Sync::ErrorLog;
 
 use Moose;
 
+use JSON ();
 use List::Util qw( max );
 use Scalar::Util qw( looks_like_number );
 
@@ -54,22 +55,33 @@ sub _level_name {
   return $LVL_NUM_TO_NAME[$self->_level_num($num)];
 }
 
+sub _pretty {
+  my ( $self, $val ) = @_;
+  return $val if defined $val && !ref $val;
+  return JSON->new->canonical->encode($val);
+}
+
+sub _add {
+  my ( $self, $path, $thing, $msg ) = @_;
+  my $nlevel = $msg->{level};
+  $self->_stats->{$nlevel}++;
+  $self->_put( $msg, $self->_errors, @$path, $thing );
+  return $self;
+}
+
 sub _report {
   my ( $self, $level, $path, $thing, @msg ) = @_;
-  my @ln = split /\n/, join '', @msg;
-  my @p = ( $self->_path_as_array($path), $thing );
+  my @ln     = split /\n/, join '', map { $self->_pretty($_) } @msg;
+  my @path   = $self->_path_as_array($path);
   my $nlevel = $self->_level_num($level);
-
-  $self->_stats->{$nlevel}++;
-
-  $self->_put(
+  $self->_add(
+    \@path,
+    $thing,
     { level      => $nlevel,
       level_name => $self->_level_name($nlevel),
       message    => \@ln,
       type       => 'message',
-    },
-    $self->_errors,
-    @p
+    }
   );
   return $self;
 }
@@ -161,6 +173,65 @@ sub _format_iter {
 sub as_string {
   my $self = shift;
   join "\n", $self->_format_iter( $self->iterator(@_) ), "\n";
+}
+
+sub _visit {
+  my ( $self, $ds, $cb, @path ) = @_;
+
+  confess "Not a ref" unless ref $ds;
+
+  if ( 'HASH' eq ref $ds ) {
+    while ( my ( $k, $v ) = each %$ds ) {
+      $self->_visit( $v, $cb, @path, $k );
+    }
+    return;
+  }
+
+  if ( 'ARRAY' eq ref $ds ) {
+    my $thing = pop @path;
+    for my $msg (@$ds) {
+      $cb->( \@path, $thing, $msg );
+    }
+    return;
+  }
+
+  confess "Not a HASH or ARRAY";
+
+}
+
+sub visit {
+  my ( $self, @path ) = @_;
+  my $cb = pop @path;
+  return $self->_visit( $self->report(@path), $cb, @path );
+}
+
+sub _mk_prefixer {
+  my ( $self, @pfx ) = @_;
+  return sub { $_[0] }
+   unless @pfx;
+  my @pre = $self->_path_as_array(@pfx);
+  return sub { [@pre, @{ $_[0] }] };
+}
+
+sub merge {
+  my ( $self, @other ) = @_;
+
+  my @pfx = ();
+  push @pfx, shift @other
+   while @other && !ref $other[0] || 'ARRAY' eq ref $other[0];
+
+  my $pxr = $self->_mk_prefixer(@pfx);
+
+  for my $el (@other) {
+    $el->visit(
+      sub {
+        my ( $path, $thing, $msg ) = @_;
+        $self->_add( $pxr->($path), $thing, $msg );
+      }
+    );
+  }
+
+  return $self;
 }
 
 1;
