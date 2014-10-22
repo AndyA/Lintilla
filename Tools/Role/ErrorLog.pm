@@ -1,4 +1,4 @@
-package Lintilla::Tools::Role::ErrorLog;
+package Lintilla::Role::ErrorLog;
 
 use Moose::Role;
 
@@ -6,7 +6,7 @@ use Lintilla::Sync::ErrorLog;
 
 =head1 NAME
 
-Lintilla::Tools::Role::ErrorLog - ErrorLog mixin
+Lintilla::Role::ErrorLog - ErrorLog mixin
 
 =cut
 
