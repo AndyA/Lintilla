@@ -6,7 +6,6 @@ use Moose;
 use Dancer qw( :syntax );
 
 use Carp qw( confess );
-use Digest::MD5 qw( md5_hex );
 use Storable qw( freeze );
 use Text::DeepDiff;
 use Text::HTMLCleaner;
@@ -22,6 +21,7 @@ our $VERSION = '0.1';
 
 with 'Lintilla::Role::DB';
 with 'Lintilla::Role::JSON';
+with 'Lintilla::Role::DataHash';
 with 'Lintilla::Role::DataCounter';
 
 use constant SYNC_PAGE  => 100;
@@ -292,18 +292,18 @@ sub _submit {
 sub submit {
   my ( $self, $uuid, $kind, $who, $data, $state, $parent ) = @_;
   $state //= 'pending';
-  my $hash = md5_hex(
-    $self->_encode(
-      { uuid   => $uuid,
-        kind   => $kind,
-        who    => $who,
-        data   => $data,
-        state  => $state,
-        parent => $parent,
-        now    => time,
-      }
-    )
+
+  my $hash = $self->data_hash(
+    { uuid   => $uuid,
+      kind   => $kind,
+      who    => $who,
+      data   => $data,
+      state  => $state,
+      parent => $parent,
+      now    => time,
+    }
   );
+
   return $self->_submit( $uuid, $kind, $who, $data, $state, $parent,
     $hash );
 }
