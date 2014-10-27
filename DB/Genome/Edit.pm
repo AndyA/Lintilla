@@ -558,10 +558,6 @@ sub list_stash {
   return $st;
 }
 
-sub _format_contributors {
-  my ( $self, $contrib ) = @_;
-}
-
 sub _parse_contributor_line {
   my ( $self, $ln ) = @_;
   return ( $1, $2 ) if $ln =~ m{^\s*([^:]+):\s*(.+?)\s*$};
