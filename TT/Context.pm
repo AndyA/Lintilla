@@ -25,7 +25,6 @@ sub process {
   my $name   = $self->_get_template_name($template);
   my $args   = JSON->new->canonical->encode( \@args );
   my $output = $self->SUPER::process( $template, @args );
-  use Data::Dumper;
   return join "\n", "<!-- [START[$name, $args]] -->", $output,
    "<!-- [END[$name]] -->";
 }
