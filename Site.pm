@@ -16,6 +16,7 @@ use Lintilla::Site::Diagnostic;
 use Lintilla::Site::Edit;
 use Lintilla::Site::Labs;
 use Lintilla::Site::Sync;
+use Lintilla::TT::Context;
 use Lintilla::TT::Extensions;
 use Path::Class;
 use URI;
@@ -31,6 +32,12 @@ sub db() { Lintilla::DB::Genome->new( dbh => database ) }
 
 my $STATIC = Lintilla::Data::Static->new(
   store => dir( setting('appdir'), 'data' ) );
+
+BEGIN {
+  if ( vars->{magic_context} ) {
+    $Template::Config::CONTEXT = 'Lintilla::TT::Context';
+  }
+}
 
 sub our_uri_for {
   my $sn = delete request->env->{SCRIPT_NAME};
