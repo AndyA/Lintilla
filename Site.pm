@@ -33,10 +33,8 @@ sub db() { Lintilla::DB::Genome->new( dbh => database ) }
 my $STATIC = Lintilla::Data::Static->new(
   store => dir( setting('appdir'), 'data' ) );
 
-BEGIN {
-  if ( vars->{magic_context} ) {
-    $Template::Config::CONTEXT = 'Lintilla::TT::Context';
-  }
+if ( config->{magic_context} ) {
+  $Template::Config::CONTEXT = 'Lintilla::TT::Context';
 }
 
 sub our_uri_for {
