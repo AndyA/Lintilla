@@ -586,6 +586,21 @@ sub _parse_contributors {
   return \@row;
 }
 
+sub _strip_contrib {
+  my ( $self, $data ) = @_;
+  for my $row (@$data) {
+    %$row = map { $_ => $row->{$_} } qw( first_name last_name type );
+  }
+  return $data;
+}
+
+sub strip_thing {
+  my ( $self, $kind, $thing ) = @_;
+  die unless $kind eq 'programme';
+  $self->_strip_contrib( $thing->{contributors} )
+   if exists $thing->{contributors};
+}
+
 sub _default_contrib {
   my ( $self, $data ) = @_;
   my $idx = 0;

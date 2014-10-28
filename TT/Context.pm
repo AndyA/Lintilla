@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 use JSON ();
+use HTML::Tiny;
 
 =head1 NAME
 
@@ -20,13 +21,20 @@ sub _get_template_name {
   return "*** UNKNOWN ***";
 }
 
+sub _comment {
+  my ( $self, $str ) = @_;
+  my $h = HTML::Tiny->new;
+  return join ' ', '<!--', $h->entity_encode($str), '-->';
+}
+
 sub process {
   my ( $self, $template, @args ) = @_;
   my $name   = $self->_get_template_name($template);
   my $args   = JSON->new->canonical->encode( \@args );
   my $output = $self->SUPER::process( $template, @args );
-  return join "\n", "<!-- [START[$name, $args]] -->", $output,
-   "<!-- [END[$name]] -->";
+  return join( "\n",
+    $self->_comment("[START[$name, $args]]"),
+    $output, $self->_comment("[END[$name]]") );
 }
 
 1;
