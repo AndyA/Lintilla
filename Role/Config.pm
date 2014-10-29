@@ -23,7 +23,7 @@ sub _read_config {
    = $self->dbh->selectrow_array(
     'SELECT `value` FROM genome_config WHERE `name`=?',
     {}, $name );
-  return $self->_decode($val);
+  return $self->_decode_wide($val);
 }
 
 sub config {

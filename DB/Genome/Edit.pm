@@ -182,7 +182,7 @@ sub diff {
     undef, $id
   );
 
-  my $data = $self->_decode( delete $edit->{data} );
+  my $data = $self->_decode_wide( delete $edit->{data} );
   $edit->{contributors} = $self->_contrib( $edit->{uuid} );
 
   return {
@@ -252,7 +252,7 @@ sub list {
 
   for my $rc (@$res) {
     $rc->{link} = $self->strip_uuid( $rc->{uuid} );
-    $rc->{data} = $self->_decode( $rc->{data} );
+    $rc->{data} = $self->_decode_wide( $rc->{data} );
   }
 
   return $self->group_by( $res, @group ) if @group;
@@ -335,7 +335,7 @@ sub decode_data {
     $out->{$key}
      = $key =~ /^(?:\w+_)?data$/
      ? defined $hash->{$key}
-       ? $self->_decode( $hash->{$key} )
+       ? $self->_decode_wide( $hash->{$key} )
        : undef
      : $hash->{$key};
   }
@@ -348,7 +348,7 @@ sub load_edit {
    = $self->dbh->selectrow_hashref( 'SELECT * FROM genome_edit WHERE id=?',
     {}, $edit_id );
   die "Edit not found" unless defined $edit;
-  $edit->{data} = $self->_decode( $edit->{data} );
+  $edit->{data} = $self->_decode_wide( $edit->{data} );
   return $edit;
 }
 
@@ -440,7 +440,7 @@ sub load_edits {
    unless $edits && @$edits;
   for my $key ( 'old_data', 'new_data' ) {
     for my $ch (@$edits) {
-      $ch->{$key} = $self->_decode( $ch->{$key} );
+      $ch->{$key} = $self->_decode_wide( $ch->{$key} );
       $ch->{$key}{type} //= 'html' if defined $ch->{$key};
     }
   }
@@ -464,7 +464,7 @@ sub load_changes {
   return { sequence => $since, changes => [] }
    unless $changes && @$changes;
   for my $key ( 'old_data', 'new_data' ) {
-    $_->{$key} = $self->_decode( $_->{$key} ) for @$changes;
+    $_->{$key} = $self->_decode_wide( $_->{$key} ) for @$changes;
   }
   return { sequence => $changes->[-1]{id}, changes => $changes };
 }
@@ -552,7 +552,7 @@ sub list_stash {
     { Slice => {} } );
 
   for my $rec (@$st) {
-    $rec->{stash} = $self->_decode( $rec->{stash} );
+    $rec->{stash} = $self->_decode_wide( $rec->{stash} );
   }
 
   return $st;
@@ -828,7 +828,7 @@ sub _deep_cmp {
         # TODO should also roll back the associated edits
         $self->_apply(
           @{$change}{ 'kind', 'uuid', 'who' },
-          $self->_decode( $change->{old_data} ),
+          $self->_decode_wide( $change->{old_data} ),
           [$change->{edit_id}, $change->{editlog_id}], 'undo'
         );
       }

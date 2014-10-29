@@ -680,7 +680,7 @@ sub services_for_ids {
   return [] unless @ids;
   my $svcs = $self->_services_for_thing( _uuid => @ids );
 
-  $_->{data} = $self->_decode( $_->{data} ) for @$svcs;
+  $_->{data} = $self->_decode_wide( $_->{data} ) for @$svcs;
 
   my @inc = (
     map { @{ $_->{data}{incorporates} } }
@@ -825,7 +825,7 @@ sub stash {
     'SELECT stash FROM genome_stash WHERE name=?',
     {}, $name );
   return unless @row;
-  return $self->_decode( $row[0] );
+  return $self->_decode_wide( $row[0] );
 }
 
 sub _programme_query {
