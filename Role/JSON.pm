@@ -2,6 +2,7 @@ package Lintilla::Role::JSON;
 
 use Moose::Role;
 
+use Carp qw( confess );
 use Encode qw( encode );
 use JSON;
 
@@ -19,6 +20,15 @@ sub _encode {
 }
 
 sub _decode {
+  my ( $self, $data ) = @_;
+  return undef unless $data;
+  my $enc = eval { $self->_json->decode($data) };
+  confess "$data caused $@" if $@;
+  return $enc;
+}
+
+# Decode non-UTF8 data
+sub _decode_wide {
   my ( $self, $data ) = @_;
   return undef unless $data;
   return $self->_json->decode( encode( 'UTF-8', $data ) );
