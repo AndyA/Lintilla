@@ -34,11 +34,27 @@ has quantum => (
 
 has _cache => ( is => 'ro', isa => 'HashRef', default => sub { {} } );
 
+has limits => (
+  is      => 'ro',
+  isa     => 'HashRef',
+  lazy    => 1,
+  builder => '_b_limits'
+);
+
 sub _b_states {
   [ sort @{
       shift->dbh->selectcol_arrayref(
         'SELECT DISTINCT(`state`) FROM genome_editstats ORDER BY `state`') }
   ];
+}
+
+sub _b_limits {
+  my $self = shift;
+  my ( $min, $max )
+   = $self->dbh->selectrow_array(
+    'SELECT UNIX_TIMESTAMP(MIN(`slot`)), UNIX_TIMESTAMP(MAX(`slot`)) FROM genome_editstats'
+   );
+  return { min => $min, max => $max };
 }
 
 sub _quantize {
@@ -58,12 +74,12 @@ sub _by_slot {
   my ( $self, $rows ) = @_;
   my $out = {};
   for my $row (@$rows) {
-    $out->{ $row->{slot} }{ $row->{state} } = $row->{count};
+    $out->{ $row->{slot} }{ $row->{state} } = $row->{count} * 1;
   }
   my %dflt = map { $_ => 0 } @{ $self->states };
   return [
     map {
-      { slot  => $_,
+      { slot  => $_ * 1,
         total => sum( values %{ $out->{$_} } ),
         %dflt,
         %{ $out->{$_} },
@@ -98,6 +114,8 @@ sub range {
     $cache->{ $_->{slot} } = $_ for @$batch;
   }
 
+  $cache->{$_}{slot} = $_ for @slot;    # Fill slot on missing items
+
   return [@{$cache}{@slot}];
 }
 
@@ -112,12 +130,34 @@ sub delta {
   for my $row (@$range) {
     if ( defined $prev ) {
       my $rec = { slot => $row->{slot} };
-      $rec->{$_} = $row->{$_} - $prev->{$_} for @$cols;
+      $rec->{$_} = ( $row->{$_} // 0 ) - ( $prev->{$_} // 0 ) for @$cols;
       push @out, $rec;
     }
     $prev = $row;
   }
   return \@out;
+}
+
+sub _as_series {
+  my ( $self, $rows ) = @_;
+
+  my %kk = ();
+  %kk = ( %kk, %$_ ) for grep defined, @$rows;
+  my $out = {};
+  for my $key ( keys %kk ) {
+    $out->{$key} = [map { $_->{$key} // 0 } @$rows];
+  }
+  return $out;
+}
+
+sub range_series {
+  my $self = shift;
+  return $self->_as_series( $self->range(@_) );
+}
+
+sub delta_series {
+  my $self = shift;
+  return $self->_as_series( $self->delta(@_) );
 }
 
 1;

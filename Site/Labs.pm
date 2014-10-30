@@ -7,6 +7,7 @@ use Encode qw( decode encode );
 use JSON ();
 use Lintilla::DB::Genome::Edit;
 use Lintilla::DB::Genome::Pages;
+use Lintilla::DB::Genome::Stats;
 
 =head1 NAME
 
@@ -18,6 +19,8 @@ our $VERSION = '0.1';
 
 sub dbp() { Lintilla::DB::Genome::Pages->new( dbh => database ) }
 sub dbe() { Lintilla::DB::Genome::Edit->new( dbh => database ) }
+
+sub dbs { Lintilla::DB::Genome::Stats->new( dbh => database, @_ ) }
 
 prefix '/labs' => sub {
 
@@ -56,6 +59,29 @@ prefix '/labs' => sub {
     };
     get '/count' => sub {
       return { change_count => dbe->change_count };
+    };
+  };
+
+  get '/stats' => sub {
+    template 'labs/stats',
+     {title   => 'Genome Edit Stats',
+      scripts => ['stats', 'Chart.min'],
+      css     => ['stats'],
+     },
+     { layout => 'labs' };
+  };
+
+  prefix '/stats' => sub {
+    get '/limits' => sub {
+      return dbs->limits;
+    };
+    get '/range/:quantum/:from/:to' => sub {
+      return dbs( quantum => param('quantum') )
+       ->range_series( param('from'), param('to') );
+    };
+    get '/delta/:quantum/:from/:to' => sub {
+      return dbs( quantum => param('quantum') )
+       ->delta_series( param('from'), param('to') );
     };
   };
 
