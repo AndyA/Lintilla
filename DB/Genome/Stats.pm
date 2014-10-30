@@ -41,6 +41,13 @@ has limits => (
   builder => '_b_limits'
 );
 
+has _quantum => (
+  is      => 'ro',
+  isa     => 'Int',
+  lazy    => 1,
+  builder => '_b_quantum'
+);
+
 sub _b_states {
   [ sort @{
       shift->dbh->selectcol_arrayref(
@@ -56,8 +63,8 @@ sub _b_limits {
    );
   my $quant = $self->_quantum;
   return {
-    min => $self->_quantize( $min, $quant ),
-    max => $self->_quantize( $max, $quant ) };
+    min => $self->_quantize( $min,              $quant ),
+    max => $self->_quantize( $max + $quant - 1, $quant ) };
 }
 
 sub _quantize {
@@ -66,7 +73,7 @@ sub _quantize {
   return $quantum * int( $slot / $quantum );
 }
 
-sub _quantum {
+sub _b_quantum {
   my $self = shift;
   my $qq = $self->_quantize( $self->quantum, QUANTUM );
   confess "Bad quantum" if $qq < QUANTUM;
@@ -90,6 +97,8 @@ sub _by_slot {
     } sort { $a <=> $b } keys %$out
   ];
 }
+
+sub scale { shift->_quantum / QUANTUM }
 
 sub range {
   my ( $self, $from, $to ) = @_;
@@ -130,10 +139,12 @@ sub delta {
   my $prev  = undef;
   my $cols  = $self->columns;
   my @out   = ();
+  my $scale = $self->scale;
   for my $row (@$range) {
     if ( defined $prev ) {
       my $rec = { slot => $row->{slot} };
-      $rec->{$_} = ( $row->{$_} // 0 ) - ( $prev->{$_} // 0 ) for @$cols;
+      $rec->{$_} = ( ( $row->{$_} // 0 ) - ( $prev->{$_} // 0 ) ) / $scale
+       for @$cols;
       push @out, $rec;
     }
     $prev = $row;
