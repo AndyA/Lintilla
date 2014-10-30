@@ -54,7 +54,10 @@ sub _b_limits {
    = $self->dbh->selectrow_array(
     'SELECT UNIX_TIMESTAMP(MIN(`slot`)), UNIX_TIMESTAMP(MAX(`slot`)) FROM genome_editstats'
    );
-  return { min => $min, max => $max };
+  my $quant = $self->_quantum;
+  return {
+    min => $self->_quantize( $min, $quant ),
+    max => $self->_quantize( $max, $quant ) };
 }
 
 sub _quantize {
