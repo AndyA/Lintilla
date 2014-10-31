@@ -63,8 +63,8 @@ sub _b_limits {
    );
   my $quant = $self->_quantum;
   return {
-    min => $self->_quantize( $min,              $quant ),
-    max => $self->_quantize( $max + $quant - 1, $quant ) };
+    min => $self->_quantize( $min,          $quant ),
+    max => $self->_quantize( $max + $quant, $quant ) };
 }
 
 sub _quantize {
