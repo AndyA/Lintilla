@@ -40,10 +40,10 @@ sub _contributor_by_name {
 }
 
 sub search {
-  my ( $self, $name ) = @_;
+  my ( $self, $name, @extra ) = @_;
   my $id = $self->_contributor_by_name($name);
   return { status => 'NOTFOUND' } unless defined $id;
-  return $self->graph($id);
+  return $self->graph( $id, @extra );
 }
 
 sub _cook_graph {
@@ -52,16 +52,18 @@ sub _cook_graph {
 }
 
 sub graph {
-  my ( $self, $id ) = @_;
+  my ( $self, $id, $limit ) = @_;
   my $graph = $self->dbh->selectall_arrayref(
     join( ' ',
       'SELECT c.name, c.id, g.count',
       'FROM labs_social_graph AS g',
       'LEFT JOIN labs_contributors AS c ON c.id=g.id_b',
       'WHERE g.id_a=?',
-      'ORDER BY `count` DESC' ),
+      'ORDER BY `count` DESC',
+      'LIMIT ?' ),
     { Slice => {} },
-    $id
+    $id,
+    $limit // 100
   );
 
   return { status => 'NOTFOUND' } unless @$graph;

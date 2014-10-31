@@ -97,8 +97,10 @@ prefix '/labs' => sub {
   };
 
   prefix '/social' => sub {
-    get '/search'    => sub { dbso->search( param('q') ) };
-    get '/graph/:id' => sub { dbso->graph( param('id') ) };
+    get '/search/:limit' =>
+     sub { dbso->search( param('q'), param('limit') ) };
+    get '/graph/:limit/:id' =>
+     sub { dbso->graph( param('id'), param('limit') ) };
   };
 
   get '/pages' => sub {
