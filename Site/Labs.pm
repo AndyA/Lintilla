@@ -7,6 +7,7 @@ use Encode qw( decode encode );
 use JSON ();
 use Lintilla::DB::Genome::Edit;
 use Lintilla::DB::Genome::Pages;
+use Lintilla::DB::Genome::SocialGraph;
 use Lintilla::DB::Genome::Stats;
 
 =head1 NAME
@@ -19,6 +20,7 @@ our $VERSION = '0.1';
 
 sub dbp() { Lintilla::DB::Genome::Pages->new( dbh => database ) }
 sub dbe() { Lintilla::DB::Genome::Edit->new( dbh => database ) }
+sub dbso() { Lintilla::DB::Genome::SocialGraph->new( dbh => database ) }
 
 sub dbs { Lintilla::DB::Genome::Stats->new( dbh => database, @_ ) }
 
@@ -83,6 +85,20 @@ prefix '/labs' => sub {
       return dbs( quantum => param('quantum') )
        ->delta_series( param('from'), param('to') );
     };
+  };
+
+  get '/social' => sub {
+    template 'labs/social',
+     {title   => 'Genome Contributor Graph',
+      scripts => ['arbor', 'arbor-tween', 'social'],
+      css     => ['social'],
+     },
+     { layout => 'labs' };
+  };
+
+  prefix '/social' => sub {
+    get '/search'    => sub { dbso->search( param('q') ) };
+    get '/graph/:id' => sub { dbso->graph( param('id') ) };
   };
 
   get '/pages' => sub {
