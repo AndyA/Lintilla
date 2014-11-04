@@ -67,17 +67,41 @@ sub _eq {
   return freeze($a) eq freeze($b);
 }
 
+# Deep comparison but don't consider missing keys to be a mismatch
+sub _deep_eq {
+  my ( $a, $b ) = @_;
+  return _eq( $a, $b ) unless ref $a && ref $b;
+  return 0 unless ref $a eq ref $b;
+
+  if ( 'ARRAY' eq ref $a ) {
+    my $la = $#$a;
+    my $lb = $#$b;
+    return 0 unless $la == $lb;
+    for my $i ( 0 .. $la ) {
+      return 0 unless _deep_eq( $a->[$i], $b->[$i] );
+    }
+    return 1;
+  }
+
+  if ( 'HASH' eq ref $a ) {
+    while ( my ( $k, $v ) = each %$a ) {
+      return 0 if exists $b->{$k} && !_deep_eq( $v, $b->{$k} );
+    }
+    return 1;
+  }
+
+  return 0;
+}
+
 sub _b_sane {
   my $self = shift;
   my (%cur);
 
   for my $ev ( @{ $self->log } ) {
-    while ( my ( $k, $v ) = each %{ $ev->{old_data} } ) {
-      if ( exists $cur{$k} && !_eq( $cur{$k}, $v ) ) {
-        $self->error( 'changelog.sanity', 'History',
-          "new_data <=> old_data mismatch for $k, new_data: ",
-          $cur{$k}, ', old_data: ', $v );
-      }
+    unless ( _deep_eq( \%cur, $ev->{old_data} ) ) {
+      $self->error( 'changelog.sanity', 'History',
+        "new_data <=> old_data mismatch, new_data: ",
+        \%cur, ', old_data: ', $ev->{old_data} );
     }
     %cur = ( %cur, %{ $ev->{new_data} } );
   }
