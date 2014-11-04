@@ -425,6 +425,8 @@ sub load_edit_history {
   return { sequence => $since, editlog => [] }
    unless $editlog && @$editlog;
 
+  $self->decode_data($editlog);
+
   for my $ev (@$editlog) {
     if ( !defined $ev->{old_state} ) {
       $ev->{edit} = $self->_stem_edit( $ev->{edit_id} );
@@ -1005,10 +1007,9 @@ sub _create_edit {
 
 sub _edit_for_event {
   my ( $self, $ev ) = @_;
-  print $self->_encode($ev);
   my $by_hash
    = $self->dbh->selectrow_hashref(
-    'SELECT * FROM genome_edit WHERE hash=?',
+    'SELECT id FROM genome_edit WHERE hash=?',
     {}, $ev->{hash} );
   return $by_hash->{id} if defined $by_hash;
   die unless exists $ev->{edit};
@@ -1023,6 +1024,8 @@ sub _import_edit {
   my $editlog_id
    = $self->amend( $edit_id, $ev->{who}, $ev->{new_state},
     $ev->{new_data} );
+
+  print "edit_id: $edit_id, editlog_id: $editlog_id\n";
 
   if ( $ev->{new_state} eq 'accepted'
     && ( $ev->{old_state} // '' ) ne 'accepted' ) {
