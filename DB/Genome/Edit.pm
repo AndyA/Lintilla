@@ -353,25 +353,6 @@ sub load_edit {
   return $edit;
 }
 
-sub _load_editlog {
-  my ( $self, @eids ) = @_;
-  return {} unless @eids;
-
-  return $self->group_by(
-    $self->decode_data(
-      $self->dbh->selectall_arrayref(
-        join( ' ',
-          'SELECT * FROM genome_editlog WHERE edit_id IN (',
-          join( ', ', map "?", @eids ),
-          ')', 'ORDER BY id ASC' ),
-        { Slice => {} },
-        @eids
-      )
-    ),
-    'edit_id'
-  );
-}
-
 # Munge editlog into suitable shape for Lintilla::Versions::ChangeLog
 sub _normalise_editlog {
   my ( $self, $log ) = @_;
@@ -427,23 +408,15 @@ sub _stem_edit {
   return $ver->at(1);
 }
 
-sub _add_edit_log {
-  my ( $self, $edits ) = @_;
-  my $log = $self->_load_editlog( map { $_->{id} } @$edits );
-  $_->{log} = $log->{ $_->{id} } // [] for @$edits;
-}
-
-sub _add_thing {
-  my ( $self, $edits ) = @_;
-  for my $edit (@$edits) {
-    $edit->{thing} = $self->load_thing( $edit->{kind}, $edit->{uuid} );
-  }
-}
-
 sub load_edit_history {
   my ( $self, $since, $limit ) = @_;
   my $editlog = $self->dbh->selectall_arrayref(
-    'SELECT id, edit_id FROM genome_editlog WHERE id > ? ORDER BY id ASC LIMIT ?',
+    join( ' ',
+      'SELECT el.*, e.hash',
+      'FROM genome_editlog AS el, genome_edit AS e',
+      'WHERE el.edit_id=e.id',
+      'AND el.id > ?',
+      'ORDER BY el.id ASC LIMIT ?' ),
     { Slice => {} },
     $since,
     $limit // SYNC_PAGE
@@ -458,34 +431,6 @@ sub load_edit_history {
     }
   }
   return { sequence => $editlog->[-1]{id}, editlog => $editlog };
-}
-
-sub _load_edits_by_id {
-  my $self   = shift;
-  my @things = unique(@_);
-  return [] unless @things;
-  my @hash = grep { 32 == length } @things;
-  my @id   = grep { 32 > length } @things;
-  my @term = ();
-  push @term, join '', 'hash IN (', join( ', ', map "?", @hash ), ')'
-   if @hash;
-  push @term, join '', 'id IN (', join( ', ', map "?", @id ), ')'
-   if @id;
-  my $edits = $self->decode_data(
-    $self->dbh->selectall_arrayref(
-      join( ' ', 'SELECT * FROM genome_edit WHERE ', join( ' OR ', @term ) ),
-      { Slice => {} },
-      @hash, @id
-    )
-  );
-  return $edits;
-}
-
-sub _load_edits_with_log {
-  my $self  = shift;
-  my $edits = $self->_load_edits_by_id(@_);
-  $self->_add_edit_log($edits);
-  return $edits;
 }
 
 sub load_edits {
@@ -1040,101 +985,6 @@ sub apply_batch {
 
 # Sync V2
 
-sub _load_changelog {
-  my ( $self, $uuid, $head ) = @_;
-
-  my $changes = $self->group_by(
-    $self->dbh->selectall_arrayref(
-      'SELECT * FROM genome_changelog WHERE id <= ? AND uuid = ?',
-      { Slice => {} },
-      $head, $uuid
-    ),
-    'id'
-  );
-
-  # Build chronological list of changes
-  my $next = $head;
-  my @log  = ();
-  while ( defined $next ) {
-    my $rec = delete $changes->{$next};
-    die "No change $next";
-    my $ev = shift @$rec;
-    unshift @log, $ev;
-    $next = $ev->{prev_id};
-  }
-  return $self->decode_data( \@log );
-}
-
-sub _eq {
-  my ( $a, $b ) = @_;
-  return 1 unless defined $a || defined $b;
-  return 0 unless defined $a && defined $b;
-  return $a eq $b unless ref $a || ref $b;
-  return 0 unless ref $a && ref $b && ref $a eq ref $b;
-  local $Storable::canonical = 1;
-  return freeze($a) eq freeze($b);
-}
-
-sub _eq_log {
-  my ( $la, $lb ) = @_;
-  for my $key (qw( old_state new_state old_data new_data )) {
-    return 0 unless _eq( $la->{$key}, $lb->{$key} );
-  }
-  return 1;
-}
-
-sub _editlog_remove {
-  my ( $self, @id ) = @_;
-  return unless @id;
-  $self->dbh->do(
-    join( ' ',
-      'DELETE FROM genome_editlog WHERE id IN (',
-      join( ', ', map "?", @id ), ')' ),
-    {},
-    @id
-  );
-}
-
-sub _append_log {
-  my ( $self, $edit_id, @log ) = @_;
-  return unless @log;
-  $self->dbh->do(
-    join( ' ',
-      'INSERT INTO genome_editlog',
-      '(`edit_id`, `who`, `when`, `old_state`, `new_state`, `old_data`, `new_data`) VALUES',
-      join( ', ', ('(?, ?, ?, ?, ?, ?, ?)') x @log ) ),
-    {},
-    map {
-      ( $edit_id,
-        @{$_}{ 'who', 'when', 'old_state', 'new_state' },
-        $self->_encode( $_->{old_data} ),
-        $self->_encode( $_->{new_data} )
-       )
-    } @log
-  );
-}
-
-sub _update_edit {
-  my ( $self, $edit_id, $ev ) = @_;
-  $self->dbh->do( 'UPDATE genome_edit SET state=?, data=? WHERE id=?',
-    {}, $ev->{new_state}, $self->_encode( $ev->{new_data} ), $edit_id );
-}
-
-sub _import_log {
-  my ( $self, $edit_id, @log ) = @_;
-  return unless @log;
-  $self->_append_log( $edit_id, @log );
-  $self->_update_edit( $edit_id, $log[-1] );
-}
-
-sub _sync_change {
-  my ( $self, $edit_id, $edit, @log ) = @_;
-  $self->_import_log( $edit_id, @log );
-  # TODO this should apply each change in the log
-  $self->apply( @{$edit}{ 'kind', 'uuid' },
-    'sync agent', $edit->{thing}, $edit_id );
-}
-
 sub _create_edit {
   my ( $self, $edit ) = @_;
   $self->dbh->do(
@@ -1153,26 +1003,36 @@ sub _create_edit {
   return $self->dbh->last_insert_id( undef, undef, undef, undef );
 }
 
+sub _edit_for_event {
+  my ( $self, $ev ) = @_;
+  print $self->_encode($ev);
+  my $by_hash
+   = $self->dbh->selectrow_hashref(
+    'SELECT * FROM genome_edit WHERE hash=?',
+    {}, $ev->{hash} );
+  return $by_hash->{id} if defined $by_hash;
+  die unless exists $ev->{edit};
+  return $self->_create_edit( $ev->{edit} );
+}
+
 sub _import_edit {
-  my ( $self, $edit ) = @_;
-  my ($curr) = @{ $self->_load_edits_with_log( $edit->{hash} ) };
-  if ($curr) {
-    # Consume common history
-    my @old = @{ $curr->{log} };
-    my @new = @{ $edit->{log} };
-    while ( @old && @new ) {
-      last unless _eq_log( $old[0], $new[0] );
-      shift @old;
-      shift @new;
-    }
-    # Anything left in the old list is BAD HISTORY
-    $self->_editlog_remove( map { $_->{id} } @old );
-    $self->_sync_change( $curr->{id}, $edit, @new );
+  my ( $self, $ev ) = @_;
+
+  my $edit_id = $self->_edit_for_event($ev);
+
+  my $editlog_id
+   = $self->amend( $edit_id, $ev->{who}, $ev->{new_state},
+    $ev->{new_data} );
+
+  if ( $ev->{new_state} eq 'accepted'
+    && ( $ev->{old_state} // '' ) ne 'accepted' ) {
+    $self->do_edit( [$edit_id, $editlog_id], $ev->{who} );
   }
-  else {
-    my $id = $self->_create_edit($edit);
-    $self->_sync_change( $id, $edit, @{ $edit->{log} } );
+  elsif ( $ev->{new_state} ne 'accepted'
+    && ( $ev->{old_state} // '' ) eq 'accepted' ) {
+    $self->undo_edit($edit_id);
   }
+
 }
 
 sub import_history {
@@ -1180,7 +1040,7 @@ sub import_history {
   my $next_seq = $history->{sequence} // die "Missing sequence in history";
   $self->transaction(
     sub {
-      for my $edit ( @{ $history->{edits} } ) {
+      for my $edit ( @{ $history->{editlog} } ) {
         $self->_import_edit($edit);
       }
       $self->set_sequence( 'edit_history', $next_seq );
