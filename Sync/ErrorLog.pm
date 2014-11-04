@@ -70,7 +70,7 @@ sub _level_name {
 sub _pretty {
   my ( $self, $val ) = @_;
   return $val if defined $val && !ref $val;
-  return JSON->new->canonical->encode($val);
+  return JSON->new->canonical->allow_nonref->encode($val);
 }
 
 sub _add {
