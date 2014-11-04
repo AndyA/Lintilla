@@ -6,6 +6,7 @@ use Moose;
 use Dancer qw( :syntax );
 
 use Carp qw( confess );
+use Lintilla::Versions::ChangeLog;
 use Storable qw( freeze );
 use Text::DeepDiff;
 use Text::HTMLCleaner;
@@ -371,6 +372,61 @@ sub _load_editlog {
   );
 }
 
+# Munge editlog into suitable shape for Lintilla::Versions::ChangeLog
+sub _normalise_editlog {
+  my ( $self, $log ) = @_;
+
+  my @out = ();
+  for my $ev (@$log) {
+    push @out,
+     {old_data => {
+        state => $ev->{old_state},
+        data  => $self->_decode_wide( $ev->{old_data} )
+      },
+      new_data => {
+        state => $ev->{new_state},
+        data  => $self->_decode_wide( $ev->{new_data} )
+      },
+     };
+  }
+
+  return \@out;
+}
+
+sub _normalised_editlog {
+  my ( $self, $edit_id ) = @_;
+  return $self->_normalise_editlog(
+    $self->dbh->selectall_arrayref(
+      'SELECT * FROM genome_editlog WHERE edit_id=? ORDER BY id ASC',
+      { Slice => {} }, $edit_id
+    )
+  );
+}
+
+# Get an instance of an edit in its initial state. That's actually
+# state #1 because there's a state change for their creation and
+# semantically #0 is pre-natal
+sub _stem_edit {
+  my ( $self, $id ) = @_;
+
+  my $edit = $self->decode_data(
+    $self->dbh->selectrow_hashref(
+      'SELECT * FROM genome_edit WHERE id=?',
+      {}, $id
+    )
+  );
+
+  confess "Edit $id not found" unless defined $edit;
+
+  my $el  = $self->_normalised_editlog($id);
+  my $ver = Lintilla::Versions::ChangeLog->new(
+    data => $edit,
+    log  => $el
+  );
+
+  return $ver->at(1);
+}
+
 sub _add_edit_log {
   my ( $self, $edits ) = @_;
   my $log = $self->_load_editlog( map { $_->{id} } @$edits );
@@ -385,21 +441,26 @@ sub _add_thing {
 }
 
 sub load_edit_history {
-  my ( $self, $since ) = @_;
-  my $changes = $self->dbh->selectall_arrayref(
+  my ( $self, $since, $limit ) = @_;
+  my $editlog = $self->dbh->selectall_arrayref(
     'SELECT id, edit_id FROM genome_editlog WHERE id > ? ORDER BY id ASC LIMIT ?',
-    { Slice => {} }, $since, SYNC_PAGE
+    { Slice => {} },
+    $since,
+    $limit // SYNC_PAGE
   );
 
-  return { sequence => $since, edits => [] }
-   unless $changes && @$changes;
+  return { sequence => $since, editlog => [] }
+   unless $editlog && @$editlog;
 
-  my $edits = $self->load_edits_by_id( map { $_->{edit_id} } @$changes );
-  $self->_add_thing($edits);
-  return { sequence => $changes->[-1]{id}, edits => $edits };
+  for my $ev (@$editlog) {
+    if ( !defined $ev->{old_state} ) {
+      $ev->{edit} = $self->_stem_edit( $ev->{edit_id} );
+    }
+  }
+  return { sequence => $editlog->[-1]{id}, editlog => $editlog };
 }
 
-sub load_edits_by_id {
+sub _load_edits_by_id {
   my $self   = shift;
   my @things = unique(@_);
   return [] unless @things;
@@ -417,6 +478,12 @@ sub load_edits_by_id {
       @hash, @id
     )
   );
+  return $edits;
+}
+
+sub _load_edits_with_log {
+  my $self  = shift;
+  my $edits = $self->_load_edits_by_id(@_);
   $self->_add_edit_log($edits);
   return $edits;
 }
@@ -971,6 +1038,33 @@ sub apply_batch {
   );
 }
 
+# Sync V2
+
+sub _load_changelog {
+  my ( $self, $uuid, $head ) = @_;
+
+  my $changes = $self->group_by(
+    $self->dbh->selectall_arrayref(
+      'SELECT * FROM genome_changelog WHERE id <= ? AND uuid = ?',
+      { Slice => {} },
+      $head, $uuid
+    ),
+    'id'
+  );
+
+  # Build chronological list of changes
+  my $next = $head;
+  my @log  = ();
+  while ( defined $next ) {
+    my $rec = delete $changes->{$next};
+    die "No change $next";
+    my $ev = shift @$rec;
+    unshift @log, $ev;
+    $next = $ev->{prev_id};
+  }
+  return $self->decode_data( \@log );
+}
+
 sub _eq {
   my ( $a, $b ) = @_;
   return 1 unless defined $a || defined $b;
@@ -1036,6 +1130,7 @@ sub _import_log {
 sub _sync_change {
   my ( $self, $edit_id, $edit, @log ) = @_;
   $self->_import_log( $edit_id, @log );
+  # TODO this should apply each change in the log
   $self->apply( @{$edit}{ 'kind', 'uuid' },
     'sync agent', $edit->{thing}, $edit_id );
 }
@@ -1060,7 +1155,7 @@ sub _create_edit {
 
 sub _import_edit {
   my ( $self, $edit ) = @_;
-  my ($curr) = @{ $self->load_edits_by_id( $edit->{hash} ) };
+  my ($curr) = @{ $self->_load_edits_with_log( $edit->{hash} ) };
   if ($curr) {
     # Consume common history
     my @old = @{ $curr->{log} };
