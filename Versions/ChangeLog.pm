@@ -3,6 +3,8 @@ package Lintilla::Versions::ChangeLog;
 use v5.10;
 
 use Moose;
+
+use List::Util qw( max );
 use Storable qw( freeze );
 
 =head1 NAME
@@ -57,40 +59,40 @@ sub _b_version_cache {
   return $vc;
 }
 
-sub _eq {
-  my ( $a, $b ) = @_;
-  return 1 unless defined $a || defined $b;
-  return 0 unless defined $a && defined $b;
-  return $a eq $b unless ref $a || ref $b;
-  return 0 unless ref $a && ref $b && ref $a eq ref $b;
-  local $Storable::canonical = 1;
-  return freeze($a) eq freeze($b);
-}
+sub _deep_diff {
+  my ( $self, $cb, $a, $b, @path ) = @_;
 
-# Deep comparison but don't consider missing keys to be a mismatch
-sub _deep_eq {
-  my ( $a, $b ) = @_;
-  return _eq( $a, $b ) unless ref $a && ref $b;
-  return 0 unless ref $a eq ref $b;
+  return unless defined $a || defined $b;
+  return $cb->( join( '.', @path ), $a, $b )
+   unless defined $a && defined $b;
+
+  unless ( ref $a || ref $b ) {
+    return $cb->( join( '.', @path ), $a, $b ) unless $a eq $b;
+    return;
+  }
+
+  $cb->( join( '.', @path ), $a, $b )
+   unless ref $a && ref $b && ref $a eq ref $b;
 
   if ( 'ARRAY' eq ref $a ) {
-    my $la = $#$a;
-    my $lb = $#$b;
-    return 0 unless $la == $lb;
-    for my $i ( 0 .. $la ) {
-      return 0 unless _deep_eq( $a->[$i], $b->[$i] );
+    my $sz = max( $#$a, $#$b );
+    my $rc = 0;
+    for my $i ( 0 .. $sz ) {
+      $rc ||= $self->_deep_diff( $cb, $a->[$i], $b->[$i], @path, $i );
     }
-    return 1;
+    return $rc;
   }
 
   if ( 'HASH' eq ref $a ) {
-    while ( my ( $k, $v ) = each %$a ) {
-      return 0 if exists $b->{$k} && !_deep_eq( $v, $b->{$k} );
+    my $rc = 0;
+    for my $key ( keys %$b ) {
+      $rc ||= $self->_deep_diff( $cb, $a->{$key}, $b->{$key}, @path, $key )
+       if exists $a->{$key};
     }
-    return 1;
+    return $rc;
   }
 
-  return 0;
+  die "Can't compare ", ref($a), "\n";
 }
 
 sub _b_sane {
@@ -100,11 +102,16 @@ sub _b_sane {
   return 1 unless @{ $self->log };
 
   for my $ev ( @{ $self->log } ) {
-    unless ( _deep_eq( \%cur, $ev->{old_data} ) ) {
-      $self->error( 'changelog.sanity', 'History',
-        "new_data <=> old_data mismatch, new_data: ",
-        \%cur, ', old_data: ', $ev->{old_data} );
-    }
+    $self->_deep_diff(
+      sub {
+        my ( $path, $a, $b ) = @_;
+        $self->error( 'changelog.sanity', 'History',
+          "new_data <=> old_data mismatch at $path, new_data: ",
+          $a, ', old_data: ', $b );
+      },
+      \%cur,
+      $ev->{old_data}
+    );
     %cur = ( %cur, %{ $ev->{new_data} } );
   }
 
@@ -113,11 +120,16 @@ sub _b_sane {
   my $log  = $self->log;
   my $ref  = $dv == 0 ? $log->[0]{old_data} : $log->[$dv - 1]{new_data};
 
-  unless ( _deep_eq( $ref, $data ) ) {
-    $self->error( 'changelog.sanity', 'Record Data',
-      "data <=> patch mismatch, data: ",
-      $data, ', patch: ', $ref );
-  }
+  $self->_deep_diff(
+    sub {
+      my ( $path, $a, $b ) = @_;
+      $self->error( 'changelog.sanity', 'Record Data',
+        "data <=> patch mismatch at $path, data: ",
+        $a, ', patch: ', $b );
+    },
+    $ref,
+    $data
+  );
 
   return !$self->error_log->at_least('ERROR');
 }
