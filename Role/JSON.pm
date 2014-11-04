@@ -21,7 +21,7 @@ sub _encode {
 
 sub _decode {
   my ( $self, $data ) = @_;
-  return undef unless $data;
+  return undef unless defined $data;
   my $enc = eval { $self->_json->decode($data) };
   confess "$data caused $@" if $@;
   return $enc;
@@ -30,7 +30,7 @@ sub _decode {
 # Decode non-UTF8 data
 sub _decode_wide {
   my ( $self, $data ) = @_;
-  return undef unless $data;
+  return undef unless defined $data;
   return $self->_json->decode( encode( 'UTF-8', $data ) );
 }
 
