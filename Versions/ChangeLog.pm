@@ -111,15 +111,10 @@ sub _b_sane {
   my $log  = $self->log;
   my $ref  = $dv == 0 ? $log->[0]{old_data} : $log->[$dv - 1]{new_data};
 
-  while ( my ( $k, $v ) = each %$ref ) {
-    unless ( _eq( $v, $data->{$k} ) ) {
-      $self->error(
-        'changelog.sanity',
-        'Programme Data',
-        "data <=> patch mismatch for $k, data: ",
-        $data->{$k}, ', patch: ', $v
-      );
-    }
+  unless ( _deep_eq( $ref, $data ) ) {
+    $self->error( 'changelog.sanity', 'Record Data',
+      "data <=> patch mismatch, data: ",
+      $data, ', patch: ', $ref );
   }
 
   return !$self->error_log->at_least('ERROR');
