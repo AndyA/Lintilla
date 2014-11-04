@@ -97,6 +97,8 @@ sub _b_sane {
   my $self = shift;
   my (%cur);
 
+  return 1 unless @{ $self->log };
+
   for my $ev ( @{ $self->log } ) {
     unless ( _deep_eq( \%cur, $ev->{old_data} ) ) {
       $self->error( 'changelog.sanity', 'History',
