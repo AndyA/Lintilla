@@ -204,7 +204,9 @@ sub diff {
 sub change_count {
   my $self = shift;
   my ($count)
-   = $self->dbh->selectrow_array('SELECT COUNT(*) FROM genome_changelog');
+   = $self->dbh->selectrow_array(
+    'SELECT COUNT(*) FROM genome_edit WHERE state=?',
+    {}, 'accepted' );
   return $count;
 }
 
