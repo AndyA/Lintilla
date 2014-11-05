@@ -1025,7 +1025,7 @@ sub _import_edit {
    = $self->amend( $edit_id, $ev->{who}, $ev->{new_state},
     $ev->{new_data} );
 
-  print "edit_id: $edit_id, editlog_id: $editlog_id\n";
+  return unless defined $editlog_id;
 
   if ( $ev->{new_state} eq 'accepted'
     && ( $ev->{old_state} // '' ) ne 'accepted' ) {
