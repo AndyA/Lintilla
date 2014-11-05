@@ -992,7 +992,8 @@ sub apply_batch {
 # Sync V2
 
 sub _create_edit {
-  my ( $self, $edit ) = @_;
+  my ( $self, $edit, $when ) = @_;
+  my $new_data = $self->_encode( $edit->{data} );
   $self->dbh->do(
     join( ' ',
       'INSERT INTO genome_edit (hash, parent_id, uuid, kind, data, state, alien, data_hash)',
@@ -1002,32 +1003,39 @@ sub _create_edit {
     $edit->{parent_id},
     $edit->{uuid},
     $edit->{kind},
-    undef, undef, undef
+    $new_data,
+    $edit->{state},
+    $self->data_hash( $edit->{state}, $edit->{data} )
   );
-  return $self->dbh->last_insert_id( undef, undef, undef, undef );
+  my $edit_id = $self->dbh->last_insert_id( undef, undef, undef, undef );
+  my $editlog_id
+   = $self->audit( $edit_id, $edit->{who}, $edit->{kind}, undef, 'pending',
+    undef, $new_data, $when );
+  return ( $edit_id, $editlog_id );
 }
 
 sub _edit_for_event {
   my ( $self, $ev ) = @_;
-  my $by_hash
-   = $self->dbh->selectrow_hashref(
+
+  my ($edit_id)
+   = $self->dbh->selectrow_array(
     'SELECT id FROM genome_edit WHERE hash=?',
     {}, $ev->{hash} );
-  return $by_hash->{id} if defined $by_hash;
-  die unless exists $ev->{edit};
-  return $self->_create_edit( $ev->{edit} );
-}
 
-sub _import_edit {
-  my ( $self, $ev ) = @_;
-
-  my $edit_id = $self->_edit_for_event($ev);
+  return $self->_create_edit( $ev->{edit}, $ev->{when} )
+   unless defined $edit_id;
 
   my $editlog_id
    = $self->amend( $edit_id, $ev->{who}, $ev->{new_state},
     $ev->{new_data}, $ev->{when} );
 
-  return unless defined $editlog_id;
+  return ( $edit_id, $editlog_id );
+}
+
+sub _import_edit {
+  my ( $self, $ev ) = @_;
+
+  my ( $edit_id, $editlog_id ) = $self->_edit_for_event($ev);
 
   if ( $ev->{new_state} eq 'accepted'
     && ( $ev->{old_state} // '' ) ne 'accepted' ) {
