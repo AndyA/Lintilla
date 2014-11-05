@@ -410,22 +410,22 @@ sub _stem_edit {
 
 sub load_edit_history {
   my ( $self, $since, $limit ) = @_;
-  my $editlog = $self->dbh->selectall_arrayref(
-    join( ' ',
-      'SELECT el.*, e.hash',
-      'FROM genome_editlog AS el, genome_edit AS e',
-      'WHERE el.edit_id=e.id',
-      'AND el.id > ?',
-      'ORDER BY el.id ASC LIMIT ?' ),
-    { Slice => {} },
-    $since,
-    $limit // SYNC_PAGE
+  my $editlog = $self->decode_data(
+    $self->dbh->selectall_arrayref(
+      join( ' ',
+        'SELECT el.*, e.hash',
+        'FROM genome_editlog AS el, genome_edit AS e',
+        'WHERE el.edit_id=e.id',
+        'AND el.id > ?',
+        'ORDER BY el.id ASC LIMIT ?' ),
+      { Slice => {} },
+      $since,
+      $limit // SYNC_PAGE
+    )
   );
 
   return { sequence => $since, editlog => [] }
    unless $editlog && @$editlog;
-
-  $self->decode_data($editlog);
 
   for my $ev (@$editlog) {
     if ( !defined $ev->{old_state} ) {
