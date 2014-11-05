@@ -34,24 +34,28 @@ sub unique(@) {
 }
 
 sub audit {
-  my ( $self, $edit_id, $who, $kind, $old_state, $new_state, $old_data,
-    $new_data )
-   = @_;
+  my (
+    $self,      $edit_id,  $who,      $kind, $old_state,
+    $new_state, $old_data, $new_data, @when
+  ) = @_;
   my ($log_id);
   $self->transaction(
     sub {
       $self->dbh->do(
         join( ' ',
           'INSERT INTO genome_editlog',
-          '  (`edit_id`, `who`, `old_state`, `new_state`, `old_data`, `new_data`, `when`, `data_hash`)',
-          '  VALUES (?, ?, ?, ?, ?, ?, NOW(), ?)' ),
+          '  (`edit_id`, `who`, `old_state`, `new_state`, `old_data`, `new_data`, `data_hash`, `when`)',
+          '  VALUES (?, ?, ?, ?, ?, ?, ?,',
+          ( @when ? '?' : 'NOW()' ),
+          ')' ),
         {},
         $edit_id, $who,
         $old_state,
         $new_state,
         $old_data,
         $new_data,
-        $self->data_hash( $old_state, $new_state, $old_data, $new_data )
+        $self->data_hash( $old_state, $new_state, $old_data, $new_data ),
+        @when
       );
       $log_id = $self->dbh->last_insert_id( undef, undef, undef, undef );
       $self->bump( 'edit', $kind,
@@ -484,7 +488,7 @@ sub load_changes {
 }
 
 sub amend {
-  my ( $self, $edit_id, $who, $state, $data ) = @_;
+  my ( $self, $edit_id, $who, $state, $data, @when ) = @_;
   my ($editlog_id);
   $self->transaction(
     sub {
@@ -504,7 +508,7 @@ sub amend {
 
       $editlog_id
        = $self->audit( $edit_id, $who, $old->{kind}, $old->{state}, $state,
-        $old_data, $new_data );
+        $old_data, $new_data, @when );
     }
   );
   return $editlog_id;
@@ -1023,7 +1027,7 @@ sub _import_edit {
 
   my $editlog_id
    = $self->amend( $edit_id, $ev->{who}, $ev->{new_state},
-    $ev->{new_data} );
+    $ev->{new_data}, $ev->{when} );
 
   return unless defined $editlog_id;
 
