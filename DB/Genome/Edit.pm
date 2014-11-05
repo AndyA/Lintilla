@@ -1002,9 +1002,7 @@ sub _create_edit {
     $edit->{parent_id},
     $edit->{uuid},
     $edit->{kind},
-    $self->_encode( $edit->{data} ),
-    $edit->{state},
-    $self->data_hash( $edit->{state}, $edit->{data} )
+    undef, undef, undef
   );
   return $self->dbh->last_insert_id( undef, undef, undef, undef );
 }
