@@ -87,20 +87,23 @@ prefix '/labs' => sub {
     };
   };
 
-  get '/social' => sub {
+  my $get_social = sub {
     template 'labs/social',
      {title   => 'Genome Contributor Graph',
-      scripts => ['arbor', 'arbor-tween', 'social'],
+      scripts => ['arbor', 'arbor-tween', 'app', 'social'],
       css     => ['social'],
      },
      { layout => 'labs' };
   };
+
+  get '/social' => $get_social;
 
   prefix '/social' => sub {
     get '/search/:limit' =>
      sub { dbso->search( param('q'), param('limit') ) };
     get '/graph/:limit/:id' =>
      sub { dbso->graph( param('id'), param('limit') ) };
+    get '/**' => $get_social;
   };
 
   get '/pages' => sub {
