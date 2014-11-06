@@ -26,11 +26,11 @@ sub dbs { Lintilla::DB::Genome::Stats->new( dbh => database, @_ ) }
 
 prefix '/labs' => sub {
 
-  get '/about' => sub {
+  get '/' => sub {
     template 'labs/about',
-     {title   => 'About Genome Labs',
+     {title   => 'Genome Labs',
       scripts => [],
-      css     => [],
+      css     => ['about'],
      },
      { layout => 'labs' };
   };
