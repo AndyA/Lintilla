@@ -46,10 +46,10 @@ sub our_uri_for {
 
 sub barlesque {
   Barlesque::Client->new(
-    blq_doctype                     => 'html5',
-    blq_link_prefix                 => 'http://www.bbc.co.uk',
-    blq_version                     => 4,
-    blq_nedstat_pagetracking_optout => 1,
+    blq_doctype             => 'html5',
+    blq_link_prefix         => 'http://www.bbc.co.uk',
+    blq_version             => 4,
+    blq_nedstat_countername => 'genome.test.page',
   );
 }
 
