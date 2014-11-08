@@ -12,6 +12,8 @@ Lintilla::DB::Genome::SocialGraph - Labs social graph
 
 with 'Lintilla::Role::DB';
 
+use constant LIMIT => 100;
+
 sub _canonicalise_name {
   my ( $self, $name ) = @_;
   $name =~ s/[^\s\w]+//g;
@@ -94,9 +96,13 @@ sub _graph {
   );
 }
 
+sub random {
+  my ( $self, $limit ) = @_;
+}
+
 sub graph {
   my ( $self, $id, $limit ) = @_;
-  $limit //= 100;
+  $limit //= LIMIT;
 
   my $graph = $self->_graph( $id, $limit );
 
