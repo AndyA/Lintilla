@@ -97,7 +97,21 @@ sub _graph {
 }
 
 sub random {
-  my ( $self, $limit ) = @_;
+  my $self = shift;
+
+  my ($max_id)
+   = $self->dbh->selectrow_array('SELECT MAX(id) FROM labs_contributors');
+
+  return { status => 'NOTFOUND' } unless defined $max_id;
+
+  while () {
+    my $id = int( rand() * $max_id );
+    my ($name)
+     = $self->dbh->selectrow_array(
+      'SELECT name FROM labs_contributors WHERE id=?',
+      {}, $id );
+    return { status => 'OK', id => $id, name => $name } if defined $name;
+  }
 }
 
 sub graph {

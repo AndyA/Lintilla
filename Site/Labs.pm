@@ -103,6 +103,7 @@ prefix '/labs' => sub {
      sub { dbso->search( param('q'), param('limit') ) };
     get '/graph/:limit/:id' =>
      sub { dbso->graph( param('id'), param('limit') ) };
+    get '/random' => sub { dbso->random };
     get '/**' => $get_social;
   };
 
