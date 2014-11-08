@@ -107,7 +107,7 @@ sub _graph {
   my ( $self, $id, $limit ) = @_;
   return $self->dbh->selectall_arrayref(
     join( ' ',
-      'SELECT c.name, c.id, c.bacon, g.count',
+      'SELECT c.*, g.count',
       'FROM labs_social_graph AS g',
       'LEFT JOIN labs_contributors AS c ON c.id=g.id_b',
       'WHERE g.id_a=?',
