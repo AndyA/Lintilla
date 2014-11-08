@@ -128,11 +128,15 @@ sub random {
 
   while () {
     my $id = int( rand() * $max_id );
-    my ($name)
-     = $self->dbh->selectrow_array(
-      'SELECT name FROM labs_contributors WHERE id=?',
-      {}, $id );
-    return { status => 'OK', id => $id, name => $name } if defined $name;
+    my ( $name, $count ) = $self->dbh->selectrow_array(
+      join( ' ',
+        'SELECT c.name, COUNT(g.id_b) AS count',
+        'FROM labs_contributors AS c, labs_social_graph AS g',
+        'WHERE g.id_a=c.id AND c.id=?' ),
+      {},
+      $id
+    );
+    return { status => 'OK', id => $id, name => $name } if $count > 0;
   }
 }
 
