@@ -50,6 +50,28 @@ sub search {
 
 sub _cook_graph {
   my ( $self, $graph ) = @_;
+
+  if (0) {
+    my @ids = map { $_->{id} } @$graph;
+
+    my $counts = $self->group_by(
+      $self->dbh->selectall_arrayref(
+        join( ' ',
+          'SELECT id_b AS id, SUM(count) AS reach',
+          'FROM labs_social_graph WHERE id_b IN',
+          '(', join( ', ', map '?', @ids ),
+          ')', 'GROUP BY id_b' ),
+        { Slice => {} },
+        @ids
+      ),
+      'id'
+    );
+
+    for my $row (@$graph) {
+      $row->{reach} = $counts->{ $row->{id} }[0]{reach};
+    }
+  }
+
   return $graph;
 }
 
