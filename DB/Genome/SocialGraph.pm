@@ -25,11 +25,11 @@ sub _canonicalise_name {
 
 sub _contributor_by_id {
   my ( $self, $id ) = @_;
-  my ($name)
-   = $self->dbh->selectrow_array(
-    'SELECT `name` FROM labs_contributors WHERE `id`=?',
+  my $contrib
+   = $self->dbh->selectrow_hashref(
+    'SELECT * FROM labs_contributors WHERE `id`=?',
     {}, $id );
-  return $name;
+  return $contrib;
 }
 
 sub _contributor_by_name {
@@ -107,7 +107,7 @@ sub _graph {
   my ( $self, $id, $limit ) = @_;
   return $self->dbh->selectall_arrayref(
     join( ' ',
-      'SELECT c.name, c.id, g.count',
+      'SELECT c.name, c.id, c.bacon, g.count',
       'FROM labs_social_graph AS g',
       'LEFT JOIN labs_contributors AS c ON c.id=g.id_b',
       'WHERE g.id_a=?',
@@ -144,17 +144,15 @@ sub graph {
   my ( $self, $id, $limit ) = @_;
   $limit //= LIMIT;
 
+  my $contrib = $self->_contributor_by_id($id);
+  return { status => 'NOTFOUND' } unless $contrib;
+
   my $graph = $self->_graph( $id, $limit );
-
-  return { status => 'NOTFOUND' } unless @$graph;
-
-  my @ids = map { $_->{id} } @$graph;
 
   return {
     status => 'OK',
-    id     => $id,
-    name   => $self->_contributor_by_id($id),
-    graph  => $self->_cook_graph($graph),
+    %$contrib,
+    graph => $self->_cook_graph($graph),
     #    links  => $self->_links_between( $limit * $limit, @ids ),
   };
 }
