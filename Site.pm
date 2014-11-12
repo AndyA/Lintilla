@@ -51,6 +51,8 @@ sub barlesque {
     blq_version             => 4,
     blq_nedstat_countername => 'genome.test.page',
     blq_nedstat             => 1,
+    blq_nedstat_labels      => 'app_name=genome&prod_name=genome',
+
   );
 }
 
