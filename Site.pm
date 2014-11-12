@@ -50,6 +50,7 @@ sub barlesque {
     blq_link_prefix         => 'http://www.bbc.co.uk',
     blq_version             => 4,
     blq_nedstat_countername => 'genome.test.page',
+    blq_nedstat             => 1,
   );
 }
 
