@@ -523,7 +523,8 @@ sub edit_edit {
     sub {
       my ( $editlog_id, $state )
        = $self->amend( $edit_id, $who, undef, $data );
-      if ( defined $editlog_id ) {
+      if ( defined $editlog_id && $state eq 'accepted' ) {
+        $self->do_edit( [$edit_id, $editlog_id], $who );
       }
     }
   );
