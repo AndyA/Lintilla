@@ -513,7 +513,20 @@ sub amend {
         $old_data, $new_data, @when );
     }
   );
+  return ( $editlog_id, $state ) if wantarray;
   return $editlog_id;
+}
+
+sub edit_edit {
+  my ( $self, $edit_id, $who, $data ) = @_;
+  $self->transaction(
+    sub {
+      my ( $editlog_id, $state )
+       = $self->amend( $edit_id, $who, undef, $data );
+      if ( defined $editlog_id ) {
+      }
+    }
+  );
 }
 
 sub workflow {
