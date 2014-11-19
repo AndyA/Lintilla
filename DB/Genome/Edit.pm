@@ -196,7 +196,7 @@ sub diff {
 
   my $data = $self->_decode_wide( delete $edit->{data} );
   $edit->{contributors} = $self->_contrib( $edit->{uuid} );
-  my $type = $edit->{type} // 'html';
+  my $type = $data->{type} // 'html';
 
   return {
     edit    => $edit,
