@@ -108,11 +108,18 @@ sub _clean_html {
     Text::HTMLCleaner->new( html => $html )->text );
 }
 
-sub _diff {
-  my ( $self, $text, $html ) = @_;
+sub _clean_text {
+  my ( $self, $type, $text ) = @_;
+  return $self->_clean_html($text)  if $type eq 'html';
+  return $self->_clean_lines($text) if $type eq 'text';
+  die "Bad type: $type";
+}
 
-  my $left = $self->_clean_lines( $text // '' );
-  my $right = defined $html ? $self->_clean_html($html) : $left;
+sub _diff {
+  my ( $self, $type, $ltext, $rtext ) = @_;
+
+  my $left = $self->_clean_lines( $ltext // '' );
+  my $right = defined $rtext ? $self->_clean_text( $type, $rtext ) : $left;
 
   my $diff = Text::DeepDiff->new( left => $left, right => $right )->diff;
 
@@ -189,13 +196,14 @@ sub diff {
 
   my $data = $self->_decode_wide( delete $edit->{data} );
   $edit->{contributors} = $self->_contrib( $edit->{uuid} );
+  my $type = $edit->{type} // 'html';
 
   return {
     edit    => $edit,
     data    => $data,
     link    => $self->strip_uuid( $edit->{uuid} ),
     history => $self->edit_history($id),
-    ( map { $_ => $self->_diff( $edit->{$_}, $data->{$_} ) }
+    ( map { $_ => $self->_diff( $type, $edit->{$_}, $data->{$_} ) }
        qw( title synopsis contributors )
     ),
   };
@@ -929,13 +937,14 @@ sub history {
 sub _parse_edit {
   my ( $self, $edit ) = @_;
   my $rec = {};
-  $rec->{title} = $self->_clean_html( $edit->{title} )
+  my $type = $edit->{type} // 'html';
+  $rec->{title} = $self->_clean_text( $type, $edit->{title} )
    if defined $edit->{title};
-  $rec->{synopsis} = $self->_clean_html( $edit->{synopsis} )
+  $rec->{synopsis} = $self->_clean_text( $type, $edit->{synopsis} )
    if defined $edit->{synopsis};
   $rec->{contributors}
    = $self->_parse_contributors(
-    $self->_clean_html( $edit->{contributors} ) )
+    $self->_clean_text( $type, $edit->{contributors} ) )
    if defined $edit->{contributors};
   return $rec;
 }
