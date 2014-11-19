@@ -204,7 +204,7 @@ sub diff {
     link    => $self->strip_uuid( $edit->{uuid} ),
     history => $self->edit_history($id),
     ( map { $_ => $self->_diff( $type, $edit->{$_}, $data->{$_} ) }
-       qw( title synopsis contributors )
+       qw( title synopsis contributors comment )
     ),
   };
 }

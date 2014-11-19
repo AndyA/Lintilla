@@ -129,6 +129,15 @@ prefix '/admin' => sub {
         return db->workflow( param('id'), 'admin', param('action') );
       }
     );
+    post '/edit/:id' => check_vis(
+      'internal',
+      sub {
+        my $db   = db;
+        my $data = $db->_decode( request->body );
+        $db->edit_edit( param('id'), 'admin', $data );
+        return { status => 'OK', message => 'Successfully edited' };
+      }
+    );
   };
 
   # Pages
@@ -153,7 +162,9 @@ prefix '/admin' => sub {
     'internal',
     sub {
       template 'admin/approve',
-       { title => 'Genome Admin', scripts => ['approve'] },
+       {title   => 'Genome Admin',
+        scripts => ['jquery.autosize.min', 'approve']
+       },
        { layout => 'admin' };
     }
   );
