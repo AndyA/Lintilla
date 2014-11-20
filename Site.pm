@@ -88,10 +88,9 @@ sub boilerplate($) {
       shareId  => 'share',
       locale   => 'en.gb',
       shareUrl => self(),
-      caption  => 'This is a test of a caption',
-      title    => 'This is test title',
-      description =>
-       'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+      #      caption      => 'This is a test of a caption',
+      title        => 'BBC Genome',
+      description  => 'Radio Times 1923-2009',
       variant      => 'default',
       variantPanel => 'light'
 # api_key=> opt.api_key,
