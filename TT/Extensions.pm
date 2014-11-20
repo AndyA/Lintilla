@@ -3,6 +3,7 @@ package Lintilla::TT::Extensions;
 use strict;
 use warnings;
 
+use JSON ();
 use POSIX qw( strftime );
 use Set::IntSpan::Fast;
 use Template::Stash;
@@ -134,6 +135,13 @@ $Template::Stash::SCALAR_OPS->{thousands} = sub {
   $n =~ s/(\d+)/_thousands($1)/e;
   return $n;
 };
+
+{
+  my $JSON = sub { JSON->new->canonical->allow_nonref->encode(shift) };
+  $Template::Stash::HASH_OPS->{json} = $JSON;
+  $Template::Stash::LIST_OPS->{json} = $JSON;
+  $Template::Stash::SCALAR_OPS->{json} = $JSON;
+}
 
 1;
 
