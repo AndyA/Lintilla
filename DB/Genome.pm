@@ -814,6 +814,12 @@ sub issue_listing {
   my @rv = (
     title =>
      $self->page_title( "Issue " . $iss->{issue}, $iss->{pretty_date} ),
+    share_stash => $self->share_stash(
+      title => join( ' ',
+        'Radio Times issue',
+        join( ', ', $iss->{issue}, $iss->{pretty_date} ),
+        'on BBC Genome' )
+    ),
     issue     => $iss,
     proximate => $self->issue_proximate( $iss->{issue}, 6 ),
     monthly   => $self->_month_issues_for_year( $iss->{year} ),
