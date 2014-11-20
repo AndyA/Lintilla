@@ -471,7 +471,10 @@ sub annual_issues {
   my $self = shift;
 
   return (
-    title  => $self->page_title('Issues'),
+    title       => $self->page_title('Issues'),
+    share_stash => $self->share_stash(
+      title => 'List of Radio Times issues from 1923 to 2009 on BBC Genome'
+    ),
     issues => $self->group_by(
       $self->_cook_issues(
         $self->dbh->selectall_arrayref(
