@@ -85,7 +85,7 @@ sub boilerplate($) {
     form        => $srch->form,
     switchview  => $pe->switcher,
     share_stash => {
-      shareId  => 'share',
+      #      shareId  => 'share',
       locale   => 'en.gb',
       shareUrl => self(),
       #      caption      => 'This is a test of a caption',
