@@ -649,8 +649,11 @@ sub issues_for_year {
   my $issues = $self->_issues_for_year($year);
 
   return (
-    title => $self->page_title("Issues for $year"),
-    year  => $year,
+    title       => $self->page_title("Issues for $year"),
+    share_stash => $self->share_stash(
+      title => "Radio times issues for $year on BBC Genome"
+    ),
+    year => $year,
     issues   => $self->group_by( $issues, 'month' ),
     approved => $self->group_by( $issues, 'approved_year' ),
   );
