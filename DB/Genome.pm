@@ -567,10 +567,13 @@ sub listing_for_schedule {
     service_years  => $self->service_years($service),
     short_title    => $short_title,
     title          => $self->page_title( $title,       $pretty ),
-    year           => $year,
-    month          => $month,
-    day            => $day,
-    date           => $date,
+    share_stash    => $self->share_stash(
+      title => join( ' ', $title, $pretty, 'on BBC Genome' )
+    ),
+    year  => $year,
+    month => $month,
+    day   => $day,
+    date  => $date,
   );
 }
 
@@ -994,12 +997,15 @@ sub search {
   my @sids = map { $_->{service_id} } @{ $ssvc->{matches} || [] };
 
   return (
-    form       => $srch->form,
-    results    => $results,
-    programmes => $progs,
-    services   => $self->_search_load_services( $srch, @sids ),
-    pagination => $srch->pagination(10),
-    title      => $self->page_title('Search Results'),
+    form        => $srch->form,
+    results     => $results,
+    programmes  => $progs,
+    services    => $self->_search_load_services( $srch, @sids ),
+    pagination  => $srch->pagination(10),
+    title       => $self->page_title('Search Results'),
+    share_stash => $self->share_stash(
+      title => 'Search for ' . $srch->q . ' on BBC Genome'
+    ),
   );
 }
 
@@ -1032,14 +1038,16 @@ sub programme {
   my $rec    = $self->resolve_services( $progs->[0]{root_uuid} );
   my $issues = $self->issues( $progs->[0]{issue} );
 
+  my @desc = @{ $progs->[0] }{ 'title', 'service_full', 'pretty_date' };
+
   return (
     about     => $rec,
     spiel     => $self->_build_service_spiel($rec),
     programme => $progs->[0],
     issue     => $issues->[0],
-    title     => $self->page_title(
-      @{ $progs->[0] }{ 'title', 'service_full', 'pretty_date' }
-    ),
+    share_stash =>
+     $self->share_stash( title => join( ', ', @desc ) . ' on BBC Genome' ),
+    title => $self->page_title(@desc),
   );
 }
 
@@ -1048,6 +1056,27 @@ sub site_name { 'BBC Genome' }
 sub page_title {
   my ( $self, @title ) = @_;
   return join ' - ', @title, $self->site_name;
+}
+
+sub share_stash {
+  my ( $self, %vals ) = @_;
+  my %default = (
+    locale       => 'en.gb',
+    title        => 'BBC Genome',
+    description  => 'Radio Times 1923-2009',
+    variant      => 'default',
+    variantPanel => 'light',
+ #    caption      => 'This is a test of a caption',
+ #    api_key        => '',
+ #    twitterName    => '',
+ #    redirect_uri   => '',
+ #    panelOpen      => '',
+ #    panelDirection => '',
+ #    image =>
+ #     'http://www.cjdaugherty.com/wp-content/uploads/2013/08/bbc-logo9.jpg',
+  );
+
+  return { %default, %vals };
 }
 
 1;
