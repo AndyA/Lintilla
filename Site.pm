@@ -84,7 +84,7 @@ sub boilerplate($) {
     stations      => $STATIC->get('stations'),
     form          => $srch->form,
     switchview    => $pe->switcher,
-    share_stash   => $db->share_stash, 
+    share_stash   => $db->share_stash,
     show_external => !config->{disable_external},
     debug_script  => config->{debug_script},
     echo_key      => echo_key(),
@@ -202,7 +202,9 @@ get '/help' => sub {
   template 'help',
    {boilerplate $db,
     echo_key => echo_key('help'),
-    title    => $db->page_title('FAQs') };
+    share_stash =>
+     $db->share_stash( title => 'FAQs for the BBC Genome Project' ),
+    title => $db->page_title('FAQs') };
 };
 
 get '/faqs' => sub {
@@ -210,7 +212,9 @@ get '/faqs' => sub {
   template 'help',
    {boilerplate $db,
     echo_key => echo_key('faqs'),
-    title    => $db->page_title('FAQs') };
+    share_stash =>
+     $db->share_stash( title => 'FAQs for the BBC Genome Project' ),
+    title => $db->page_title('FAQs') };
 };
 
 get '/about' => sub {
@@ -218,7 +222,9 @@ get '/about' => sub {
   template 'about',
    {boilerplate $db,
     echo_key => echo_key('about'),
-    title    => $db->page_title('About this project') };
+    share_stash =>
+     $db->share_stash( title => 'About the BBC Genome Project' ),
+    title => $db->page_title('About this project') };
 };
 
 get qr/\/([0-9a-f]{32})/i => sub {
