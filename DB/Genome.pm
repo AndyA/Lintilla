@@ -1016,7 +1016,8 @@ sub search {
     pagination  => $srch->pagination(10),
     title       => $self->page_title('Search Results'),
     share_stash => $self->share_stash(
-      title => join( ' ', 'Search for', $srch->q, 'on BBC Genome' )
+      title    => join( ' ', 'Search for', $srch->q, 'on BBC Genome' ),
+      shareUrl => $srch->self_link,
     ),
   );
 }

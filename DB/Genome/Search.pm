@@ -122,6 +122,11 @@ sub page_link {
   return "$uri";
 }
 
+sub self_link {
+  my $self = shift;
+  return $self->page_link( $self->page );
+}
+
 sub order_link {
   my ( $self, $order ) = @_;
   my $uri = URI->new( sprintf '/search/%d/%d', 0, $self->size );
