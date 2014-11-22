@@ -28,6 +28,9 @@ no if $] >= 5.018, warnings => "experimental::smartmatch";
 use constant BOILERPLATE =>
  qw( services years decades decade_years month_names short_month_names );
 
+use constant URL_SHRINKER =>
+ 'http://www.bbc.co.uk/modules/share/service/shrink';
+
 sub db() { Lintilla::DB::Genome->new( dbh => database ) }
 
 my $STATIC = Lintilla::Data::Static->new(
@@ -248,6 +251,14 @@ get qr/\/([0-9a-f]{32})/i => sub {
       pass;
     }
   }
+};
+
+# Redirect for URL shrinking
+
+get '/modules/share/service/shrink' => sub {
+  my $shrink = URI->new(URL_SHRINKER);
+  $shrink->query_form(params);
+  redirect $shrink;
 };
 
 # Must be last
