@@ -23,12 +23,7 @@ with 'Lintilla::Role::DB';
 with 'Lintilla::Role::Config';
 with 'Lintilla::Role::DateTime';
 with 'Lintilla::Role::Gatherer';
-
-has source => (
-  is       => 'ro',
-  required => 1,
-  default  => '70ba6e0c-c493-42bd-8c64-c9f4be994f6d',
-);
+with 'Lintilla::Role::Source';
 
 has years    => ( is => 'ro', lazy => 1, builder => '_build_years' );
 has decades  => ( is => 'ro', lazy => 1, builder => '_build_decades' );

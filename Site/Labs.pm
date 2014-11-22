@@ -7,8 +7,11 @@ use Encode qw( decode encode );
 use JSON ();
 use Lintilla::DB::Genome::Edit;
 use Lintilla::DB::Genome::Pages;
+use Lintilla::DB::Genome::Schedule;
 use Lintilla::DB::Genome::SocialGraph;
 use Lintilla::DB::Genome::Stats;
+use Lintilla::Magic::Asset;
+use Path::Class;
 
 =head1 NAME
 
@@ -23,6 +26,13 @@ sub dbe() { Lintilla::DB::Genome::Edit->new( dbh => database ) }
 sub dbso() { Lintilla::DB::Genome::SocialGraph->new( dbh => database ) }
 
 sub dbs { Lintilla::DB::Genome::Stats->new( dbh => database, @_ ) }
+
+sub our_uri_for {
+  my $sn = delete request->env->{SCRIPT_NAME};
+  my $uri = request->uri_for( join '/', '', @_ );
+  request->env->{SCRIPT_NAME} = $sn;
+  return $uri;
+}
 
 prefix '/labs' => sub {
 
@@ -126,6 +136,35 @@ prefix '/labs' => sub {
         css     => ['pages'],
        },
        { layout => 'labs' };
+    };
+  };
+
+  # Dynamic schedule chunks
+  prefix '/var/schedule' => sub {
+    get '/week/:slot' => sub {
+      die "Bad slot" unless param('slot') =~ /^(-?\d+)\.json$/;
+      my $slot     = $1;
+      my @path     = ( 'labs', 'var', 'schedule', 'week', "$slot.json" );
+      my $out_file = file setting('public'), @path;
+
+      my $sched = Lintilla::DB::Genome::Schedule->new(
+        slot     => $slot,
+        out_file => $out_file,
+        dbh      => database
+      );
+
+      my $magic = Lintilla::Magic::Asset->new(
+        filename => $out_file,
+        timeout  => 20,
+        provider => $sched,
+        method   => 'create_week'
+      );
+
+      $magic->render or die "Can't render";
+
+      my $self = our_uri_for(@path) . '?1';
+      return redirect $self, 307;
+
     };
   };
 

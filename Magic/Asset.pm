@@ -18,10 +18,12 @@ has filename => ( is => 'ro', required => 1 );
 has provider => ( is => 'ro', required => 1 );
 
 has timeout => ( isa => 'Maybe[Num]', is => 'ro', default => 20 );
+has method  => ( isa => 'Str',        is => 'ro', default => 'create' );
 
 sub render {
-  my $self = shift;
-  my $fn   = $self->filename;
+  my $self   = shift;
+  my $fn     = $self->filename;
+  my $method = $self->method;
   unless ( -e $fn ) {
     my $lockf = "$fn.LOCK";
     # TODO dump a .ERROR file if the conversion fails so we
@@ -32,7 +34,7 @@ sub render {
     file($lockf)->parent->mkpath;
     open my $lh, '>>', $lockf or die "Can't write $lockf: $!\n";
     if ( flock( $lh, LOCK_EX | LOCK_NB ) ) {
-      eval { $self->provider->create };
+      eval { $self->provider->$method };
       my $err = $@;
       close $lh;
       die $err if $err;
