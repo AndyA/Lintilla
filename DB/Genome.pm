@@ -1008,6 +1008,8 @@ sub search {
 
   my @sids = map { $_->{service_id} } @{ $ssvc->{matches} || [] };
 
+  my $self_link = $srch->self_link;
+
   return (
     form        => $srch->form,
     results     => $results,
@@ -1016,8 +1018,8 @@ sub search {
     pagination  => $srch->pagination(10),
     title       => $self->page_title('Search Results'),
     share_stash => $self->share_stash(
-      title    => join( ' ', 'Search for', $srch->q, 'on BBC Genome' ),
-      shareUrl => $srch->self_link,
+      title => join( ' ', 'Search for', $srch->q, 'on BBC Genome' ),
+      ( defined $self_link ? ( shareUrl => $self_link ) : () ),
     ),
   );
 }
