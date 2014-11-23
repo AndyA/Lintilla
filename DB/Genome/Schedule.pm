@@ -103,8 +103,6 @@ sub _services_for_uuids {
   my $services
    = $self->group_by( $self->_load_services( _uuid => @uuids ), '_uuid' );
 
-  debug 'services: ', $services;
-
   for my $uuid ( keys %$services ) {
     my $svcs = $services->{$uuid};
     next unless $svcs->[0]{service_type} eq 'pseudo';
