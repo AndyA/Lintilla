@@ -5,6 +5,7 @@ use Moose;
 use Dancer ':syntax';
 use POSIX qw( strftime );
 use Path::Class;
+use Time::Local;
 
 =head1 NAME
 
@@ -16,19 +17,21 @@ with 'Lintilla::Role::DB';
 with 'Lintilla::Role::JSON';
 with 'Lintilla::Role::Source';
 
+use constant DAY => 60 * 60 * 24;
+
 has out_file => ( is => 'ro', required => 1 );
-has slot => ( is => 'ro', isa => 'Int', required => 1 );
-has size => (
+has slot     => ( is => 'ro', isa      => 'Str' );
+has size     => (
   is       => 'ro',
   isa      => 'Int',
   required => 1,
-  default  => 60 * 60 * 24 * 7
+  default  => 7
 );
 
-sub _sane {
-  my $self  = shift;
-  my $qslot = int( $self->slot / $self->size ) * $self->size;
-  die "Bad schedule slot" unless $self->slot == $qslot;
+sub _parse_date {
+  die "Bad date" unless $_[1] =~ /^(\d\d\d\d)-?(\d\d)-?(\d\d)$/;
+  my ( $y, $m, $d ) = ( $1, $2, $3 );
+  return timegm 0, 0, 0, $d, $m - 1, $y;
 }
 
 sub _sql_date { strftime '%Y-%m-%d', gmtime $_[1] }
@@ -133,12 +136,51 @@ sub _data_for_slot {
   return $stash;
 }
 
+sub _date_range {
+  my $self = shift;
+  my ( $min, $max )
+   = map { $self->_sql_date( $self->_quantise( $self->_parse_date($_) ) ) }
+   $self->dbh->selectrow_array(
+    'SELECT MIN(`date`), MAX(`date`) FROM genome_programmes_v2');
+  s/-//g for $min, $max;
+  return { min => $min, max => $max, step => $self->size };
+}
+
+sub _span { shift->size * DAY }
+
+sub _quantise {
+  my ( $self, $epoch ) = @_;
+  my $offset = DAY * 365 * 100;
+  my $span   = $self->_span;
+  return int( ( $epoch + $offset ) / $span ) * $span - $offset;
+}
+
+sub _range {
+  my $self  = shift;
+  my $slot  = $self->_parse_date( $self->slot );
+  my $qslot = $self->_quantise($slot);
+  die "Quantised up!" if $qslot > $slot;
+  die "Bad slot" unless $slot == $qslot;
+  return ( $slot, $self->_span );
+}
+
+sub _create_json {
+  my ( $self, $data ) = @_;
+  my $out_file = $self->out_file;
+  my $tmp_file = "$out_file.tmp.json";
+  my $fh       = file($tmp_file)->openw;
+  print $fh $self->_encode($data);
+  rename $tmp_file, $out_file or die $!;
+}
+
 sub create_week {
   my $self = shift;
-  $self->_sane;
-  my $fh = file( $self->out_file )->openw;
-  print $fh $self->_encode(
-    $self->_data_for_slot( $self->slot, $self->size ) );
+  $self->_create_json( $self->_data_for_slot( $self->_range ) );
+}
+
+sub create_range {
+  my $self = shift;
+  $self->_create_json( $self->_date_range );
 }
 
 1;

@@ -141,30 +141,47 @@ prefix '/labs' => sub {
 
   # Dynamic schedule chunks
   prefix '/var/schedule' => sub {
-    get '/week/:slot' => sub {
-      die "Bad slot" unless param('slot') =~ /^(-?\d+)\.json$/;
-      my $slot     = $1;
-      my @path     = ( 'labs', 'var', 'schedule', 'week', "$slot.json" );
-      my $out_file = file setting('public'), @path;
+    my @base_path = ( 'labs', 'var', 'schedule' );
 
-      my $sched = Lintilla::DB::Genome::Schedule->new(
-        slot     => $slot,
-        out_file => $out_file,
-        dbh      => database
-      );
+    get '/range' => sub {
+      my @path = ( @base_path, 'range' );
+      my $out_file = file setting('public'), @path;
 
       my $magic = Lintilla::Magic::Asset->new(
         filename => $out_file,
         timeout  => 20,
-        provider => $sched,
-        method   => 'create_week'
+        provider => Lintilla::DB::Genome::Schedule->new(
+          out_file => $out_file,
+          dbh      => database
+        ),
+        method => 'create_range'
       );
 
       $magic->render or die "Can't render";
-
       my $self = our_uri_for(@path) . '?1';
       return redirect $self, 307;
+    };
 
+    get '/week/:slot' => sub {
+      my $slot = param('slot');
+      die "Bad slot" unless $slot =~ /^\d+$/;
+      my @path = ( @base_path, 'week', $slot );
+      my $out_file = file setting('public'), @path;
+
+      my $magic = Lintilla::Magic::Asset->new(
+        filename => $out_file,
+        timeout  => 20,
+        provider => Lintilla::DB::Genome::Schedule->new(
+          slot     => $slot,
+          out_file => $out_file,
+          dbh      => database
+        ),
+        method => 'create_week'
+      );
+
+      $magic->render or die "Can't render";
+      my $self = our_uri_for(@path) . '?1';
+      return redirect $self, 307;
     };
   };
 
