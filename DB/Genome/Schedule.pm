@@ -58,6 +58,8 @@ sub _programmes_for_slot {
 sub _load_services {
   my ( $self, $kf, @ids ) = @_;
 
+  return [] unless @ids;
+
   my $services = $self->dbh->selectall_arrayref(
     join( ' ',
       'SELECT',
