@@ -975,8 +975,8 @@ sub undo_edit {
         {},
         $edit_id
       );
-      die "Unknown edit ID" unless defined $id;
-      $self->safe_undo($id);
+      #      die "Unknown edit ID" unless defined $id;
+      $self->safe_undo($id) if defined $id;
     }
   );
 }
