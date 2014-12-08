@@ -119,7 +119,7 @@ sub page_link {
   my $uri
    = URI->new( sprintf '/search/%d/%d', $page * $self->size, $self->size );
   $uri->query_form( $self->persist );
-  return "$uri";
+  return "$uri#search";
 }
 
 sub self_link {
@@ -133,7 +133,7 @@ sub order_link {
   my $p = $self->persist;
   $p->{order} = $order;
   $uri->query_form($p);
-  return "$uri";
+  return "$uri#search";
 }
 
 sub service_link {
@@ -143,7 +143,7 @@ sub service_link {
   if (@svc) { $p->{svc} = join ',', @svc }
   else      { delete $p->{svc} }
   $uri->query_form($p);
-  return "$uri";
+  return "$uri#search";
 }
 
 sub pagination {
