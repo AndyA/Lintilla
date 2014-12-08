@@ -47,15 +47,19 @@ sub our_uri_for {
   return $uri;
 }
 
-sub barlesque {
+sub is_tls {
   my $tls = request->env->{HTTP_X_TLS} // 'no';
+  return $tls eq 'yes';
+}
+
+sub barlesque {
   Barlesque::Client->new(
     blq_doctype             => 'html5',
     blq_link_prefix         => 'http://www.bbc.co.uk',
     blq_version             => 4,
     blq_nedstat_countername => 'genome.test.page',
     blq_nedstat             => 1,
-    ( $tls eq 'yes' ? ( blq_https => 1 ) : () )
+    ( is_tls() ? ( blq_https => 1 ) : () )
   );
 }
 
@@ -79,9 +83,12 @@ sub boilerplate($) {
   my $pe   = vars->{personality};
   return (
     $db->gather(BOILERPLATE),
-    barlesque    => barlesque->parts,
-    visibility   => $pe->personality,
-    change_count => $dbe->change_count,
+    barlesque   => barlesque->parts,
+    static_base => is_tls()
+    ? 'https://static.bbc.co.uk'
+    : 'http://static.bbci.co.uk',
+    visibility    => $pe->personality,
+    change_count  => $dbe->change_count,
     stash         => sub { $db->stash(shift) },
     timelist      => sub { $srch->timelist },
     title         => $db->page_title,
