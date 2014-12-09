@@ -231,6 +231,16 @@ get '/about' => sub {
     title => $db->page_title('About this project') };
 };
 
+get '/style-guide' => sub {
+  my $db = db;
+  template 'style-guide',
+   {boilerplate $db,
+    echo_key => echo_key('styleguide'),
+    share_stash =>
+     $db->share_stash( title => 'Editing Style Guide for BBC Genome' ),
+    title => $db->page_title('Editing Style Guide') };
+};
+
 get qr/\/([0-9a-f]{32})/i => sub {
   my ($uuid) = splat;
   my $db     = db;
