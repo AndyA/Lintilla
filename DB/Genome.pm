@@ -1077,13 +1077,6 @@ sub share_stash {
     variant      => 'default',
     variantPanel => 'light',
     twitterName  => 'bbcgenome',
- #    caption      => 'This is a test of a caption',
- #    api_key        => '',
- #    redirect_uri   => '',
- #    panelOpen      => '',
- #    panelDirection => '',
- #    image =>
- #     'http://www.cjdaugherty.com/wp-content/uploads/2013/08/bbc-logo9.jpg',
   );
 
   return { %default, %vals };
