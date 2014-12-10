@@ -102,6 +102,7 @@ sub boilerplate($) {
     switchview    => $pe->switcher,
     share_stash   => $db->share_stash,
     show_external => !config->{disable_external},
+    infax_link    => !!config->{infax_link},
     debug_script  => config->{debug_script},
     echo_key      => echo_key(),
   );
