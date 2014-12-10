@@ -379,16 +379,19 @@ sub _add_infax_links {
   my @uids = map { $_->{_uuid} } @$rows;
 
   if (@uids) {
-    my $infax = $self->group_by(
-      $self->dbh->selectall_arrayref(
-        join( ' ',
-          'SELECT * FROM genome_infax WHERE uuid IN', '(',
-          join( ', ', map '?', @uids ), ')' ),
-        { Slice => {} },
-        @uids
-      ),
-      'uuid'
+    my $irows = $self->dbh->selectall_arrayref(
+      join( ' ',
+        'SELECT * FROM genome_infax WHERE uuid IN', '(',
+        join( ', ', map '?', @uids ), ')' ),
+      { Slice => {} },
+      @uids
     );
+    for my $irow (@$irows) {
+      $irow->{pretty_date} = $self->pretty_date( $irow->{when} );
+      $irow->{pretty_time} = sprintf '%02d:%02d:%02d',
+       $self->decode_time( $irow->{when} );
+    }
+    my $infax = $self->group_by( $irows, 'uuid' );
     for my $row (@$rows) {
       my $ifx = delete $infax->{ $row->{_uuid} };
       $row->{infax} = $ifx->[0] if $ifx;
