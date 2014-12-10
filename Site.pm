@@ -31,7 +31,12 @@ use constant BOILERPLATE =>
 use constant URL_SHRINKER =>
  'http://www.bbc.co.uk/modules/share/service/shrink';
 
-sub db() { Lintilla::DB::Genome->new( dbh => database ) }
+sub db() {
+  Lintilla::DB::Genome->new(
+    dbh   => database,
+    infax => config->{infax_link} ? 1 : 0
+  );
+}
 
 my $STATIC = Lintilla::Data::Static->new(
   store => dir( setting('appdir'), 'data' ) );

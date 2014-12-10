@@ -25,6 +25,8 @@ with 'Lintilla::Role::DateTime';
 with 'Lintilla::Role::Gatherer';
 with 'Lintilla::Role::Source';
 
+has infax => ( is => 'ro', isa => 'Bool', default => 0 );
+
 has years    => ( is => 'ro', lazy => 1, builder => '_build_years' );
 has decades  => ( is => 'ro', lazy => 1, builder => '_build_decades' );
 has services => ( is => 'ro', lazy => 1, builder => '_build_services' );
@@ -343,7 +345,7 @@ sub clean_id {
   return $uuid;
 }
 
-sub _add_programme_details {
+sub _add_default_programme_details {
   my ( $self, $rows ) = @_;
   my @uids = map { $_->{_uuid} } @$rows;
   my $sql
@@ -369,6 +371,37 @@ sub _add_programme_details {
     $row->{pretty_broadcast_date}
      = $self->pretty_date( $row->{broadcast_date} );
   }
+  return $rows;
+}
+
+sub _add_infax_links {
+  my ( $self, $rows ) = @_;
+  my @uids = map { $_->{_uuid} } @$rows;
+
+  if (@uids) {
+    my $infax = $self->group_by(
+      $self->dbh->selectall_arrayref(
+        join( ' ',
+          'SELECT * FROM genome_infax WHERE uuid IN', '(',
+          join( ', ', map '?', @uids ), ')' ),
+        { Slice => {} },
+        @uids
+      ),
+      'uuid'
+    );
+    for my $row (@$rows) {
+      my $ifx = delete $infax->{ $row->{_uuid} };
+      $row->{infax} = $ifx->[0] if $ifx;
+    }
+  }
+
+  return $rows;
+}
+
+sub _add_programme_details {
+  my ( $self, $rows ) = @_;
+  $self->_add_default_programme_details($rows);
+  $self->_add_infax_links($rows) if $self->infax;
   return $rows;
 }
 
