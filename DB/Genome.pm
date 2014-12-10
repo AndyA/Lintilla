@@ -388,7 +388,7 @@ sub _add_infax_links {
     );
     for my $irow (@$irows) {
       $irow->{pretty_date} = $self->pretty_date( $irow->{when} );
-      $irow->{pretty_time} = sprintf '%02d:%02d:%02d',
+      $irow->{pretty_time} = sprintf '%02d:%02d',
        $self->decode_time( $irow->{when} );
       $irow->{pretty_score} = sprintf '%5.3f', $irow->{score};
     }
