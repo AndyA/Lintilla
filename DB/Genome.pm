@@ -15,8 +15,9 @@ Lintilla::DB::Genome - Genome model
 
 =cut
 
-use constant YEAR_START => 1923;
-use constant YEAR_END   => 2009;
+use constant YEAR_START       => 1923;
+use constant YEAR_END         => 2009;
+use constant INFAX_CONFIDENCE => 90;
 
 with 'Lintilla::Role::JSON';
 with 'Lintilla::Role::DB';
@@ -390,7 +391,8 @@ sub _add_infax_links {
       $irow->{pretty_date} = $self->pretty_date( $irow->{when} );
       $irow->{pretty_time} = sprintf '%02d:%02d',
        $self->decode_time( $irow->{when} );
-      $irow->{pretty_score} = sprintf '%d', 100 * ( 1 - $irow->{score} );
+      $irow->{pretty_score} = sprintf '%d',
+       INFAX_CONFIDENCE * ( 1 - $irow->{score} );
     }
     my $infax = $self->group_by( $irows, 'uuid' );
     for my $row (@$rows) {
