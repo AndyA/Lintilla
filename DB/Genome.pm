@@ -583,6 +583,9 @@ sub listing_for_schedule {
   my $rows = $self->dbh->selectall_arrayref( $sql, { Slice => {} },
     $self->source, $service, $date );
 
+  my $notes = $self->listing_notes($date);
+  my $note = $self->find_note( $notes->{$date}, $service );
+
   my @pages  = unique map { $_->{page} } @$rows;
   my @issues = unique map { $_->{issue} } @$rows;
 
@@ -593,6 +596,7 @@ sub listing_for_schedule {
     spiel          => $self->_build_service_spiel($rec),
     issues         => $self->issues(@issues),
     listing        => $self->_add_programme_details($rows),
+    note           => $note,
     month_name     => $self->month_names->[$month - 1],
     outlet         => join( '/', @spec ),
     pages          => \@pages,
@@ -800,6 +804,38 @@ sub _explode_listing {
   return \@out;
 }
 
+sub listing_notes {
+  my ( $self, @dates ) = @_;
+
+  return {} unless @dates;
+
+  my $notes = $self->dbh->selectall_arrayref(
+    join( ' ',
+      'SELECT ln.`date`, ln.`service`, cm.`message`',
+      'FROM genome_listing_notes AS ln, genome_content_messages AS cm',
+      'WHERE ln.message_id=cm.id',
+      'AND `date` IN (',
+      join( ', ', map '?', @dates ),
+      ')',
+      'ORDER BY service IS NULL, service' ),
+    { Slice => {} },
+    @dates
+  );
+
+  return $self->group_by( $notes, 'date' );
+}
+
+sub find_note {
+  my ( $self, $notes, @svcs ) = @_;
+  return unless $notes;
+  my %got = map { $_ => 1 } @svcs;
+  for my $note (@$notes) {
+    return $note if defined $note->{service} && $got{ $note->{service} };
+    return $note if !defined $note->{service};
+  }
+  return;
+}
+
 sub issue_listing {
   my ( $self, $uuid ) = @_;
 
@@ -850,7 +886,19 @@ sub issue_listing {
     $i->{service_dates} = $svc_dates->{ $i->{service} };
   }
 
-  $iss->{listing} = $self->group_by( $list, 'date' );
+  my $by_date       = $self->group_by( $list, 'date' );
+  my $notes         = $self->listing_notes( keys %$by_date );
+  my $notes_by_date = {};
+
+  while ( my ( $date, $items ) = each %$by_date ) {
+    my @svc = unique map { $_->{service} } @$items;
+    my $note = $self->find_note( $notes->{$date}, @svc );
+    $notes_by_date->{$date} = $note if defined $note;
+  }
+
+  $iss->{listing} = $by_date;
+  $iss->{notes}   = $notes_by_date;
+
   my @rv = (
     title =>
      $self->page_title( "Issue " . $iss->{issue}, $iss->{pretty_date} ),
