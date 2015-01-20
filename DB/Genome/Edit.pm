@@ -70,7 +70,7 @@ sub _cook_order {
   my ($order) = @_;
 
   my %ok_order = map { $_ => 1 } qw(
-   id uuid kind data state title service created updated
+   id uuid kind data state title service created updated tx
   );
 
   my @ord = ();
@@ -260,7 +260,9 @@ sub list {
   my $res = $self->_cook_list(
     $self->dbh->selectall_arrayref(
       join( ' ',
-        'SELECT e.`id`, e.`uuid`, e.`kind`, e.`state`, e.`data`, p.`title`, c.`comment`,',
+        'SELECT',
+        '  e.`id`, e.`uuid`, e.`kind`, e.`state`, e.`data`, p.`title`,',
+        '  p.`when` AS `tx`, c.`comment`,',
         '  MIN(el.`when`) AS `created`, MAX(el.`when`) AS `updated`,',
         "  IF(s2.`title` IS NULL, s.`title`, CONCAT_WS(' ', s2.`title`, s.`title`)) AS service",
         'FROM',
