@@ -95,13 +95,6 @@ prefix '/admin' => sub {
     }
   );
 
-  get '/list/comment/:state/:start/:size/:order' => check_vis(
-    'internal',
-    sub {
-      return {};
-    }
-  );
-
   get '/list/:kind/:state/:start/:size/:order' => check_vis(
     'internal',
     sub {
