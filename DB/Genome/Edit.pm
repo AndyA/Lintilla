@@ -275,6 +275,15 @@ sub list {
   return $res;
 }
 
+sub _yn { $_[0] ? 'Y' : 'N' }
+
+sub _has_comment {
+  my ( $self, $data ) = @_;
+  return unless exists $data->{comment};
+  return if $data->{comment} =~ /^\s*$/;
+  return 1;
+}
+
 sub _submit {
   my ( $self, $uuid, $kind, $who, $data, $state, $parent, $hash ) = @_;
   my $dbh = $self->dbh;
@@ -300,6 +309,15 @@ sub _submit {
         $self->data_hash( $state, $new_data )
       );
       my $edit_id = $dbh->last_insert_id( undef, undef, undef, undef );
+      $dbh->do(
+        join( ' ',
+          'INSERT INTO genome_edit_comment',
+          '(`id`, `comment`)',
+          'VALUES (?, ?)' ),
+        {},
+        $edit_id,
+        _yn( $self->_has_comment($data) )
+      );
       $self->audit( $edit_id, $who, $kind, undef, 'pending', undef,
         $new_data );
     }
@@ -515,6 +533,9 @@ sub amend {
 
       $self->dbh->do( 'UPDATE genome_edit SET state=?, data=? WHERE id=?',
         {}, $state, $new_data, $edit_id );
+
+      $self->dbh->do( 'UPDATE genome_edit_comment SET comment=? WHERE id=?',
+        {}, _yn( $self->_has_comment($data) ), $edit_id );
 
       $editlog_id
        = $self->audit( $edit_id, $who, $old->{kind}, $old->{state}, $state,
@@ -1033,6 +1054,15 @@ sub _create_edit {
     $self->data_hash( $edit->{state}, $edit->{data} )
   );
   my $edit_id = $self->dbh->last_insert_id( undef, undef, undef, undef );
+  $self->dbh->do(
+    join( ' ',
+      'INSERT INTO genome_edit_comment',
+      '(`id`, `comment`)',
+      'VALUES (?, ?)' ),
+    {},
+    $edit_id,
+    _yn( $self->_has_comment( $edit->{data} ) )
+  );
   my $editlog_id
    = $self->audit( $edit_id, $edit->{who}, $edit->{kind}, undef, 'pending',
     undef, $new_data, $when );
