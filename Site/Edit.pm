@@ -106,10 +106,7 @@ prefix '/admin' => sub {
     'internal',
     sub {
       return {
-        list => db->list(
-          param('kind'), param('state'), param('start'), param('size'),
-          param('order'),
-        ),
+        list  => db->list(params),
         count => db->edit_state_count
       };
     }

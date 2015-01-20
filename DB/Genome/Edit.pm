@@ -231,19 +231,25 @@ sub edit_state_count {
 }
 
 sub list {
-  my ( $self, $kind, $state, $start, $size, $order ) = @_;
+  my ( $self, %params ) = @_;
 
-  my $ord = $self->_cook_order($order);
+  my $ord = $self->_cook_order( $params{order} // '-updated' );
 
   my @group = ();
   my @filt  = ();
   my @bind  = ();
 
-  if ( $kind ne '*' ) { push @filt, 'AND e.kind=?'; push @bind, $kind }
-  else                { push @group, 'kind' }
+  if ( exists $params{kind} && $params{kind} ne '*' ) {
+    push @filt, 'AND e.kind=?';
+    push @bind, $params{kind};
+  }
+  else { push @group, 'kind' }
 
-  if ( $state ne '*' ) { push @filt, 'AND e.state=?'; push @bind, $state }
-  else                 { push @group, 'state' }
+  if ( exists $params{state} && $params{state} ne '*' ) {
+    push @filt, 'AND e.state=?';
+    push @bind, $params{state};
+  }
+  else { push @group, 'state' }
 
   my $res = $self->_cook_list(
     $self->dbh->selectall_arrayref(
@@ -261,7 +267,9 @@ sub list {
         "ORDER BY $ord",
         'LIMIT ?, ?' ),
       { Slice => {} },
-      @bind, $start, $size
+      @bind,
+      $params{start},
+      $params{size}
     )
   );
 
