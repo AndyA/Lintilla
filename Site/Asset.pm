@@ -118,7 +118,7 @@ get '/asset/var/*/**' => sub {
 
   $magic->render or die "Can't render";
 
-  my $self = our_uri_for( @p, @v, @name ) . '?1';
+  my $self = our_uri_for( @p, @v, @name ) . '?' . rand();
 
   return redirect $self, 307;
 };
