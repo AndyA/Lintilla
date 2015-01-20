@@ -251,16 +251,28 @@ sub list {
   }
   else { push @group, 'state' }
 
+  if ( exists $params{comment} && $params{comment} ne '*' ) {
+    die unless $params{comment} =~ /^[yn]$/i;
+    push @filt, 'AND c.comment=?';
+    push @bind, $params{comment} = uc $params{comment};
+  }
+
   my $res = $self->_cook_list(
     $self->dbh->selectall_arrayref(
       join( ' ',
-        'SELECT e.`id`, e.`uuid`, e.`kind`, e.`state`, e.`data`, p.`title`,',
+        'SELECT e.`id`, e.`uuid`, e.`kind`, e.`state`, e.`data`, p.`title`, c.`comment`,',
         '  MIN(el.`when`) AS `created`, MAX(el.`when`) AS `updated`,',
         "  IF(s2.`title` IS NULL, s.`title`, CONCAT_WS(' ', s2.`title`, s.`title`)) AS service",
-        'FROM genome_edit AS e, genome_editlog AS el, genome_programmes_v2 AS p, genome_services AS s',
+        'FROM',
+        '  genome_edit AS e,',
+        '  genome_edit_comment AS c,',
+        '  genome_editlog AS el,',
+        '  genome_programmes_v2 AS p,',
+        '  genome_services AS s',
         'LEFT JOIN genome_services AS s2 ON s2._uuid=s._parent',
         'WHERE e.uuid=p._uuid',
         @filt,
+        '  AND e.id=c.id',
         '  AND e.id=el.edit_id',
         '  AND s._uuid=p.service',
         'GROUP BY id',
