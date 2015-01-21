@@ -263,6 +263,8 @@ sub list {
         'SELECT',
         '  e.`id`, e.`uuid`, e.`kind`, e.`state`, e.`data`, p.`title`,',
         '  p.`when` AS `tx`, c.`comment`,',
+        '  p.`service_key`,',
+        '  s2._key AS parent_service_key,',
         '  MIN(el.`when`) AS `created`, MAX(el.`when`) AS `updated`,',
         "  IF(s2.`title` IS NULL, s.`title`, CONCAT_WS(' ', s2.`title`, s.`title`)) AS service",
         'FROM',
@@ -290,6 +292,8 @@ sub list {
   for my $rc (@$res) {
     $rc->{link} = $self->strip_uuid( $rc->{uuid} );
     $rc->{data} = $self->_decode_wide( $rc->{data} );
+    $rc->{icon} = join '', '/images/logos/',
+     $rc->{parent_service_key} // $rc->{service_key}, '.png';
   }
 
   return $self->group_by( $res, @group ) if @group;
