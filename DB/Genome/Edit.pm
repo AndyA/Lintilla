@@ -209,6 +209,29 @@ sub diff {
   };
 }
 
+sub _programme_versions {
+  my ( $self, $uuid ) = @_;
+  my $thing = $self->load_thing( 'programme', $uuid );
+
+  my $change = $self->decode_data(
+    $self->dbh->selectall_arrayref(
+      'SELECT * FROM genome_changelog WHERE uuid=? ORDER BY id ASC',
+      { Slice => {} },
+      $self->format_uuid($uuid)
+    )
+  );
+
+  my $ver
+   = Lintilla::Versions::ChangeLog->new( data => $thing, log => $change );
+}
+
+sub versions {
+  my ( $self, $uuid ) = @_;
+  my $ver = $self->_programme_versions($uuid);
+
+  return [map { $ver->at($_) } 0 .. $ver->length];
+}
+
 sub change_count {
   my $self = shift;
   my ($count)
@@ -442,10 +465,7 @@ sub _normalised_editlog {
   );
 }
 
-# Get an instance of an edit in its initial state. That's actually
-# state #1 because there's a state change for their creation and
-# semantically #0 is pre-natal
-sub _stem_edit {
+sub _edit_versions {
   my ( $self, $id ) = @_;
 
   my $edit = $self->decode_data(
@@ -463,7 +483,15 @@ sub _stem_edit {
     log  => $el
   );
 
-  return $ver->at(1);
+  return $ver;
+}
+
+# Get an instance of an edit in its initial state. That's actually
+# state #1 because there's a state change for their creation and
+# semantically #0 is pre-natal
+sub _stem_edit {
+  my ( $self, $id ) = @_;
+  return $self->_edit_versions($id)->at(1);
 }
 
 sub load_edit_history {

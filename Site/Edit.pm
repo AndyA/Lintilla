@@ -112,6 +112,13 @@ prefix '/admin' => sub {
     }
   );
 
+  get '/versions/:uuid' => check_vis(
+    'internal',
+    sub {
+      return db->versions( param('uuid') );
+    }
+  );
+
   prefix '/edit' => sub {
     post '/workflow/:id/:action' => check_vis(
       'internal',
