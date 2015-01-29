@@ -23,7 +23,7 @@ has data_version => (
   isa      => 'Int',
   required => 1,
   lazy     => 1,
-  builder  => '_d_data_version'
+  builder  => '_b_data_version'
 );
 
 has ['_min_version', '_max_version'] => (
@@ -48,7 +48,7 @@ has _sane => (
   builder => '_b_sane'
 );
 
-sub _d_data_version { shift->length }
+sub _b_data_version { shift->length }
 sub _b_min_max      { shift->data_version }
 
 sub _b_version_cache {
