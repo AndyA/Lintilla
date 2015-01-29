@@ -166,6 +166,14 @@ sub _make_version {
 
 sub length { scalar @{ shift->log } }
 
+sub log_at {
+  my ( $self, $version ) = @_;
+  confess "Version out of range"
+   if $version < 0 || $version > $self->length;
+  return undef if $version == 0;
+  return $self->log->[$version - 1];
+}
+
 sub at {
   my ( $self, $version ) = @_;
   $self->_check_sane;
