@@ -229,7 +229,8 @@ sub versions {
   my ( $self, $uuid ) = @_;
   my $ver = $self->_programme_versions($uuid);
 
-  return [map { $ver->at($_) } 0 .. $ver->length];
+  return [map { { thing => $ver->at($_), change => $ver->log_at($_) } }
+     0 .. $ver->length];
 }
 
 sub change_count {
