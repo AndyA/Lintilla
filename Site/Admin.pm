@@ -77,10 +77,28 @@ prefix '/admin2' => sub {
     }
   );
 
+  get '/list/:kind/:state/:start/:size/:order/near/:edit_id' => check_vis(
+    'internal',
+    sub {
+      my %params = params;
+      my $row = db->find_edit_in_list(%params) // 0;
+      $params{start} = int( $row / $params{size} ) * $params{size};
+
+      return {
+        start => $params{start},
+        size  => $params{size},
+        list  => db->list_v2(%params),
+        count => db->edit_state_count
+      };
+    }
+  );
+
   get '/list/:kind/:state/:start/:size/:order' => check_vis(
     'internal',
     sub {
       return {
+        start => param('start'),
+        size  => param('size'),
         list  => db->list_v2(params),
         count => db->edit_state_count
       };
@@ -129,8 +147,7 @@ prefix '/admin2' => sub {
       template 'admin2/approve',
        {title       => 'Genome Admin',
         scripts     => [],
-        stylesheets => [
-        ],
+        stylesheets => [],
        },
        { layout => 'admin2' };
     }

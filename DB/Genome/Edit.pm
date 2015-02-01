@@ -266,15 +266,34 @@ sub _list_filter {
   }
 }
 
-sub _find_edit_in_list {
-  my ( $self, $cook, %params ) = @_;
+sub find_edit_in_list {
+  my ( $self, %params ) = @_;
+  my $dbh = $self->dbh;
+
+  $self->_list_filter( \my ( @group, @filt, @bind ), %params );
+  my $ord = $self->_cook_order( $params{order} // '-updated' );
+
+  $dbh->do('SET @row=0');
+  my ($row) = $self->dbh->selectrow_array(
+    join( ' ',
+      'SELECT row FROM (',
+      '  SELECT @row:=@row+1 AS row, id AS edit_id',
+      '  FROM genome_edit_digest WHERE',
+      join( ' AND ', @filt ),
+      "  ORDER BY $ord",
+      ') AS q WHERE edit_id = ?' ),
+    {},
+    @bind,
+    $params{edit_id}
+  );
+
+  return $row;
 }
 
 sub _edit_list {
   my ( $self, $cook, %params ) = @_;
 
   $self->_list_filter( \my ( @group, @filt, @bind ), %params );
-
   my $ord = $self->_cook_order( $params{order} // '-updated' );
 
   my $res = $self->dbh->selectall_arrayref(
