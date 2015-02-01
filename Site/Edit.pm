@@ -105,6 +105,16 @@ prefix '/admin' => sub {
     }
   );
 
+  get '/list2/:kind/:state/:start/:size/:order' => check_vis(
+    'internal',
+    sub {
+      return {
+        list  => db->list_v2(params),
+        count => db->edit_state_count
+      };
+    }
+  );
+
   get '/diff/:id' => check_vis(
     'internal',
     sub {

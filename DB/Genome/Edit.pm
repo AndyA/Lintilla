@@ -254,8 +254,8 @@ sub edit_state_count {
   return { map { $_ => $by_state->{$_}[0]{count} } keys %$by_state };
 }
 
-sub list {
-  my ( $self, %params ) = @_;
+sub _edit_list {
+  my ( $self, $cook, %params ) = @_;
 
   my $ord = $self->_cook_order( $params{order} // '-updated' );
 
@@ -285,7 +285,8 @@ sub list {
     $self->dbh->selectall_arrayref(
       join( ' ',
         'SELECT',
-        '  e.`id`, e.`uuid`, e.`kind`, e.`state`, e.`data`, p.`title`,',
+        '  e.`id`, e.`uuid`, e.`kind`, e.`state`, e.`data`,',
+        '  p.`title`, p.`synopsis`,',
         '  p.`when` AS `tx`, c.`comment`,',
         '  p.`service_key`,',
         '  s2._key AS parent_service_key,',
@@ -320,9 +321,95 @@ sub list {
      $rc->{parent_service_key} // $rc->{service_key}, '.png';
   }
 
+  $cook->($res) if $cook;
+
   return $self->group_by( $res, @group ) if @group;
 
   return $res;
+}
+
+# admin v1
+
+sub list {
+  my ( $self, %params ) = @_;
+  return $self->_edit_list( undef, %params );
+}
+
+# admin v2
+
+sub _add_versions {
+  my ( $self, $res ) = @_;
+  my @uuid = unique( map { $_->{uuid} } @$res );
+
+  my $change = $self->group_by(
+    $self->decode_data(
+      $self->dbh->selectall_arrayref(
+        join( ' ',
+          'SELECT *',
+          'FROM genome_changelog',
+          ( 'WHERE uuid IN (', join( ', ', map '?', @uuid ), ')' ),
+          'ORDER BY id ASC' ),
+        { Slice => {} },
+        @uuid
+      )
+    ),
+    'uuid'
+  );
+
+  my $contrib = $self->group_by(
+    $self->dbh->selectall_arrayref(
+      join( ' ',
+        'SELECT *',
+        'FROM genome_contributors',
+        ( 'WHERE `_parent` IN (', join( ', ', map '?', @uuid ), ')' ),
+        'ORDER BY `_parent`, `index` ASC' ),
+      { Slice => {} },
+      @uuid
+    ),
+    '_parent'
+  );
+
+  for my $rc (@$res) {
+    $rc->{contributors} = $contrib->{ $rc->{uuid} } // [];
+
+    my $ver = $change->{ $rc->{uuid} } // [];
+    my $nver = @$ver;
+
+    if ( $rc->{state} ne 'accepted' ) {
+      my $nd = {};
+      for my $kk (qw( title synopsis contributors comment )) {
+        $nd->{$kk} = $rc->{data}{$kk} if exists $rc->{data}{$kk};
+      }
+      push @$ver,
+       {old_data => {
+          title        => $rc->{title},
+          synopsis     => $rc->{synopsis},
+          contributors => $rc->{contributors},
+        },
+        new_data => $nd,
+       };
+    }
+
+    my $cl = Lintilla::Versions::ChangeLog->new(
+      data         => $rc,
+      log          => $ver,
+      data_version => $nver
+    );
+
+    $rc->{versions}
+     = [map { { thing => $cl->at($_), change => $cl->log_at($_) } }
+       0 .. $cl->length];
+  }
+}
+
+sub list_v2 {
+  my ( $self, %params ) = @_;
+  return $self->_edit_list(
+    sub {
+      $self->_add_versions( $_[0] );
+    },
+    %params
+  );
 }
 
 sub _yn { $_[0] ? 'Y' : 'N' }
@@ -1119,8 +1206,8 @@ sub _create_edit {
     _yn( $self->_has_comment( $edit->{data} ) )
   );
   my $editlog_id
-   = $self->audit( $edit_id, $edit->{who}, $edit->{kind}, undef, 'pending',
-    undef, $new_data, $when );
+   = $self->audit( $edit_id, $edit->{who}, $edit->{kind}, undef,
+    'pending', undef, $new_data, $when );
   return ( $edit_id, $editlog_id );
 }
 
