@@ -9,6 +9,7 @@ use Lintilla::DB::Genome::Edit;
 use Lintilla::DB::Genome;
 use Lintilla::Data::Static;
 use Lintilla::Personality;
+use Lintilla::Site::Admin;
 use Lintilla::Site::Asset;
 use Lintilla::Site::Data;
 use Lintilla::Site::Debug;
