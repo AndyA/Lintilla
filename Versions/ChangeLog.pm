@@ -134,7 +134,11 @@ sub _b_sane {
   return !$self->error_log->at_least('ERROR');
 }
 
-sub _check_sane { shift->_sane || confess "Inconsitent state" }
+sub _check_sane {
+  my $self = shift;
+  $self->_sane
+   || confess "Inconsistent state\n" . $self->error_log->as_string;
+}
 
 sub _patch {
   my ( $self, @patch ) = @_;
