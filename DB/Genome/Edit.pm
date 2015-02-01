@@ -264,6 +264,7 @@ sub _list_filter {
     push @$filt, '`comment`=?';
     push @$bind, $params{comment} = uc $params{comment};
   }
+  push @$filt, 'TRUE' unless @$filt;
 }
 
 sub find_edit_in_list {
