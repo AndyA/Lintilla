@@ -244,64 +244,68 @@ sub edit_state_count {
   return { map { $_ => $by_state->{$_}[0]{count} } keys %$by_state };
 }
 
-sub _edit_list {
-  my ( $self, $cook, %params ) = @_;
-
-  my $ord = $self->_cook_order( $params{order} // '-updated' );
-
-  my @group = ();
-  my @filt  = ();
-  my @bind  = ();
+sub _list_filter {
+  my ( $self, $group, $filt, $bind, %params ) = @_;
 
   if ( exists $params{kind} && $params{kind} ne '*' ) {
-    push @filt, 'AND e.kind=?';
-    push @bind, $params{kind};
+    push @$filt, 'AND e.kind=?';
+    push @$bind, $params{kind};
   }
-  else { push @group, 'kind' }
+  else { push @$group, 'kind' }
 
   if ( exists $params{state} && $params{state} ne '*' ) {
-    push @filt, 'AND e.state=?';
-    push @bind, $params{state};
+    push @$filt, 'AND e.state=?';
+    push @$bind, $params{state};
   }
-  else { push @group, 'state' }
+  else { push @$group, 'state' }
 
   if ( exists $params{comment} && $params{comment} ne '*' ) {
     die unless $params{comment} =~ /^[yn]$/i;
-    push @filt, 'AND c.comment=?';
-    push @bind, $params{comment} = uc $params{comment};
+    push @$filt, 'AND c.comment=?';
+    push @$bind, $params{comment} = uc $params{comment};
   }
+}
 
-  my $res = $self->_cook_list(
-    $self->dbh->selectall_arrayref(
-      join( ' ',
-        'SELECT',
-        '  e.`id`, e.`uuid`, e.`kind`, e.`state`, e.`data`,',
-        '  p.`title`, p.`synopsis`,',
-        '  p.`when` AS `tx`, c.`comment`,',
-        '  p.`service_key`,',
-        '  s2._key AS parent_service_key,',
-        '  MIN(el.`when`) AS `created`, MAX(el.`when`) AS `updated`,',
-        "  IF(s2.`title` IS NULL, s.`title`, CONCAT_WS(' ', s2.`title`, s.`title`)) AS service",
-        'FROM',
-        '  genome_edit AS e,',
-        '  genome_edit_comment AS c,',
-        '  genome_editlog AS el,',
-        '  genome_programmes_v2 AS p,',
-        '  genome_services AS s',
-        'LEFT JOIN genome_services AS s2 ON s2._uuid=s._parent',
-        'WHERE e.uuid=p._uuid',
-        @filt,
-        '  AND e.id=c.id',
-        '  AND e.id=el.edit_id',
-        '  AND s._uuid=p.service',
-        'GROUP BY id',
-        "ORDER BY $ord",
-        'LIMIT ?, ?' ),
-      { Slice => {} },
-      @bind,
-      $params{start},
-      $params{size}
-    )
+sub _find_edit_in_list {
+  my ( $self, $cook, %params ) = @_;
+}
+
+sub _edit_list {
+  my ( $self, $cook, %params ) = @_;
+
+  $self->_list_filter( \my ( @group, @filt, @bind ), %params );
+
+  my $ord = $self->_cook_order( $params{order} // '-updated' );
+
+  my $res = $self->dbh->selectall_arrayref(
+    join( ' ',
+      'SELECT',
+      '  e.`id`, e.`uuid`, e.`kind`, e.`state`, e.`data`,',
+      '  p.`title`, p.`synopsis`,',
+      '  p.`when` AS `tx`, c.`comment`,',
+      '  p.`service_key`,',
+      '  s2._key AS parent_service_key,',
+      '  MIN(el.`when`) AS `created`, MAX(el.`when`) AS `updated`,',
+      "  IF(s2.`title` IS NULL, s.`title`, CONCAT_WS(' ', s2.`title`, s.`title`)) AS service",
+      'FROM',
+      '  genome_edit AS e,',
+      '  genome_edit_comment AS c,',
+      '  genome_editlog AS el,',
+      '  genome_programmes_v2 AS p,',
+      '  genome_services AS s',
+      'LEFT JOIN genome_services AS s2 ON s2._uuid=s._parent',
+      'WHERE e.uuid=p._uuid',
+      @filt,
+      '  AND e.id=c.id',
+      '  AND e.id=el.edit_id',
+      '  AND s._uuid=p.service',
+      'GROUP BY id',
+      "ORDER BY $ord",
+      'LIMIT ?, ?' ),
+    { Slice => {} },
+    @bind,
+    $params{start},
+    $params{size}
   );
 
   for my $rc (@$res) {
