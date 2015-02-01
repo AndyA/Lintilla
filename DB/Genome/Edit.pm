@@ -248,20 +248,20 @@ sub _list_filter {
   my ( $self, $group, $filt, $bind, %params ) = @_;
 
   if ( exists $params{kind} && $params{kind} ne '*' ) {
-    push @$filt, 'AND e.kind=?';
+    push @$filt, '`kind`=?';
     push @$bind, $params{kind};
   }
   else { push @$group, 'kind' }
 
   if ( exists $params{state} && $params{state} ne '*' ) {
-    push @$filt, 'AND e.state=?';
+    push @$filt, '`state`=?';
     push @$bind, $params{state};
   }
   else { push @$group, 'state' }
 
   if ( exists $params{comment} && $params{comment} ne '*' ) {
     die unless $params{comment} =~ /^[yn]$/i;
-    push @$filt, 'AND c.comment=?';
+    push @$filt, '`comment`=?';
     push @$bind, $params{comment} = uc $params{comment};
   }
 }
@@ -279,27 +279,9 @@ sub _edit_list {
 
   my $res = $self->dbh->selectall_arrayref(
     join( ' ',
-      'SELECT',
-      '  e.`id`, e.`uuid`, e.`kind`, e.`state`, e.`data`,',
-      '  p.`title`, p.`synopsis`,',
-      '  p.`when` AS `tx`, c.`comment`,',
-      '  p.`service_key`,',
-      '  s2._key AS parent_service_key,',
-      '  MIN(el.`when`) AS `created`, MAX(el.`when`) AS `updated`,',
-      "  IF(s2.`title` IS NULL, s.`title`, CONCAT_WS(' ', s2.`title`, s.`title`)) AS service",
-      'FROM',
-      '  genome_edit AS e,',
-      '  genome_edit_comment AS c,',
-      '  genome_editlog AS el,',
-      '  genome_programmes_v2 AS p,',
-      '  genome_services AS s',
-      'LEFT JOIN genome_services AS s2 ON s2._uuid=s._parent',
-      'WHERE e.uuid=p._uuid',
-      @filt,
-      '  AND e.id=c.id',
-      '  AND e.id=el.edit_id',
-      '  AND s._uuid=p.service',
-      'GROUP BY id',
+      'SELECT * FROM genome_edit_digest',
+      'WHERE',
+      join( ' AND ', @filt ),
       "ORDER BY $ord",
       'LIMIT ?, ?' ),
     { Slice => {} },
