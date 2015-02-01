@@ -366,27 +366,23 @@ sub _add_versions {
   for my $rc (@$res) {
     $rc->{contributors} = $contrib->{ $rc->{uuid} } // [];
 
-    my $ver = $change->{ $rc->{uuid} } // [];
-    my $nver = @$ver;
+    my @ver = @{ $change->{ $rc->{uuid} } // [] };
+    my $nver = @ver;
 
     if ( $rc->{state} ne 'accepted' ) {
-      my $nd = {};
-      for my $kk (qw( title synopsis contributors comment )) {
-        $nd->{$kk} = $rc->{data}{$kk} if exists $rc->{data}{$kk};
-      }
-      push @$ver,
+      push @ver,
        {old_data => {
           title        => $rc->{title},
           synopsis     => $rc->{synopsis},
           contributors => $rc->{contributors},
         },
-        new_data => $nd,
+        new_data => $self->_parse_edit( $rc->{data} ),
        };
     }
 
     my $cl = Lintilla::Versions::ChangeLog->new(
       data         => $rc,
-      log          => $ver,
+      log          => \@ver,
       data_version => $nver
     );
 
