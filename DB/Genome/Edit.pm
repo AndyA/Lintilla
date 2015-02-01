@@ -83,16 +83,6 @@ sub _cook_order {
   return join ', ', @ord;
 }
 
-sub _cook_list {
-  my $self = shift;
-  my ($list) = @_;
-  for my $itm (@$list) {
-    #    $itm->{service} = join ' ', grep defined,
-    #     @{$itm}{ 'ps_title', 'cs_title' };
-  }
-  return $list;
-}
-
 sub _clean_lines {
   my ( $self, $txt ) = @_;
   my @ln = split /\n/, $txt;
