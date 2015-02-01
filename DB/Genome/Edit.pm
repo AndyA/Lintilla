@@ -279,8 +279,7 @@ sub _edit_list {
 
   my $res = $self->dbh->selectall_arrayref(
     join( ' ',
-      'SELECT * FROM genome_edit_digest',
-      'WHERE',
+      'SELECT * FROM genome_edit_digest WHERE',
       join( ' AND ', @filt ),
       "ORDER BY $ord",
       'LIMIT ?, ?' ),
