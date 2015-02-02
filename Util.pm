@@ -7,7 +7,7 @@ use Time::HiRes qw( sleep time );
 
 use base qw( Exporter );
 
-our @EXPORT_OK = qw( wait_for_file );
+our @EXPORT_OK = qw( wait_for_file tidy );
 our %EXPORT_TAGS = ( all => [@EXPORT_OK] );
 
 =head1 NAME
@@ -26,6 +26,12 @@ sub wait_for_file {
     return $name if -e $name;
   }
   return;
+}
+
+sub tidy {
+  my $s = shift;
+  s/^\s+//, s/\s+$//, s/\s+/ /g for $s;
+  return $s;
 }
 
 1;
