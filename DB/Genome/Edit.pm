@@ -8,7 +8,7 @@ use Dancer qw( :syntax );
 use Carp qw( confess );
 use Lintilla::Util qw( tidy );
 use Lintilla::Versions::ChangeLog;
-use Storable qw( freeze );
+use Storable qw( freeze dclone );
 use Text::DeepDiff;
 use Text::HTMLCleaner;
 use Time::HiRes qw( time );
@@ -335,7 +335,8 @@ sub _add_versions {
   my ( $self, $res ) = @_;
   my @uuid = unique( map { $_->{uuid} } @$res );
 
-  my $change = @uuid
+  my $change
+   = @uuid
    ? $self->group_by(
     $self->decode_data(
       $self->dbh->selectall_arrayref(
@@ -352,7 +353,8 @@ sub _add_versions {
    )
    : [];
 
-  my $contrib = @uuid
+  my $contrib
+   = @uuid
    ? $self->group_by(
     $self->dbh->selectall_arrayref(
       join( ' ',
