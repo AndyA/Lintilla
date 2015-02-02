@@ -6,6 +6,7 @@ use Moose;
 use Dancer qw( :syntax );
 
 use Carp qw( confess );
+use Lintilla::Util qw( tidy );
 use Lintilla::Versions::ChangeLog;
 use Storable qw( freeze );
 use Text::DeepDiff;
@@ -363,31 +364,45 @@ sub _add_versions {
   );
 
   for my $rc (@$res) {
+    my @log = ();
     $rc->{contributors} = $contrib->{ $rc->{uuid} } // [];
 
     my @ver = @{ $change->{ $rc->{uuid} } // [] };
     my $nver = @ver;
 
-    if ( $rc->{state} ne 'accepted' ) {
-      push @ver,
-       {old_data => {
-          title        => $rc->{title},
-          synopsis     => $rc->{synopsis},
-          contributors => $rc->{contributors},
+    eval {
+      if ( $rc->{state} ne 'accepted' ) {
+        push @log, "Adding version from $rc->{state}";
+        push @ver,
+         {old_data => {
+            title        => $rc->{title},
+            synopsis     => $rc->{synopsis},
+            contributors => $rc->{contributors},
+          },
+          new_data => $self->_parse_edit( $rc->{data} ),
+         };
+      }
+
+      my $cl = Lintilla::Versions::ChangeLog->new(
+        data         => $rc,
+        log          => \@ver,
+        data_version => $nver
+      );
+
+      $rc->{versions}
+       = [map { { thing => $cl->at($_), change => $cl->log_at($_) } }
+         0 .. $cl->length];
+    };
+    if ($@) {
+      $rc->{error} = {
+        message => tidy($@),
+        args    => {
+          log          => \@ver,
+          data_version => $nver
         },
-        new_data => $self->_parse_edit( $rc->{data} ),
-       };
+        log => \@log
+      };
     }
-
-    my $cl = Lintilla::Versions::ChangeLog->new(
-      data         => $rc,
-      log          => \@ver,
-      data_version => $nver
-    );
-
-    $rc->{versions}
-     = [map { { thing => $cl->at($_), change => $cl->log_at($_) } }
-       0 .. $cl->length];
   }
 }
 
