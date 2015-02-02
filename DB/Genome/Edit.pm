@@ -331,6 +331,33 @@ sub list {
 
 # admin v2
 
+sub _merge_key {
+  my ( $self, $rec ) = @_;
+  return $self->_encode(
+    { old_data => $rec->{old_data},
+      new_data => $rec->{new_data} }
+  );
+}
+
+# For some reason we sometimes have duplicate entries in
+# genome_changelog. That plays havoc with attempts to
+# reconstruct version history so we ignore them here.
+#
+# Theoretically we could use data_hash to spot duplicates
+# but since we don't know what's causing them we don't
+# trust it. Prolly OK tho.
+sub _merge_changes {
+  my ( $self, $log, $nver ) = @_;
+  for ( my $i = 0; $i < @$log - 1; $i++ ) {
+    my $ka = $self->_merge_key( $log->[$i] );
+    while ( $ka eq $self->_merge_key( $log->[$i + 1] ) ) {
+      splice @$log, $i + 1, 1;
+      $nver-- if $nver > $i;
+    }
+  }
+  return $nver;
+}
+
 sub _add_versions {
   my ( $self, $res ) = @_;
   my @uuid = unique( map { $_->{uuid} } @$res );
@@ -389,6 +416,8 @@ sub _add_versions {
          };
       }
 
+      $nver = $self->_merge_changes( \@ver, $nver );
+
       my $cl = Lintilla::Versions::ChangeLog->new(
         data         => $rc,
         log          => \@ver,
@@ -401,7 +430,7 @@ sub _add_versions {
     };
     if ($@) {
       $rc->{error} = {
-        message => tidy($@),
+        message => $@,
         args    => {
           log          => \@ver,
           data_version => $nver
