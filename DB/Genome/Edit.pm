@@ -335,7 +335,8 @@ sub _add_versions {
   my ( $self, $res ) = @_;
   my @uuid = unique( map { $_->{uuid} } @$res );
 
-  my $change = $self->group_by(
+  my $change = @uuid
+   ? $self->group_by(
     $self->decode_data(
       $self->dbh->selectall_arrayref(
         join( ' ',
@@ -348,9 +349,11 @@ sub _add_versions {
       )
     ),
     'uuid'
-  );
+   )
+   : [];
 
-  my $contrib = $self->group_by(
+  my $contrib = @uuid
+   ? $self->group_by(
     $self->dbh->selectall_arrayref(
       join( ' ',
         'SELECT *',
@@ -361,7 +364,8 @@ sub _add_versions {
       @uuid
     ),
     '_parent'
-  );
+   )
+   : [];
 
   for my $rc (@$res) {
     my @log = ();
