@@ -601,7 +601,8 @@ sub _edit_versions {
 
   confess "Edit $id not found" unless defined $edit;
 
-  my $el  = $self->_normalised_editlog($id);
+  my $el = $self->_normalised_editlog($id);
+  $self->_merge_changes( $el, 0 );
   my $ver = Lintilla::Versions::ChangeLog->new(
     data => $edit,
     log  => $el
