@@ -292,7 +292,7 @@ sub find_edit_in_list {
 }
 
 sub _edit_list {
-  my ( $self, $cook, %params ) = @_;
+  my ( $self, %params ) = @_;
 
   $self->_list_filter( \my ( @group, @filt, @bind ), %params );
   my $ord = $self->_cook_order( $params{order} // '-updated' );
@@ -316,18 +316,16 @@ sub _edit_list {
      $rc->{parent_service_key} // $rc->{service_key}, '.png';
   }
 
-  $cook->($res) if $cook;
-
-  return $self->group_by( $res, @group ) if @group;
-
-  return $res;
+  return ( $res, @group );
 }
 
 # admin v1
 
 sub list {
   my ( $self, %params ) = @_;
-  return $self->_edit_list( undef, %params );
+  my ( $res,  @group )  = $self->_edit_list(%params);
+  return $self->group_by( $res, @group ) if @group;
+  return $res;
 }
 
 # admin v2
@@ -395,12 +393,9 @@ sub _add_versions {
 
 sub list_v2 {
   my ( $self, %params ) = @_;
-  return $self->_edit_list(
-    sub {
-      $self->_add_versions( $_[0] );
-    },
-    %params
-  );
+  my ( $res,  @group )  = $self->_edit_list(%params);
+  $self->_add_versions($res);
+  return $res;
 }
 
 sub _yn { $_[0] ? 'Y' : 'N' }
