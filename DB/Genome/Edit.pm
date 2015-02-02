@@ -288,7 +288,7 @@ sub find_edit_in_list {
     $params{edit_id}
   );
 
-  return $row;
+  return $row - 1;
 }
 
 sub _edit_list {
