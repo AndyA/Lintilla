@@ -80,7 +80,7 @@ sub _cook_order {
     die unless $ok_order{$fld};
     push @ord, "`$fld` " . ( $dir eq '+' ? 'ASC' : 'DESC' );
   }
-  return join ', ', @ord;
+  return join ', ', @ord, '`id` ASC';
 }
 
 sub _clean_lines {
