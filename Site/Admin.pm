@@ -137,7 +137,7 @@ prefix '/admin2' => sub {
     'internal',
     sub {
       delete request->env->{SCRIPT_NAME};   # don't include disptch.fcgi in URI
-      redirect '/admin2/approve/queue/pending/1/-updated';
+      redirect '/admin2/approve/programme/pending/1/-updated';
     }
   );
 
