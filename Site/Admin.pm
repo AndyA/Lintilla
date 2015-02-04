@@ -146,7 +146,7 @@ prefix '/admin2' => sub {
     sub {
       template 'admin2/approve',
        {title       => 'Genome Admin',
-        scripts     => [],
+        scripts     => ['approve'],
         stylesheets => [],
        },
        { layout => 'admin2' };
