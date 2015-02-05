@@ -379,7 +379,7 @@ sub _add_versions {
     $self->decode_data(
       $self->dbh->selectall_arrayref(
         join( ' ',
-          'SELECT *',
+          'SELECT *, "accepted" AS state',
           'FROM genome_changelog',
           ( 'WHERE uuid IN (', join( ', ', map '?', @uuid ), ')' ),
           'ORDER BY id ASC' ),
@@ -424,6 +424,10 @@ sub _add_versions {
             contributors => $rc->{contributors},
           },
           new_data => $self->_parse_edit( $rc->{data} ),
+          edit_id  => $rc->{id},
+          created  => $rc->{created},
+          updated  => $rc->{updated},
+          state    => $rc->{state},
          };
       }
 
