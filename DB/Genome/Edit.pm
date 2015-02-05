@@ -275,13 +275,17 @@ sub find_edit_in_list {
   $self->_list_filter( \my ( @group, @filt, @bind ), %params );
   my $ord = $self->_cook_order( $params{order} // '-updated' );
 
+  my @or = ( join( ' AND ', @filt ), 'id=?' );
+  push @bind, $params{edit_id};
+
   $dbh->do('SET @row=0');
   my ($row) = $self->dbh->selectrow_array(
     join( ' ',
       'SELECT row FROM (',
       '  SELECT @row:=@row+1 AS row, id AS edit_id',
-      '  FROM genome_edit_digest WHERE',
-      join( ' AND ', @filt ),
+      '  FROM genome_edit_digest',
+      '  WHERE',
+      join( ' OR ', map "($_)", @or ),
       "  ORDER BY $ord",
       ') AS q WHERE edit_id = ?' ),
     {},
@@ -298,10 +302,17 @@ sub _edit_list {
   $self->_list_filter( \my ( @group, @filt, @bind ), %params );
   my $ord = $self->_cook_order( $params{order} // '-updated' );
 
+  my @or = ( join( ' AND ', @filt ) );
+  if ( exists $params{edit_id} ) {
+    push @or,   'id=?';
+    push @bind, $params{edit_id};
+  }
+
   my $res = $self->dbh->selectall_arrayref(
     join( ' ',
-      'SELECT * FROM genome_edit_digest WHERE',
-      join( ' AND ', @filt ),
+      'SELECT * FROM genome_edit_digest',
+      'WHERE',
+      join( ' OR ', map "($_)", @or ),
       "ORDER BY $ord",
       'LIMIT ?, ?' ),
     { Slice => {} },
