@@ -278,20 +278,40 @@ sub find_edit_in_list {
   my @or = ( join( ' AND ', @filt ), 'id=?' );
   push @bind, $params{edit_id};
 
-  $dbh->do('SET @row=0');
-  my ($row) = $self->dbh->selectrow_array(
-    join( ' ',
-      'SELECT row FROM (',
-      '  SELECT @row:=@row+1 AS row, id AS edit_id',
-      '  FROM genome_edit_digest AS d, genome_programmes_v2 AS p',
-      '  WHERE p._uuid = d.uuid AND (',
+  my $need_prog = $ord =~ /\btitle\b/;
+
+  my $sql = join(
+    ' ',
+    ( 'SELECT row ', 'FROM (', '  SELECT @row:=@row+1 AS row, id',
+      '  FROM ( '
+    ),
+    $need_prog
+    ? (
+      '    SELECT d.*, p.title ',
+      '    FROM genome_edit_digest AS d, genome_programmes_v2 AS p ',
+      '    WHERE p._uuid = d.uuid',
+      '    AND (',
       join( ' OR ', map "($_)", @or ),
-      "  ) ORDER BY $ord",
-      ') AS q WHERE edit_id = ?' ),
-    {},
-    @bind,
-    $params{edit_id}
+      '    )',
+      '    GROUP BY d.id '
+     )
+    : (
+      '    SELECT d.* ',
+      '    FROM genome_edit_digest AS d',
+      '    WHERE (',
+      join( ' OR ', map "($_)", @or ),
+      '    )'
+    ),
+    ( '  ) AS q1, (',
+      '    SELECT @row:=0',
+      '  ) AS q2 ',
+      "  ORDER BY $ord) AS q3",
+      '  WHERE id=?'
+    )
   );
+
+  my ($row)
+   = $self->dbh->selectrow_array( $sql, {}, @bind, $params{edit_id} );
 
   return $row - 1;
 }
@@ -310,11 +330,17 @@ sub _edit_list {
 
   my $res = $self->dbh->selectall_arrayref(
     join( ' ',
-      'SELECT d.*, p.title, p.synopsis',
-      'FROM genome_edit_digest AS d, genome_programmes_v2 AS p',
-      'WHERE p._uuid = d.uuid AND (',
+      'SELECT *',
+      'FROM ( ',
+      '  SELECT d.*, p.title, p.synopsis ',
+      '  FROM genome_edit_digest AS d, genome_programmes_v2 AS p ',
+      '  WHERE p._uuid = d.uuid',
+      '  AND (',
       join( ' OR ', map "($_)", @or ),
-      ") ORDER BY $ord",
+      '  )',
+      '  GROUP BY d.id ',
+      ') AS q1 ',
+      "ORDER BY $ord",
       'LIMIT ?, ?' ),
     { Slice => {} },
     @bind,
