@@ -67,21 +67,24 @@ sub audit {
 }
 
 sub _cook_order {
-  my $self = shift;
-  my ($order) = @_;
+  my $self  = shift;
+  my $order = shift;
 
   my %ok_order = map { $_ => 1 } qw(
    id uuid kind data state title service created updated tx
   );
 
-  my @ord = ();
-  for my $part ( split /,/, $order ) {
+  my @ord  = ();
+  my @part = split /,/, $order;
+  my %seen = ();
+  for my $part ( @part, '+id' ) {
     my ( $dir, $fld )
      = $part =~ /^([-+])(.+)$/ ? ( $1, $2 ) : ( '+', $part );
     die unless $ok_order{$fld};
+    next if $seen{$fld}++;
     push @ord, "`$fld` " . ( $dir eq '+' ? 'ASC' : 'DESC' );
   }
-  return join ', ', @ord, '`id` ASC';
+  return join ', ', @ord;
 }
 
 sub _clean_lines {
