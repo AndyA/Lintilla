@@ -87,6 +87,7 @@ prefix '/admin2' => sub {
       return {
         start => $params{start},
         size  => $params{size},
+        limit => db->count_for_list_query(%params),
         list  => db->list_v2(%params),
         count => db->edit_state_count
       };
@@ -96,10 +97,17 @@ prefix '/admin2' => sub {
   get '/list/:kind/:state/:start/:size/:order' => check_vis(
     'internal',
     sub {
+      my %params = params;
+
+      my $limit = db->count_for_list_query(%params);
+      $params{start} = int( $limit / $params{size} ) * $params{size}
+       if $params{start} >= $limit;
+
       return {
-        start => param('start'),
-        size  => param('size'),
-        list  => db->list_v2(params),
+        start => $params{start},
+        size  => $params{size},
+        limit => $limit,
+        list  => db->list_v2(%params),
         count => db->edit_state_count
       };
     }

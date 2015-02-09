@@ -271,6 +271,27 @@ sub _list_filter {
   push @$filt, 'TRUE' unless @$filt;
 }
 
+sub count_for_list_query {
+  my ( $self, %params ) = @_;
+
+  $self->_list_filter( \my ( @group, @filt, @bind ), %params );
+
+  my @or = ( join( ' AND ', @filt ), 'id=?' );
+  push @bind, $params{edit_id};
+
+  my ($count) = $self->dbh->selectrow_array(
+    join( ' ',
+      'SELECT COUNT(*) AS `count`',
+      'FROM genome_edit_digest',
+      'WHERE (',
+      join( ' OR ', map "($_)", @or ),
+      '    )' ),
+    {},
+    @bind
+  );
+  return $count;
+}
+
 sub find_edit_in_list {
   my ( $self, %params ) = @_;
   my $dbh = $self->dbh;
