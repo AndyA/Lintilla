@@ -12,6 +12,8 @@ Lintilla::Tools::Enqueue - Enqueue JS/CSs
 
 has map => ( isa => 'HashRef', is => 'ro', required => 1 );
 
+has inherit => ( isa => 'Maybe[Lintilla::Tools::Enqueue]', is => 'ro' );
+
 has _render => (
   traits  => ['Hash'],
   isa     => 'HashRef[CodeRef]',
@@ -36,8 +38,17 @@ sub BUILD {
 sub _resolve {
   my ( $self, $name ) = @_;
   my ( $type, $tag ) = split /\./, $name, 2;
-  return ( $self->map->{$type}{$tag}, $type, $tag ) if wantarray;
-  return $self->map->{$type}{$tag};
+  my $map = $self->map;
+
+  if ( exists $map->{$type} && exists $map->{$type}{$tag} ) {
+    return ( $self->map->{$type}{$tag}, $type, $tag ) if wantarray;
+    return $self->map->{$type}{$tag};
+  }
+
+  my $super = $self->inherit;
+  return $super->_resolve($name) if $super;
+
+  return;
 }
 
 sub _expand {
