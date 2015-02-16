@@ -21,9 +21,11 @@ has _deps => (
 );
 
 has _render => (
-  isa     => 'HashRef[Code]',
+  traits  => ['Hash'],
+  isa     => 'HashRef[CodeRef]',
   is      => 'ro',
   default => sub { {} },
+  handles => { formatter => 'set' }
 );
 
 sub BUILD {
@@ -37,14 +39,6 @@ sub BUILD {
       $h->script( { src => $_[0]{url}, type => 'text/javascript' } );
     }
   );
-}
-
-sub formatter {
-  my ( $self, %h ) = @_;
-  my $r = $self->_render;
-  while ( my ( $type, $code ) = each %h ) {
-    $r->{$type} = $code;
-  }
 }
 
 sub _enqueue {
