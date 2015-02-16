@@ -101,9 +101,9 @@ my $ENQUEUE = Lintilla::Tools::Enqueue->new(
       approve => {
         url      => '/admin2/js/approve.js',
         requires => [
-          'js.jquery', 'js.adminapp', 'js.programme', 'js.versions',
-          'js.util',   'js.progress', 'js.uri',       'js.scroller',
-          'js.jquery_hotkeys',
+          'js.jquery',         'js.adminapp', 'js.programme', 'js.versions',
+          'js.util',           'js.progress', 'js.uri',       'js.scroller',
+          'js.jquery_hotkeys', 'css.fa'
         ]
       },
     } }
