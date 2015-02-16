@@ -48,7 +48,7 @@ sub _resolve {
   my $super = $self->inherit;
   return $super->_resolve($name) if $super;
 
-  return;
+  die "Can't resolve $name";
 }
 
 sub _expand {
