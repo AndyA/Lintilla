@@ -21,7 +21,7 @@ our $VERSION = '0.1';
 my $CLIENT = Lintilla::Broadcast::Client->new;
 my $SERVER = Lintilla::Broadcast::Server->new->listen;
 
-my $ENQUEUE = Lintilla::Tools::Enqueue->new(
+my $RESOURCES = Lintilla::Tools::Enqueue->new(
   map => {
     css => {
       admin2 => { url => '/admin2/css/admin2.css' },
@@ -243,7 +243,7 @@ prefix '/admin2' => sub {
     sub {
       template 'admin2/approve',
        {title     => 'Genome Admin',
-        resources => $ENQUEUE->render( 'js.approve', 'css.admin2' ),
+        resources => $RESOURCES->render( 'js.approve', 'css.admin2' ),
        },
        { layout => 'admin2' };
     }
