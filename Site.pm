@@ -39,6 +39,24 @@ sub db() {
   );
 }
 
+sub resources {
+  return state $res ||= Lintilla::Tools::Enqueue->new(
+    map => {
+      css => {
+        fa        => { url => '/css/font-awesome/css/font-awesome.min.css' },
+        jquery_ui => { url => '/css/jquery-ui.min.css' },
+      },
+      js => {
+        jquery    => { url => '/js/jquery-1.11.1.min.js' },
+        jquery_ui => {
+          url      => '/js/jquery-ui.min.js',
+          requires => ['css.jquery_ui', 'js.jquery']
+        },
+        spin => { url => '/js/spin.min.js' },
+      } }
+  );
+}
+
 my $STATIC = Lintilla::Data::Static->new(
   store => dir( setting('appdir'), 'data' ) );
 
