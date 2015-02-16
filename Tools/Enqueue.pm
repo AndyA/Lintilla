@@ -12,14 +12,6 @@ Lintilla::Tools::Enqueue - Enqueue JS/CSs
 
 has map => ( isa => 'HashRef', is => 'ro', required => 1 );
 
-has _deps => (
-  traits  => ['Array'],
-  isa     => 'ArrayRef',
-  is      => 'ro',
-  default => sub { [] },
-  handles => { enqueue => 'push' }
-);
-
 has _render => (
   traits  => ['Hash'],
   isa     => 'HashRef[CodeRef]',
@@ -39,21 +31,6 @@ sub BUILD {
       $h->script( { src => $_[0]{url}, type => 'text/javascript' } );
     }
   );
-}
-
-sub _enqueue {
-  my ( $self, $type, @obj ) = @_;
-  return $self->enqueue( map { "$type.$_" } @obj );
-}
-
-sub js {
-  my ( $self, @js ) = @_;
-  return $self->_enqueue( js => @js );
-}
-
-sub css {
-  my ( $self, @css ) = @_;
-  return $self->_enqueue( css => @css );
 }
 
 sub _resolve {
@@ -76,7 +53,7 @@ sub _expand {
 
 sub expand {
   my $self = shift;
-  return [$self->_expand( {}, @{ $self->_deps }, @_ )];
+  return [$self->_expand( {}, @_ )];
 }
 
 sub render {
