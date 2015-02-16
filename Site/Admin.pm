@@ -101,9 +101,9 @@ my $ENQUEUE = Lintilla::Tools::Enqueue->new(
       approve => {
         url      => '/admin2/js/approve.js',
         requires => [
-          'css.admin2',  'js.jquery', 'js.adminapp', 'js.programme',
-          'js.versions', 'js.util',   'js.progress', 'js.uri',
-          'js.scroller', 'js.jquery_hotkeys',
+          'js.jquery', 'js.adminapp', 'js.programme', 'js.versions',
+          'js.util',   'js.progress', 'js.uri',       'js.scroller',
+          'js.jquery_hotkeys',
         ]
       },
     } }
@@ -243,7 +243,7 @@ prefix '/admin2' => sub {
     sub {
       template 'admin2/approve',
        {title     => 'Genome Admin',
-        resources => $ENQUEUE->render('js.approve'),
+        resources => $ENQUEUE->render( 'js.approve', 'css.admin2' ),
        },
        { layout => 'admin2' };
     }
