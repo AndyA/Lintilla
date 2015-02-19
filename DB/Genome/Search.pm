@@ -268,7 +268,7 @@ sub _build_sphinx {
 
 sub _is_valid {
   my $self = shift;
-  return unless length $self->q;
+  return unless length $self->q || config->{empty_search};
   if ( $self->adv ) {
     return unless looks_like_number( $self->yf );
     return unless looks_like_number( $self->yt );
