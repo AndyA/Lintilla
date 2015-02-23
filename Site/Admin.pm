@@ -33,8 +33,9 @@ sub resources {
          { url => '/admin2/css/jquery.ui.labeledslider.css' },
       },
       js => {
-        uri       => { url => '/admin2/js/URI.js' },
-        diff_lcs  => { url => '/admin2/js/diff-lcs.js' },
+        uri            => { url => '/admin2/js/URI.js' },
+        cookies        => { url => '/admin2/js/cookies.js' },
+        diff_lcs       => { url => '/admin2/js/diff-lcs.js' },
         jquery_hotkeys => {
           url      => '/admin2/js/jquery.hotkeys.js',
           requires => ['js.jquery']
@@ -97,9 +98,9 @@ sub resources {
         approve => {
           url      => '/admin2/js/approve.js',
           requires => [
-            'js.jquery',         'js.adminapp', 'js.programme', 'js.versions',
-            'js.util',           'js.progress', 'js.uri',       'js.scroller',
-            'js.jquery_hotkeys', 'css.fa'
+            'js.jquery',   'js.cookies',        'js.adminapp', 'js.programme',
+            'js.versions', 'js.util',           'js.progress', 'js.uri',
+            'js.scroller', 'js.jquery_hotkeys', 'css.fa'
           ]
         },
       } }
