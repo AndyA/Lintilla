@@ -422,7 +422,7 @@ sub _add_related {
 
     for my $row (@$rows) {
       my $rec = delete $related->{ $row->{_uuid} };
-      $row->{related} = $rec->[0] if $rec;
+      $row->{related} = $self->_make_public( $rec || [] );
     }
   }
 
@@ -467,6 +467,7 @@ sub _issue_image_path {
 
 sub _make_public {
   my ( $self, $in ) = @_;
+  return [map { $self->_make_public($_) } @$in] if 'ARRAY' eq ref $in;
   my $out = {};
   while ( my ( $k, $v ) = each %$in ) {
     ( my $kk = $k ) =~ s/^_+//g;
