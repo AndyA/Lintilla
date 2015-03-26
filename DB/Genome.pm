@@ -26,7 +26,8 @@ with 'Lintilla::Role::DateTime';
 with 'Lintilla::Role::Gatherer';
 with 'Lintilla::Role::Source';
 
-has infax => ( is => 'ro', isa => 'Bool', default => 0 );
+has infax   => ( is => 'ro', isa => 'Bool', default => 0 );
+has related => ( is => 'ro', isa => 'Bool', default => 0 );
 
 has years    => ( is => 'ro', lazy => 1, builder => '_build_years' );
 has decades  => ( is => 'ro', lazy => 1, builder => '_build_decades' );
@@ -404,10 +405,37 @@ sub _add_infax_links {
   return $rows;
 }
 
+sub _add_related {
+  my ( $self, $rows ) = @_;
+  my @uids = map { $_->{_uuid} } @$rows;
+
+  if (@uids) {
+    my $irows = $self->dbh->selectall_arrayref(
+      join( ' ',
+        'SELECT * FROM genome_related WHERE _parent IN', '(',
+        join( ', ', map '?', @uids ), ')' ),
+      { Slice => {} },
+      @uids
+    );
+
+    my $related = $self->group_by( $irows, '_parent' );
+
+    for my $row (@$rows) {
+      my $rec = delete $related->{ $row->{_uuid} };
+      $row->{related} = $rec->[0] if $rec;
+    }
+  }
+
+  return $rows;
+}
+
 sub _add_programme_details {
   my ( $self, $rows ) = @_;
   $self->_add_default_programme_details($rows);
+
   $self->_add_infax_links($rows) if $self->infax;
+  $self->_add_related($rows)     if $self->related;
+
   return $rows;
 }
 
