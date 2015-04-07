@@ -28,6 +28,7 @@ with 'Lintilla::Role::Source';
 
 has infax   => ( is => 'ro', isa => 'Bool', default => 0 );
 has related => ( is => 'ro', isa => 'Bool', default => 0 );
+has media   => ( is => 'ro', isa => 'Bool', default => 0 );
 
 has years    => ( is => 'ro', lazy => 1, builder => '_build_years' );
 has decades  => ( is => 'ro', lazy => 1, builder => '_build_decades' );
@@ -430,12 +431,38 @@ sub _add_related {
   return $rows;
 }
 
+sub _add_media {
+  my ( $self, $rows ) = @_;
+  my @uids = map { $_->{_uuid} } @$rows;
+
+  if (@uids) {
+    my $irows = $self->dbh->selectall_arrayref(
+      join( ' ',
+        'SELECT * FROM genome_media WHERE _parent IN',
+        '(', join( ', ', map '?', @uids ),
+        ')', 'ORDER BY `row_num`' ),
+      { Slice => {} },
+      @uids
+    );
+
+    my $media = $self->group_by( $irows, '_parent' );
+
+    for my $row (@$rows) {
+      my $rec = delete $media->{ $row->{_uuid} };
+      $row->{media} = $self->_make_public( $rec || [] );
+    }
+  }
+
+  return $rows;
+}
+
 sub _add_programme_details {
   my ( $self, $rows ) = @_;
   $self->_add_default_programme_details($rows);
 
   $self->_add_infax_links($rows) if $self->infax;
   $self->_add_related($rows)     if $self->related;
+  $self->_add_media($rows)       if $self->media;
 
   return $rows;
 }
