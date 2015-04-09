@@ -42,6 +42,24 @@ sub pretty_date {
   return $pd;
 }
 
+sub pretty_duration {
+  my ( $self, $secs ) = @_;
+
+  my @uname = ( 'hour', 'minute', 'second' );
+  my @part  = ();
+  my @hpart = ();
+
+  while ($secs) {
+    my $u  = $secs % 60;
+    my $un = pop @uname;
+    unshift @part, $u;
+    unshift @hpart, $u == 1 ? "$u $un" : "$u ${un}s" if $u;
+    $secs = int( $secs / 60 );
+  }
+
+  return join ', ', @hpart;
+}
+
 sub decode_date {
   my ( $self, $date ) = @_;
   die unless $date =~ /^(\d+)-(\d+)-(\d+)/;

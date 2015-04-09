@@ -449,6 +449,9 @@ sub _add_media {
 
     for my $row (@$rows) {
       my $rec = delete $media->{ $row->{_uuid} };
+      for my $me (@$rec) {
+        $me->{pretty_duration} = $self->pretty_duration( $me->{duration} );
+      }
       $row->{media} = $self->_make_public( $rec || [] );
     }
   }
