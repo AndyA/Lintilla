@@ -171,6 +171,7 @@ DROP TABLE IF EXISTS `elvis_keyword`;
 CREATE TABLE `elvis_keyword` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'Keyword id',
   `name` varchar(60) NOT NULL COMMENT 'Keyword',
+  `tabindex` int(5) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2817 DEFAULT CHARSET=utf8;
