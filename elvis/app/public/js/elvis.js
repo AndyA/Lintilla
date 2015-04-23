@@ -149,8 +149,9 @@ $(function() {
 
   function makeTag(info) {
     var link = '/tag/' + info.id;
+    var tabindex = info.tabindex === null ? '' : ' tabindex="' + info.tabindex + '" ';
     return '<span class="keyword minus">' //
-    + '<span class="keyword-minus fa fa-minus-circle"></span>' //
+    + '<span ' + tabindex + 'class="keyword-minus fa fa-minus-circle"></span>' //
     + '<a href="' + link + '">' + info.name + '</a>' //
     + '</span>';
   }

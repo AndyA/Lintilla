@@ -136,7 +136,7 @@ sub keywords {
   my @bad = grep { !/^\d+$/ } @acno;
   die "Bad acno: ", join( ', ', @bad ) if @bad;
   my $sql = join ' ',
-   'SELECT ik.acno, k.id, k.name, COUNT(ik2.acno) AS freq',
+   'SELECT ik.acno, k.id, k.name, k.tabindex, COUNT(ik2.acno) AS freq',
    'FROM elvis_keyword AS k, elvis_image_keyword AS ik, elvis_image_keyword AS ik2',
    'WHERE ik.acno IN (', join( ', ', map { "?" } @acno ), ')',
    'AND ik.id=k.id',
