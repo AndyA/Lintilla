@@ -13,8 +13,6 @@ Lintilla::Site::Asset - Asset handling
 
 =cut
 
-use constant DOCROOT => '/opt/lintilla/elvis/app/public';    # FIXME
-
 # TODO move this into a config file.
 my %RECIPE = (
   display => {
@@ -131,7 +129,7 @@ get '/asset/var/*/**.jpg' => sub {
   my $in_url = our_uri_for( @p,
     ( defined $spec->{base} ? ( var => $spec->{base} ) : () ), @name );
 
-  my $out_file = file( DOCROOT, @p, @v, @name );
+  my $out_file = file setting('public'), @p, @v, @name;
 
   debug "in_url: $in_url";
   debug "out_file: $out_file";
