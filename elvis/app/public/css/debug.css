@@ -1,8 +1,14 @@
 #count {
   text-align: center;
-  padding-top: 20%;
+  font-size: 100px;
+  padding-top: 15%;
+  color: rgb(180, 180, 180);
 }
 
-#count span {
-  font-size: 100px;
+#count .excluded {
+  color: rgb(80, 200, 100);
+}
+
+#count .included {
+  color: rgb(190, 70, 40);
 }

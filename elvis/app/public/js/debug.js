@@ -9,8 +9,10 @@ $(function() {
       stats = data;
     });
     $.when(get_count, get_stats).done(function() {
-      var done = count - stats[id].freq;
-      $('#count span').text(done);
+      var included = stats[id].freq;
+      var excluded = count - included;
+      $('#count .included').text(included);
+      $('#count .excluded').text(excluded);
       setTimeout(function() {
         updateStats(id)
       },

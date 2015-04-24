@@ -1,3 +1,4 @@
 <div id="count">
-  <span></span>
+  Approved: <span class="included"></span><br>
+  Rejected: <span class="excluded"></span><br>
 </div>
