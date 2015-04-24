@@ -45,6 +45,12 @@ prefix '/data' => sub {
   get '/keywords/:acnos' => sub {
     return cook keywords => model->keywords( split /,/, param('acnos') );
   };
+  get '/keyword/:ids' => sub {
+    return model->keyword_info( split /,/, param('ids') );
+  };
+  get '/count' => sub {
+    return model->image_count;
+  };
   get '/search/:size/:start' => sub {
     return cook assets =>
      model->search( param('size'), param('start'), param('q') );

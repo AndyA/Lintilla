@@ -152,6 +152,28 @@ sub keywords {
   return $by_acno;
 }
 
+sub keyword_info {
+  my ( $self, @id ) = @_;
+  my @bad = grep { !/^\d+$/ } @id;
+  die "Bad id ", join( ', ', @bad ) if @bad;
+  my $sql = join ' ',
+   'SELECT k.*, COUNT(ik.acno) AS freq',
+   'FROM elvis_keyword AS k, elvis_image_keyword AS ik',
+   'WHERE k.id IN (', join( ', ', map { "?" } @id ), ')',
+   'AND ik.id=k.id',
+   'GROUP BY k.id',
+   'ORDER BY k.id';
+
+  return $self->dbh->selectall_hashref( $sql, 'id', {}, @id );
+}
+
+sub image_count {
+  my $self = shift;
+  my ($count)
+   = $self->dbh->selectrow_array('SELECT COUNT(*) FROM elvis_image');
+  return $count;
+}
+
 sub tag {
   my ( $self, $size, $start, $id ) = @_;
   $size = MAX_PAGE if $size > MAX_PAGE;
