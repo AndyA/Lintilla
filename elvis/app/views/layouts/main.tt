@@ -14,7 +14,7 @@
     <link rel="stylesheet"
       href="//maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css">
     <script>
-      ds = "<%= ds | html %>";
+      ds = "[% ds | html %]";
     </script>
   </head>
   <body>
@@ -23,11 +23,11 @@
         <span class="ident"><a href="/">ELVIS Image Search</a></span>
         <form method="GET" action="/search">
           <input type="text" class="query" name="q" 
-                 value="<%= q | html %>" size="40" autofocus />
+                 value="[% q | html %]" size="40" autofocus />
           <button type="submit" class="icon-search fa fa-search fa-lg"></button>
         </form>
       </div>
-      <% content %>
+      [% content %]
     </div>
   </body>
 </html>
