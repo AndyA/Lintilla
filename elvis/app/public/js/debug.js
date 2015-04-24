@@ -9,7 +9,6 @@ $(function() {
       stats = data;
     });
     $.when(get_count, get_stats).done(function() {
-      console.log("All loaded, count=", count, ", stats=", stats);
       var done = count - stats[id].freq;
       $('#count span').text(done);
       setTimeout(function() {
