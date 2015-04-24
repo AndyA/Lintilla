@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>[% title %]</title>
+    <script src="/js/jquery-1.9.1.min.js"></script>
+    <script src="/js/jquery.autocomplete.min.js"></script>
+    <script src="/js/urlparser.js"></script>
+    <script src="/js/util.js"></script>
+    <script src="/js/debug.js"></script>
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/debug.css" />
+    <link rel="stylesheet"
+      href="//maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css">
+  </head>
+  <body>
+    <div id="container">
+      [% content %]
+    </div>
+  </body>
+</html>
+

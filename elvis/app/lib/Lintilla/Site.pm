@@ -44,4 +44,8 @@ get '/tag/:id' => sub {
    };
 };
 
+get '/debug/stats' => sub {
+  template 'debug', {}, { layout => 'debug' };
+};
+
 true;
