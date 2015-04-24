@@ -6,9 +6,9 @@
 }
 
 #count .excluded {
-  color: rgb(80, 200, 100);
+  color: rgb(190, 70, 40);
 }
 
 #count .included {
-  color: rgb(190, 70, 40);
+  color: rgb(80, 200, 100);
 }
