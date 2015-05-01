@@ -54,7 +54,9 @@ $(function() {
     if (info.headline) body += textDiv('headline', info.headline);
     if (info.annotation) body += rawDiv('annotation', info.annotation);
     if (info.origin_date) body += textDiv('origin-date', info.origin_date);
-    if (info.latitude && info.longitude) body += rawDiv('map-link', '<a target="_blank" href="' + makeMapLink(info.latitude, info.longitude) + '">map</a>');
+    if (info.latitude && info.longitude) {
+      body += rawDiv('map-link', '<a target="_blank" href="' + makeMapLink(info.latitude, info.longitude) + '">map</a>');
+    }
     body += '<dl>';
 
     var refs = Object.keys(ref).sort();
