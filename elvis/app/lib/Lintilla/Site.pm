@@ -35,7 +35,9 @@ get '/by/:field/:value' => sub {
    };
 };
 
-get '/tag/:id' => sub {
+get '/:kind/:id' => sub {
+  my $kind = param('kind');
+  return pass unless $kind eq 'tag' || $kind eq 'workflow';
   my $id = param('id');
   die unless $id =~ /^\d+$/;
   template 'index',

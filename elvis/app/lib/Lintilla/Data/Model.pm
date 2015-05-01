@@ -191,16 +191,21 @@ sub tag {
   );
 }
 
-sub get_tag {
-  my ( $self, $acno, $tag ) = @_;
+sub make_tag {
+  my ( $self, $tag ) = @_;
   $self->dbh->do( 'INSERT IGNORE INTO elvis_keyword (name) VALUES (?)',
     {}, $tag );
-  my $id = (
+  return (
     $self->dbh->selectrow_array(
       'SELECT id FROM elvis_keyword WHERE name=?',
       {}, $tag
     )
   )[0];
+}
+
+sub get_tag {
+  my ( $self, $acno, $tag ) = @_;
+  my $id = $self->make_tag($tag);
   $self->dbh->do(
     'INSERT INTO elvis_image_keyword (id, acno) VALUES (?, ?)',
     {}, $id, $acno );
