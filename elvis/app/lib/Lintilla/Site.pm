@@ -9,7 +9,9 @@ our $VERSION = '0.1';
 
 get '/' => sub {
   template 'index',
-   { q => '', ds => request->uri_for('/data/page/:size/:start') };
+   {q      => '',
+    ds     => request->uri_for('/data/page/:size/:start'),
+    config => { mode => 'normal' } };
 };
 
 get '/map/**' => sub {
