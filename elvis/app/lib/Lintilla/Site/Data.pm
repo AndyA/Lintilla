@@ -18,7 +18,7 @@ sub model { Lintilla::Data::Model->new( dbh => database ) }
 
 prefix '/svc' => sub {
   post '/tag/remove/:acno/:id' => sub {
-    model->remove_tag( param('acno'), param('id') );
+    model->remove_tag( param('acno'), split /,/, param('id') );
   };
   post '/tag/add/:acno' => sub {
     model->get_tag( param('acno'), param('tag') );

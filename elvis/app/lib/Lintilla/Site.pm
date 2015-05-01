@@ -21,6 +21,7 @@ get '/search' => sub {
   template 'index',
    {q  => $q,
     ds => request->uri_for( '/data/search/:size/:start', { q => $q } ),
+    config => { mode => 'normal' },
    };
 };
 
@@ -30,19 +31,34 @@ get '/by/:field/:value' => sub {
   die unless $field =~ /^\w+$/;
   die unless $value =~ /^\d+$/;
   template 'index',
-   {q  => '',
-    ds => request->uri_for("/data/by/:size/:start/$field/$value"),
+   {q      => '',
+    ds     => request->uri_for("/data/by/:size/:start/$field/$value"),
+    config => { mode => 'normal' },
    };
 };
 
-get '/:kind/:id' => sub {
-  my $kind = param('kind');
-  return pass unless $kind eq 'tag' || $kind eq 'workflow';
+get '/workflow/:id/:markid' => sub {
+  my $id     = param('id');
+  my $markid = param('markid');
+  die unless $id =~ /^\d+$/ && $markid =~ /^\d+$/;
+  template 'index',
+   {q      => '',
+    ds     => request->uri_for("/data/tag/:size/:start/$id"),
+    config => {
+      mode        => 'workflow',
+      workflow_id => $id,
+      mark_id     => $markid,
+    },
+   };
+};
+
+get '/tag/:id' => sub {
   my $id = param('id');
   die unless $id =~ /^\d+$/;
   template 'index',
-   {q  => '',
-    ds => request->uri_for("/data/tag/:size/:start/$id"),
+   {q      => '',
+    ds     => request->uri_for("/data/tag/:size/:start/$id"),
+    config => { mode => 'normal' },
    };
 };
 

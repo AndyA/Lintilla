@@ -70,6 +70,12 @@ $(function() {
       }
     }
 
+    var workflow = '';
+    if (config.mode == 'workflow') {
+      workflow = '<span class="reject fa fa-thumbs-o-down fa-2x"></span>' //
+      + '<span class="approve fa fa-thumbs-o-up fa-2x"></span>';
+    }
+
     body += '</dl>';
 
     return '<div class="picture">' //
@@ -82,6 +88,7 @@ $(function() {
     + '</div>' //
     + '<div class="text">' //
     + '<span class="btag">' //
+    + workflow //
     + '<span class="left fa fa-arrow-circle-o-left fa-2x"></span>' //
     + '<span class="right fa fa-arrow-circle-o-right fa-2x"></span>' //
     + '<span class="close fa fa-times-circle-o fa-2x"></span>' //
@@ -112,6 +119,12 @@ $(function() {
     }
   }
 
+  function removeTags(info, ids) {
+    return $.post('/svc/tag/remove/' + info.acno + '/' + ids.join(','), {}).fail(function(data) {
+      alert("Failed to remove tag");
+    });
+  }
+
   function goLeft() {
     stepUsing(function(e) {
       return e.prev()
@@ -122,6 +135,14 @@ $(function() {
     stepUsing(function(e) {
       return e.next()
     });
+  }
+
+  function goApprove(info) {
+    removeTags(info, [config.workflow_id]).done(goRight);
+  }
+
+  function goReject(info) {
+    removeTags(info, [config.workflow_id, config.mark_id]).done(goRight);
   }
 
   function closeDetail() {
@@ -196,6 +217,12 @@ $(function() {
     $('.detail .close').click(closeDetail);
     $('.detail .left').click(goLeft);
     $('.detail .right').click(goRight);
+    $('.detail .reject').click(function() {
+      goReject(info)
+    });
+    $('.detail .approve').click(function() {
+      goApprove(info)
+    });
     $('.detail a').click(function(e) {
       e.stopPropagation();
     });
@@ -346,6 +373,7 @@ $(function() {
   });
 
   $(document).keyup(function(e) {
+    console.log("KEY: ", e.keyCode);
     switch (e.keyCode) {
     case 27:
       closeDetail();
@@ -356,6 +384,17 @@ $(function() {
     case 39:
       goRight();
       break;
+    }
+
+    if (config.mode == 'workflow') {
+      switch (e.keyCode) {
+      case 78:
+        $('.detail .reject').trigger('click');
+        break;
+      case 89:
+        $('.detail .approve').trigger('click');
+        break;
+      }
     }
   });
 

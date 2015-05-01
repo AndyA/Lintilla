@@ -213,10 +213,17 @@ sub get_tag {
 }
 
 sub remove_tag {
-  my ( $self, $acno, $id ) = @_;
-  $self->dbh->do( 'DELETE FROM elvis_image_keyword WHERE id=? AND acno=?',
-    {}, $id, $acno );
-  return { id => $id };
+  my ( $self, $acno, @id ) = @_;
+  $self->dbh->do(
+    join( ' ',
+      'DELETE FROM elvis_image_keyword WHERE id IN (',
+      join( ', ', map "?", @id ),
+      ') AND acno=?' ),
+    {},
+    @id, $acno
+  );
+  return { id => \@id };
+
 }
 
 sub tag_complete {
