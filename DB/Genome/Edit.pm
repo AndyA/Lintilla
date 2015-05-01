@@ -22,9 +22,10 @@ Lintilla::DB::Genome::Edit - Editing support
 our $VERSION = '0.1';
 
 with 'Lintilla::Role::DB';
-with 'Lintilla::Role::JSON';
-with 'Lintilla::Role::DataHash';
 with 'Lintilla::Role::DataCounter';
+with 'Lintilla::Role::DataHash';
+with 'Lintilla::Role::JSON';
+with 'Lintilla::Role::UUID';
 
 use constant SYNC_PAGE  => 100;
 use constant SYNC_EDITS => 10;

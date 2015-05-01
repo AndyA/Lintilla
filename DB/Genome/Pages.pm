@@ -10,6 +10,7 @@ Lintilla::DB::Genome::Pages - Access page layout (coordinates)
 
 with 'Lintilla::Role::JSON';
 with 'Lintilla::Role::DB';
+with 'Lintilla::Role::UUID';
 
 sub _numify {
   my ( $self, $hash, @key ) = @_;

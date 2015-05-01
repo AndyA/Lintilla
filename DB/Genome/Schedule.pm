@@ -14,6 +14,7 @@ Lintilla::DB::Genome::Schedule - Build /labs/ schedule chunks
 =cut
 
 with 'Lintilla::Role::DB';
+with 'Lintilla::Role::UUID';
 with 'Lintilla::Role::JSON';
 with 'Lintilla::Role::Source';
 

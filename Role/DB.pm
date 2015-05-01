@@ -34,33 +34,6 @@ sub transaction {
   }
 }
 
-sub format_uuid {
-  my ( $self, $uuid ) = @_;
-  return join '-', $1, $2, $3, $4, $5
-   if $uuid =~ /^ ([0-9a-f]{8}) -?
-                  ([0-9a-f]{4}) -?
-                  ([0-9a-f]{4}) -?
-                  ([0-9a-f]{4}) -?
-                  ([0-9a-f]{12}) $/xi;
-  die "Bad UUID";
-}
-
-sub strip_uuid {
-  my ( $self, $uuid ) = @_;
-  # Format to validate
-  ( my $stripped = $self->format_uuid($uuid) ) =~ s/-//g;
-  return $stripped;
-}
-
-sub is_uuid {
-  my ( $self, $str ) = @_;
-  return $str =~ /^ ([0-9a-f]{8}) -
-                    ([0-9a-f]{4}) -
-                    ([0-9a-f]{4}) -
-                    ([0-9a-f]{4}) -
-                    ([0-9a-f]{12}) $/xi;
-}
-
 sub _group_by {
   my ( $self, $del, $rows, @keys ) = @_;
   return $rows unless @keys;

@@ -19,12 +19,13 @@ use constant YEAR_START       => 1923;
 use constant YEAR_END         => 2009;
 use constant INFAX_CONFIDENCE => 90;
 
-with 'Lintilla::Role::JSON';
-with 'Lintilla::Role::DB';
 with 'Lintilla::Role::Config';
+with 'Lintilla::Role::DB';
 with 'Lintilla::Role::DateTime';
 with 'Lintilla::Role::Gatherer';
+with 'Lintilla::Role::JSON';
 with 'Lintilla::Role::Source';
+with 'Lintilla::Role::UUID';
 
 has infax   => ( is => 'ro', isa => 'Bool', default => 0 );
 has related => ( is => 'ro', isa => 'Bool', default => 0 );
