@@ -10,7 +10,7 @@ Lintilla::Role::UUID - Handle UUIDs
 
 =cut
 
-sub create_uuid { create_uuid_as_string(UUID_V4) }
+sub make_uuid { create_uuid_as_string(UUID_V4) }
 
 sub format_uuid {
   my ( $self, $uuid ) = @_;
