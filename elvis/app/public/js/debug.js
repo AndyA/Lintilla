@@ -3,6 +3,10 @@ $(function() {
   var WORKFLOW_TODO = 'RES Unchecked';
   var WORKFLOW_FLAG = 'RES Suitable';
 
+  function numberWithCommas(x) {
+    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
+
   $.get('/data/keyword/lookup', {
     query: [WORKFLOW_TODO, WORKFLOW_FLAG].join(',')
   }).done(function(tag_to_id) {
@@ -28,9 +32,9 @@ $(function() {
         var approved = flag - todo;
         var rejected = count - flag;
 
-        $('#count .approved').text(flag - todo);
-        $('#count .rejected').text(count - flag);
-        $('#count .todo').text(todo);
+        $('#count .approved').text(numberWithCommas(flag - todo));
+        $('#count .rejected').text(numberWithCommas(count - flag));
+        $('#count .todo').text(numberWithCommas(todo));
 
         setTimeout(function() {
           updateStats()
