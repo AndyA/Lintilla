@@ -212,6 +212,20 @@ sub get_tag {
   return { id => $id, name => $tag };
 }
 
+sub get_tag_id {
+  my ( $self, @name ) = @_;
+  my $tags = $self->dbh->selectall_arrayref(
+    join( ' ',
+      'SELECT name, id FROM elvis_keyword WHERE name IN (',
+      join( ',', map '?', @name ), ')' ),
+    { Slice => {} },
+    @name
+  );
+  my $out = {};
+  $out->{ $_->{name} } = $_->{id} for @$tags;
+  return $out;
+}
+
 sub remove_tag {
   my ( $self, $acno, @id ) = @_;
   $self->dbh->do(

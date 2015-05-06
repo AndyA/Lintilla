@@ -1,4 +1,5 @@
 <div id="count">
-  Approved: <span class="included"></span><br>
-  Rejected: <span class="excluded"></span><br>
+  Approved: <span class="approved"></span><br>
+  Rejected: <span class="rejected"></span><br>
+  Unchecked: <span class="todo"></span><br>
 </div>

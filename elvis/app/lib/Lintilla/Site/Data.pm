@@ -45,6 +45,12 @@ prefix '/data' => sub {
   get '/keywords/:acnos' => sub {
     return cook keywords => model->keywords( split /,/, param('acnos') );
   };
+  get '/keyword/lookup' => sub {
+    my $q = param('query');
+    return {} unless defined $q;
+    my @name = split /\s*,\s*/, $q;
+    return model->get_tag_id(@name);
+  };
   get '/keyword/:ids' => sub {
     return model->keyword_info( split /,/, param('ids') );
   };

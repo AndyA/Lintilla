@@ -5,10 +5,14 @@
   color: rgb(180, 180, 180);
 }
 
-#count .excluded {
+#count .rejected {
   color: rgb(190, 70, 40);
 }
 
-#count .included {
+#count .approved {
   color: rgb(80, 200, 100);
+}
+
+#count .todo {
+  color: rgb(70, 100, 190);
 }
