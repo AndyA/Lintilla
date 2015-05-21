@@ -182,7 +182,8 @@ sub tag {
       "SELECT i.*, AsText(c.location) AS location FROM elvis_image AS i "
        . "LEFT JOIN elvis_coordinates AS c ON i.acno=c.acno, "
        . "elvis_image_keyword AS ik "
-       . "WHERE hash IS NOT NULL AND ik.acno=i.acno AND ik.id=? LIMIT ?, ?",
+       . "WHERE hash IS NOT NULL AND ik.acno=i.acno AND ik.id=? "
+       . "ORDER BY seq LIMIT ?, ?",
       { Slice => {} },
       $id,
       $start,
