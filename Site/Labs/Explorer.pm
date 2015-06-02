@@ -27,7 +27,8 @@ prefix '/labs' => sub {
   };
 
   prefix '/explorer/data' => sub {
-    get '/services' => sub { db->service_info };
+    get '/services'    => sub { db->service_info };
+    get '/years/:uuid' => sub { db->service_years( param('uuid') ); };
     get '/year/:uuid/:year' => sub {
       db->service_year( param('uuid'), param('year') );
     };

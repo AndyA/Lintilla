@@ -58,6 +58,24 @@ sub service_info {
   return $self->_uniq_group( $self->group_by( $rc, '_uuid' ) );
 }
 
+sub service_years {
+  my ( $self, $uuid ) = @_;
+
+  return $self->dbh->selectall_arrayref(
+    join( ' ',
+      'SELECT `year`,',
+      '    MIN(`date`) AS start_date,',
+      '    MAX(`date`) AS end_date,',
+      '    SUM(`count`) AS `count`',
+      '  FROM `labs_service_dates`',
+      ' WHERE `service` = ?',
+      ' GROUP BY `year`',
+      ' ORDER BY `year`' ),
+    { Slice => {} },
+    $self->format_uuid($uuid)
+  );
+}
+
 sub service_year {
   my ( $self, $uuid, $year ) = @_;
 
