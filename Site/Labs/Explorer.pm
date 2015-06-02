@@ -2,6 +2,9 @@ package Lintilla::Site::Labs::Explorer;
 
 use Dancer ':syntax';
 
+use Dancer::Plugin::Database;
+use Lintilla::DB::Genome::Explorer;
+
 =head1 NAME
 
 Lintilla::Site::Labs::Explorer - Schedule explorer
@@ -9,6 +12,8 @@ Lintilla::Site::Labs::Explorer - Schedule explorer
 =cut
 
 our $VERSION = '0.1';
+
+sub db() { Lintilla::DB::Genome::Explorer->new( dbh => database ) }
 
 prefix '/labs' => sub {
 
@@ -19,6 +24,13 @@ prefix '/labs' => sub {
       css     => ['explorer'],
      },
      { layout => 'labs2' };
+  };
+
+  prefix '/explorer/data' => sub {
+    get '/spans' => sub { db->service_info };
+    get '/chunk/:uuid/:chunk' => sub {
+      db->service_chunk( param('uuid'), param('chunk') );
+    };
   };
 
 };
