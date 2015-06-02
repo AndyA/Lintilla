@@ -27,9 +27,9 @@ prefix '/labs' => sub {
   };
 
   prefix '/explorer/data' => sub {
-    get '/spans' => sub { db->service_info };
-    get '/chunk/:uuid/:chunk' => sub {
-      db->service_chunk( param('uuid'), param('chunk') );
+    get '/services' => sub { db->service_info };
+    get '/year/:uuid/:year' => sub {
+      db->service_year( param('uuid'), param('year') );
     };
   };
 
