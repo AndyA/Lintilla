@@ -33,6 +33,10 @@ prefix '/labs' => sub {
     };
   };
 
+  get '/explorer/**' => sub {
+    forward '/labs/explorer';
+  };
+
 };
 
 1;
