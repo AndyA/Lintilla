@@ -6,6 +6,8 @@ use DateTime;
 use DateTime::Format::MySQL;
 use POSIX qw( floor );
 
+use Lintilla::Util::Flatpack qw( flatpack );
+
 =head1 NAME
 
 Lintilla::DB::Genome::Explorer - Schedule explorer data
@@ -15,6 +17,15 @@ Lintilla::DB::Genome::Explorer - Schedule explorer data
 with 'Lintilla::Role::DB';
 with 'Lintilla::Role::UUID';
 with 'Lintilla::Role::JSON';
+
+sub _uniq_group {
+  my ( $self, $grp ) = @_;
+  for ( values %$grp ) {
+    die unless 1 == @$_;
+    $_ = $_->[0];
+  }
+  return $grp;
+}
 
 sub service_info {
   my $self = shift;
@@ -44,7 +55,7 @@ sub service_info {
     $svc->{data} = $data;
   }
 
-  return $self->group_by( $rc, '_uuid' );
+  return $self->_uniq_group( $self->group_by( $rc, '_uuid' ) );
 }
 
 sub service_year {
@@ -61,6 +72,10 @@ sub service_year {
     $year,
     $self->format_uuid($uuid)
   );
+
+  $_->{duration} *= 1 for @$rc;
+
+  return flatpack $rc;
 }
 
 1;
