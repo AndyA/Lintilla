@@ -34,6 +34,15 @@ sub _decode_wide {
   return $self->_json->decode( encode( 'UTF-8', $data ) );
 }
 
+sub _decode_php_object {
+  my ( $self, $data ) = @_;
+  my $dec = $self->_decode_wide($data);
+  return undef unless defined $dec;
+  # Assume an empty array is actually an empty hash
+  return {} if 'ARRAY' eq ref $dec && 0 == @$dec;
+  return $dec;
+}
+
 1;
 
 # vim:ts=2:sw=2:sts=2:et:ft=perl

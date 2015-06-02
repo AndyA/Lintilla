@@ -33,7 +33,7 @@ sub service_info {
     { Slice => {} }
   );
 
-  $_->{data} = $self->_decode_wide( $_->{data} ) for @$rc;
+  $_->{data} = $self->_decode_php_object( $_->{data} ) for @$rc;
 
   return $rc;
 }
