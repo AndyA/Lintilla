@@ -26,16 +26,25 @@ sub service_info {
       '    MAX(sd.`date`) AS `end_date`,',
       '    MIN(sd.`year`) AS `start_year`,',
       '    MAX(sd.`year`) AS `end_year`,',
-      '    SUM(sd.`count`) AS `programmes`',
-      '  FROM `labs_service_dates` AS sd, genome_services AS s',
-      ' WHERE sd.`service` = s.`_uuid`',
-      ' GROUP BY sd.`service`' ),
+      '    SUM(sd.`count`) AS `count`',
+      '  FROM `genome_services` AS s',
+      '  LEFT JOIN `labs_service_dates` AS sd',
+      '    ON sd.`service` = s.`_uuid`',
+      ' GROUP BY s.`_uuid`' ),
     { Slice => {} }
   );
 
-  $_->{data} = $self->_decode_php_object( $_->{data} ) for @$rc;
+  my %by_key = map { $_->{_key} => $_->{_uuid} } @$rc;
+  for my $svc (@$rc) {
+    my $data = $self->_decode_php_object( $svc->{data} );
+    $data->{incorporates}
+     = [map { $by_key{$_} // die "No service for $_" }
+       @{ $data->{incorporates} }]
+     if $data && $data->{incorporates};
+    $svc->{data} = $data;
+  }
 
-  return $rc;
+  return $self->group_by( $rc, '_uuid' );
 }
 
 sub service_year {
