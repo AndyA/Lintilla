@@ -17,6 +17,7 @@ Lintilla::DB::Genome::Explorer - Schedule explorer data
 with 'Lintilla::Role::DB';
 with 'Lintilla::Role::UUID';
 with 'Lintilla::Role::JSON';
+with 'Lintilla::Role::Source';
 
 sub _uniq_group {
   my ( $self, $grp ) = @_;
@@ -85,10 +86,12 @@ sub service_year {
       '  FROM `genome_programmes_v2`',
       ' WHERE `year` = ?',
       '   AND `service` = ?',
+      '   AND `source` = ?',
       ' ORDER BY `when`' ),
     { Slice => {} },
     $year,
-    $self->format_uuid($uuid)
+    $self->format_uuid($uuid),
+    $self->source
   );
 
   $_->{duration} *= 1 for @$rc;
