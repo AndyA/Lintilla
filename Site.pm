@@ -24,6 +24,12 @@ use URI;
 
 our $VERSION = '0.1';
 
+=head1 NAME
+
+Lintilla::Site - Genome main app
+
+=cut
+
 no if $] >= 5.018, warnings => "experimental::smartmatch";
 
 use constant BOILERPLATE =>
