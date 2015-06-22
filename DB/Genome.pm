@@ -414,9 +414,14 @@ sub _add_related {
   if (@uids) {
     my $irows = $self->dbh->selectall_arrayref(
       join( ' ',
-        'SELECT * FROM genome_related WHERE _parent IN',
-        '(', join( ', ', map '?', @uids ),
-        ')', 'ORDER BY `index`' ),
+        'SELECT r.*, rm.`keep`',
+        'FROM genome_related AS r',
+        'LEFT JOIN genome_related_meta AS rm ON r._uuid=rm._uuid',
+        'WHERE r._parent IN',
+        '(',
+        join( ', ', map '?', @uids ),
+        ')',
+        'ORDER BY r.`index`' ),
       { Slice => {} },
       @uids
     );
