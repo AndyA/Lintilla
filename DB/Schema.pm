@@ -10,69 +10,127 @@ Lintilla::DB::Schema - Database schema
 
 sub schema {
   return {
-    stash => {
+    changelog => {
+      child_of => {
+        infax         => "uuid",
+        programmes_v2 => "uuid"
+      },
       pkey  => "id",
-      table => "genome_stash",
-      root  => 1
+      root  => 1,
+      table => "genome_changelog"
+    },
+    comment_tags => {
+      pkey  => ["_comment_uuid", "_tag_uuid"],
+      table => "genome_comment_tags"
     },
     comments => {
+      pkey  => "_uuid",
       root  => 1,
-      table => "genome_comments",
-      pkey  => "_uuid"
+      table => "genome_comments"
     },
-    unstem => {
-      pkey  => "stem",
+    config           => { table => "genome_config" },
+    content_messages => {
+      pkey  => "id",
       root  => 1,
-      table => "genome_unstem"
+      table => "genome_content_messages"
     },
-    uuid_map => {
-      pkey     => "id",
+    contributors => {
       child_of => {
-        overrides     => "uuid",
-        infax         => "uuid",
-        programmes_v2 => "uuid",
-        sources       => "uuid",
-        services      => "uuid"
+        infax         => "_parent",
+        programmes_v2 => "_parent"
       },
-      table => "genome_uuid_map",
-      root  => 1
+      table => "genome_contributors"
+    },
+    coordinates => {
+      child_of => {
+        infax         => "_parent",
+        issues        => "issue",
+        overrides     => "_parent",
+        programmes_v2 => "_parent",
+        related       => "_parent"
+      },
+      table => "genome_coordinates"
+    },
+    data_counter => { table => "genome_data_counter" },
+    debug        => {
+      pkey  => "name",
+      root  => 1,
+      table => "genome_debug"
+    },
+    edit => {
+      child_of => {
+        infax         => "uuid",
+        programmes_v2 => "uuid"
+      },
+      pkey  => "id",
+      root  => 1,
+      table => "genome_edit"
+    },
+    edit_comment => {
+      pkey  => "id",
+      root  => 1,
+      table => "genome_edit_comment"
+    },
+    edit_digest => {
+      child_of => {
+        infax         => "uuid",
+        programmes_v2 => "uuid"
+      },
+      pkey  => "id",
+      root  => 1,
+      table => "genome_edit_digest"
+    },
+    editlog => {
+      pkey  => "id",
+      root  => 1,
+      table => "genome_editlog"
+    },
+    editstats => {
+      pkey  => ["slot", "state"],
+      table => "genome_editstats"
+    },
+    infax => {
+      child_of => { programmes_v2 => "uuid" },
+      pkey     => "uuid",
+      root     => 1,
+      table    => "genome_infax"
+    },
+    issues => {
+      child_of => { issues => "_parent" },
+      pkey     => "_uuid",
+      root     => 1,
+      table    => "genome_issues"
+    },
+    listing_notes => {
+      child_of => { services => "service" },
+      table    => "genome_listing_notes"
     },
     listings_v2 => {
-      root     => 1,
-      table    => "genome_listings_v2",
       child_of => {
+        issues   => "issue",
         services => "service",
-        sources  => "source",
-        issues   => "issue"
+        sources  => "source"
       },
-      pkey => "_uuid"
+      pkey  => "_uuid",
+      root  => 1,
+      table => "genome_listings_v2"
     },
-    service_dates => {
-      table    => "genome_service_dates",
-      child_of => { services => "service" },
-      pkey     => ["service", "date"]
+    media => {
+      child_of => {
+        infax         => "_parent",
+        programmes_v2 => "_parent"
+      },
+      table => "genome_media"
     },
-    data_counter      => { table => "genome_data_counter" },
+    media_collection => {
+      pkey  => "id",
+      root  => 1,
+      table => "genome_media_collection"
+    },
     media_spreadsheet => {
+      pkey  => "id",
       root  => 1,
-      table => "genome_media_spreadsheet",
-      pkey  => "id"
-    },
-    regions => {
-      root  => 1,
-      table => "genome_regions",
-      pkey  => "_uuid"
-    },
-    services => {
-      table    => "genome_services",
-      root     => 1,
-      pkey     => "_uuid",
-      child_of => { services => "_parent" }
-    },
-    sources => {
-      root  => 1,
-      table => "genome_sources",
-      pkey  => "_uuid"
+      table => "genome_media_spreadsheet"
     },
     overrides => {
       child_of => { programmes_v2 => "_uuid" },
@@ -80,163 +138,105 @@ sub schema {
       root     => 1,
       table    => "genome_overrides"
     },
-    changelog => {
-      pkey     => "id",
+    programmes_v2 => {
       child_of => {
-        infax         => "uuid",
-        programmes_v2 => "uuid"
+        infax         => "_uuid",
+        issues        => "issue",
+        listings_v2   => "listing",
+        overrides     => "_uuid",
+        programmes_v2 => "_parent",
+        services      => "service",
+        sources       => "source"
       },
-      table => "genome_changelog",
-      root  => 1
-    },
-    variation_items => { table => "genome_variation_items" },
-    debug           => {
-      table => "genome_debug",
+      pkey  => "_uuid",
       root  => 1,
-      pkey  => "name"
-    },
-    edit => {
-      pkey     => "id",
-      child_of => {
-        infax         => "uuid",
-        programmes_v2 => "uuid"
-      },
-      table => "genome_edit",
-      root  => 1
-    },
-    edit_digest => {
-      root     => 1,
-      table    => "genome_edit_digest",
-      child_of => {
-        infax         => "uuid",
-        programmes_v2 => "uuid"
-      },
-      pkey => "id"
-    },
-    service_aliases => {
-      table    => "genome_service_aliases",
-      child_of => { services => "_parent" }
-    },
-    tables => {
-      child_of => {
-        programmes_v2 => "_parent",
-        issues        => "issue",
-        infax         => "_parent"
-      },
-      table => "genome_tables"
-    },
-    related => {
-      root     => 1,
-      table    => "genome_related",
-      child_of => {
-        programmes_v2 => "_parent",
-        issues        => "issue",
-        infax         => "_parent",
-        listings_v2   => "_parent"
-      },
-      pkey => "_uuid"
-    },
-    sequence => {
-      pkey  => "kind",
-      table => "genome_sequence",
-      root  => 1
+      table => "genome_programmes_v2"
     },
     region_aliases => {
       child_of => { regions => "_parent" },
       table    => "genome_region_aliases"
     },
-    comment_tags => {
-      pkey  => ["_comment_uuid", "_tag_uuid"],
-      table => "genome_comment_tags"
+    regions => {
+      pkey  => "_uuid",
+      root  => 1,
+      table => "genome_regions"
     },
-    media_collection => {
-      pkey  => "id",
-      table => "genome_media_collection",
-      root  => 1
-    },
-    programmes_v2 => {
-      root     => 1,
-      table    => "genome_programmes_v2",
+    related => {
       child_of => {
-        listings_v2   => "listing",
-        services      => "service",
-        sources       => "source",
-        programmes_v2 => "_parent",
-        issues        => "issue",
-        overrides     => "_uuid",
-        infax         => "_uuid"
-      },
-      pkey => "_uuid"
-    },
-    coordinates => {
-      table    => "genome_coordinates",
-      child_of => {
-        overrides     => "_parent",
         infax         => "_parent",
         issues        => "issue",
-        programmes_v2 => "_parent",
-        related       => "_parent"
-      }
-    },
-    listing_notes => {
-      child_of => { services => "service" },
-      table    => "genome_listing_notes"
-    },
-    editlog => {
-      table => "genome_editlog",
+        listings_v2   => "_parent",
+        programmes_v2 => "_parent"
+      },
+      pkey  => "_uuid",
       root  => 1,
-      pkey  => "id"
+      table => "genome_related"
+    },
+    sequence => {
+      pkey  => "kind",
+      root  => 1,
+      table => "genome_sequence"
+    },
+    service_aliases => {
+      child_of => { services => "_parent" },
+      table    => "genome_service_aliases"
+    },
+    service_dates => {
+      child_of => { services => "service" },
+      pkey  => ["service", "date"],
+      table => "genome_service_dates"
+    },
+    services => {
+      child_of => { services => "_parent" },
+      pkey     => "_uuid",
+      root     => 1,
+      table    => "genome_services"
+    },
+    sources => {
+      pkey  => "_uuid",
+      root  => 1,
+      table => "genome_sources"
+    },
+    stash => {
+      pkey  => "id",
+      root  => 1,
+      table => "genome_stash"
+    },
+    tables => {
+      child_of => {
+        infax         => "_parent",
+        issues        => "issue",
+        programmes_v2 => "_parent"
+      },
+      table => "genome_tables"
     },
     tags => {
       pkey  => "_uuid",
-      table => "genome_tags",
-      root  => 1
-    },
-    variations => {
       root  => 1,
-      table => "genome_variations",
-      pkey  => "_uuid"
+      table => "genome_tags"
     },
-    content_messages => {
-      table => "genome_content_messages",
+    unstem => {
+      pkey  => "stem",
       root  => 1,
-      pkey  => "id"
+      table => "genome_unstem"
     },
-    infax => {
-      table    => "genome_infax",
-      root     => 1,
-      pkey     => "uuid",
-      child_of => { programmes_v2 => "uuid" }
-    },
-    config => { table => "genome_config" },
-    issues => {
-      root     => 1,
-      table    => "genome_issues",
-      child_of => { issues => "_parent" },
-      pkey     => "_uuid"
-    },
-    editstats => {
-      pkey  => ["slot", "state"],
-      table => "genome_editstats"
-    },
-    edit_comment => {
+    uuid_map => {
+      child_of => {
+        infax         => "uuid",
+        overrides     => "uuid",
+        programmes_v2 => "uuid",
+        services      => "uuid",
+        sources       => "uuid"
+      },
       pkey  => "id",
       root  => 1,
-      table => "genome_edit_comment"
+      table => "genome_uuid_map"
     },
-    media => {
-      child_of => {
-        programmes_v2 => "_parent",
-        infax         => "_parent"
-      },
-      table => "genome_media"
-    },
-    contributors => {
-      child_of => {
-        programmes_v2 => "_parent",
-        infax         => "_parent"
-      },
-      table => "genome_contributors"
+    variation_items => { table => "genome_variation_items" },
+    variations      => {
+      pkey  => "_uuid",
+      root  => 1,
+      table => "genome_variations"
     } };
 }
 
