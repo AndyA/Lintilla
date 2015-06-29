@@ -248,10 +248,11 @@ sub _set_filter {
     my @tfilt = $self->_time_filter;
     $sph->SetFilterRange( timeslot => @tfilt ) if @tfilt;
     given ( $self->media ) {
-      when ('all')   { }
-      when ('tv')    { $sph->SetFilter( service_type => [SERVICE_TV] ) }
-      when ('radio') { $sph->SetFilter( service_type => [SERVICE_RADIO] ) }
-      default        { die }
+      when ('all')      { }
+      when ('tv')       { $sph->SetFilter( service_type => [SERVICE_TV] ) }
+      when ('radio')    { $sph->SetFilter( service_type => [SERVICE_RADIO] ) }
+      when ('playable') { $sph->SetFilter( has_media => [1] ) }
+      default           { die }
     }
   }
 }
