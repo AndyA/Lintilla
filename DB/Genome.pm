@@ -27,9 +27,10 @@ with 'Lintilla::Role::Gatherer';
 with 'Lintilla::Role::Source';
 with 'Lintilla::Role::UUID';
 
-has infax   => ( is => 'ro', isa => 'Bool', default => 0 );
-has related => ( is => 'ro', isa => 'Bool', default => 0 );
-has media   => ( is => 'ro', isa => 'Bool', default => 0 );
+has infax          => ( is => 'ro', isa => 'Bool', default => 0 );
+has related        => ( is => 'ro', isa => 'Bool', default => 0 );
+has related_merged => ( is => 'ro', isa => 'Bool', default => 0 );
+has media          => ( is => 'ro', isa => 'Bool', default => 0 );
 
 has years    => ( is => 'ro', lazy => 1, builder => '_build_years' );
 has decades  => ( is => 'ro', lazy => 1, builder => '_build_decades' );
@@ -407,6 +408,30 @@ sub _add_infax_links {
   return $rows;
 }
 
+sub _add_related_merged {
+  my ( $self, $rows ) = @_;
+  my @uids = map { $_->{_uuid} } @$rows;
+
+  if (@uids) {
+    my $irows = $self->dbh->selectall_arrayref(
+      join( ' ',
+        'SELECT * FROM genome_related_merged WHERE _parent IN', '(',
+        join( ', ', map '?', @uids ), ')' ),
+      { Slice => {} },
+      @uids
+    );
+
+    my $related = $self->group_by( $irows, '_parent', 'location' );
+
+    for my $row (@$rows) {
+      my $rec = delete $related->{ $row->{_uuid} };
+      $row->{related_merged} = $self->_make_public( $rec || [] );
+    }
+  }
+
+  return $rows;
+}
+
 sub _add_related {
   my ( $self, $rows ) = @_;
   my @uids = map { $_->{_uuid} } @$rows;
@@ -469,9 +494,10 @@ sub _add_programme_details {
   my ( $self, $rows ) = @_;
   $self->_add_default_programme_details($rows);
 
-  $self->_add_infax_links($rows) if $self->infax;
-  $self->_add_related($rows)     if $self->related;
-  $self->_add_media($rows)       if $self->media;
+  $self->_add_infax_links($rows)    if $self->infax;
+  $self->_add_related($rows)        if $self->related;
+  $self->_add_related_merged($rows) if $self->related_merged;
+  $self->_add_media($rows)          if $self->media;
 
   return $rows;
 }

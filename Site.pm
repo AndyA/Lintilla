@@ -40,10 +40,11 @@ use constant URL_SHRINKER =>
 
 sub db() {
   Lintilla::DB::Genome->new(
-    dbh     => database,
-    infax   => config->{infax_link} ? 1 : 0,
-    related => config->{show_related} ? 1 : 0,
-    media   => config->{show_media} ? 1 : 0,
+    dbh            => database,
+    infax          => config->{infax_link} ? 1 : 0,
+    related        => config->{show_related} ? 1 : 0,
+    related_merged => config->{show_related_merged} ? 1 : 0,
+    media          => config->{show_media} ? 1 : 0,
   );
 }
 
