@@ -2,6 +2,7 @@ package Lintilla::Site::Labs;
 
 use Dancer ':syntax';
 
+use Lintilla::Site::Labs::Collection;
 use Lintilla::Site::Labs::Explorer;
 use Lintilla::Site::Labs::Livestats;
 use Lintilla::Site::Labs::Pages;
