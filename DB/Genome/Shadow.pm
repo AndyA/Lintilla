@@ -16,7 +16,7 @@ sub _load_changes {
   my $index = $self->dbh->selectall_arrayref(
     join( " ",
       "SELECT *",
-      "FROM `shadow_log`",
+      "FROM `shadow_x_log`",
       "WHERE `id` BETWEEN ? AND ?",
       "ORDER BY `id`" ),
     { Slice => {} },
@@ -35,9 +35,9 @@ sub _load_changes {
     $stash->{$table} = $self->dbh->selectall_arrayref(
       join( " ",
         "SELECT *" . "FROM `$table`",
-        "WHERE `shadow_sequence` IN(",
+        "WHERE `sequence` IN(",
         join( ", ", map "?", @ids ),
-        ") ORDER BY `shadow_sequence`" ),
+        ") ORDER BY `sequence`" ),
       { Slice => {} },
       @ids
     );
@@ -48,7 +48,7 @@ sub _load_changes {
     my $table    = $row->{table};
     my $sequence = $row->{sequence};
     my $event    = shift @{ $stash->{$table} // [] };
-    die unless defined $event && $event->{shadow_sequence} == $sequence;
+    die unless defined $event && $event->{sequence} == $sequence;
     $event->{table} = $table;
     $event->{id}    = $row->{id};
     # Put NEW_*, OLD_* fields in 'new', 'old' hashes.
