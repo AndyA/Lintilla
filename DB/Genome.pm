@@ -1184,7 +1184,7 @@ sub _no_query_search {
   if ( defined( my $svc = $options->svc ) ) {
     my @svc = split /,/, $svc;
     if (@svc) {
-      push @filt, "`s`.`service_id` IN(" . join( ", ", map "?", @svc ), ")";
+      push @filt, "`s`.`service_id` IN(" . join( ", ", map "?", @svc ) . ")";
       push @bind, @svc;
     }
   }
