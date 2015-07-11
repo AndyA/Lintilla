@@ -1141,22 +1141,26 @@ sub _no_query_search {
 
     {
       my ( $from, $to, $invert ) = $options->month_filter;
-      push @filt, join " ", "`s`.`month`", ( $invert ? ("NOT") : () ),
-       "BETWEEN ? AND ?";
-      push @bind, $from, $to;
+      if ( defined $from ) {
+        push @filt, join " ", "`s`.`month`", ( $invert ? ("NOT") : () ),
+         "BETWEEN ? AND ?";
+        push @bind, $from, $to;
+      }
     }
 
     {
       my ( $from, $to, $invert ) = $options->time_filter;
-      push @filt, join " ", "`s`.`timeslot`", ( $invert ? ("NOT") : () ),
-       "BETWEEN ? AND ?";
-      push @bind, $from, $to;
+      if ( defined $from ) {
+        push @filt, join " ", "`s`.`timeslot`", ( $invert ? ("NOT") : () ),
+         "BETWEEN ? AND ?";
+        push @bind, $from, $to;
+      }
     }
 
     my %media_filter = (
-      tv       => ["`service_type` = ?", $options->SERVICE_TV],
-      radio    => ["`service_type` = ?", $options->SERVICE_RADIO],
-      playable => ["`has_media`"]
+      tv       => ["`s`.`service_type` = ?", $options->SERVICE_TV],
+      radio    => ["`s`.`service_type` = ?", $options->SERVICE_RADIO],
+      playable => ["`s`.`has_media`"]
     );
 
     my @mf = @{ $media_filter{ $options->media } // [] };
@@ -1170,7 +1174,7 @@ sub _no_query_search {
   my @services = @{
     $self->dbh->selectcol_arrayref(
       join( " ",
-        "SELECT DISTINCT `service_id` FROM `genome_search`",
+        "SELECT DISTINCT `s`.`service_id` FROM `genome_search` AS `s`",
         @filt ? ( "WHERE", join " AND ", @filt ) : () ),
       {},
       @bind
@@ -1180,25 +1184,94 @@ sub _no_query_search {
   if ( defined( my $svc = $options->svc ) ) {
     my @svc = split /,/, $svc;
     if (@svc) {
-      push @filt, "`service_id` IN(" . join( ", ", map "?", @svc ), ")";
+      push @filt, "`s`.`service_id` IN(" . join( ", ", map "?", @svc ), ")";
       push @bind, @svc;
     }
   }
 
   my ($count) = $self->dbh->selectrow_array(
     join( " ",
-      "SELECT COUNT(*) AS `count` FROM `genome_search`",
+      "SELECT COUNT(*) AS `count` FROM `genome_search` AS `s`",
       @filt ? ( "WHERE", join " AND ", @filt ) : () ),
     {},
     @bind
   );
 
+  my $dir = $options->order eq "desc" ? "DESC" : "ASC";
+
+  my @ids = @{
+    $self->dbh->selectcol_arrayref(
+      join( " ",
+        "SELECT `s`.`_uuid` FROM `genome_search` AS `s`",
+        @filt ? ( "WHERE", join " AND ", @filt ) : (),
+        "ORDER BY `when` $dir",
+        "LIMIT ?, ?" ),
+      {},
+      @bind,
+      $options->start,
+      $options->size
+    ) // [] };
+
+  my $progs
+   = @ids
+   ? $self->_programme_query(
+    join( ' ',
+      'SELECT *,',
+      'IF (parent_service_key IS NOT NULL, parent_service_key, service_key) AS root_service_key',
+      'FROM (',
+      '  SELECT',
+      '    p.*,',
+      '    s2._key AS parent_service_key,',
+      '    s.title AS service_name,',
+      '    s2.title AS service_sub,',
+      '    s.subkey AS subkey',
+      '  FROM (genome_programmes_v2 AS p, genome_services AS s)',
+      '  LEFT JOIN genome_services AS s2 ON s2._uuid = s._parent',
+      '  WHERE p.service = s._uuid',
+      '  AND p._uuid IN (',
+      join( ", ", map "?", @ids ),
+      '  )',
+      ') AS q',
+      'ORDER BY FIELD(`_uuid`, ',
+      join( ", ", map "?", @ids ),
+      ')' ),
+    { Slice => {} },
+    @ids, @ids
+   )
+   : [];
+
+  my $hl = Text::Highlight->new( words => [] );
+  for my $prog (@$progs) {
+    for my $key ( 'title', 'synopsis' ) {
+      $prog->{"${key}_html"} = $hl->highlight( $prog->{$key} )
+       if exists $prog->{$key};
+    }
+  }
+
+  my $self_link  = $options->self_link;
+  my $pagination = Lintilla::DB::Genome::Search::Pagination->new(
+    options => $options,
+    total   => $count,
+    window  => 10
+  );
+
+  return (
+    form        => $options->form,
+    results     => { total_found => $count },
+    programmes  => $progs,
+    services    => $self->_search_load_services( $options, @services ),
+    pagination  => $pagination->pagination,
+    title       => $self->page_title('Search Results'),
+    share_stash => $self->share_stash(
+      title => join( ' ', 'Search BBC Genome' ),
+      ( defined $self_link ? ( shareUrl => $self_link ) : () ),
+    ),
+  );
+
 }
 
-sub search {
-  my ( $self, @params ) = @_;
-
-  my $options = Lintilla::DB::Genome::Search::Options->new(@params);
+sub _query_search {
+  my ( $self, $options ) = @_;
 
   my $srch = Lintilla::DB::Genome::Search::Sphinx->new(
     options => $options,
@@ -1246,7 +1319,6 @@ sub search {
   my $ssvc = $srch->services;
   my $kwm  = $srch->keyword_map;
   my @kw   = $self->unstem( $kwm, keys %{ $results->{words} } );
-  #  my $kw   = $srch->keywords;
 
   my $hl = Text::Highlight->new( words => \@kw );
   for my $prog (@$progs) {
@@ -1277,6 +1349,16 @@ sub search {
       ( defined $self_link ? ( shareUrl => $self_link ) : () ),
     ),
   );
+}
+
+sub search {
+  my ( $self, @params ) = @_;
+
+  my $options = Lintilla::DB::Genome::Search::Options->new(@params);
+
+  return length( $options->q )
+   ? $self->_query_search($options)
+   : $self->_no_query_search($options);
 }
 
 sub programme {
