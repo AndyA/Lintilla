@@ -7,6 +7,7 @@ use Barlesque::Client;
 use Dancer::Plugin::Database;
 use Lintilla::DB::Genome::Edit;
 use Lintilla::DB::Genome;
+use Lintilla::DB::Genome::Search::Options;
 use Lintilla::Data::Static;
 use Lintilla::Personality;
 use Lintilla::Site::Admin;
@@ -112,7 +113,7 @@ sub echo_key {
 sub boilerplate($) {
   my $db   = shift;
   my $dbe  = Lintilla::DB::Genome::Edit->new( dbh => $db->dbh );
-  my $srch = Lintilla::DB::Genome::Search->new;
+  my $srch = Lintilla::DB::Genome::Search::Options->new;
   my $pe   = vars->{personality};
   return (
     $db->gather(BOILERPLATE),

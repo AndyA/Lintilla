@@ -4,7 +4,9 @@ use v5.10;
 
 use Dancer ':syntax';
 use HTML::Tiny;
-use Lintilla::DB::Genome::Search;
+use Lintilla::DB::Genome::Search::Sphinx;
+use Lintilla::DB::Genome::Search::Options;
+use Lintilla::DB::Genome::Search::Pagination;
 use Lintilla::Filter qw( cook );
 use Moose;
 use Text::Highlight;
@@ -1121,13 +1123,68 @@ sub unstem {
   return @out;
 }
 
+sub _blank_search {
+  my ( $self, $srch ) = @_;
+
+  my @bind = ();
+  my @filt = ();
+
+  if ( $srch->adv ) {
+    push @filt, "`s`.`year` BETWEEN ? AND ?";
+    push @bind, $srch->yf, $srch->yt;
+
+    my @df = $srch->day_filter;
+    if (@df) {
+      push @filt, "`s`.`weekday` IN (" . join( ", ", map "?", @df ) . ")";
+      push @bind, @df;
+    }
+
+    {
+      my ( $from, $to, $invert ) = $srch->month_filter;
+      push @filt, join " ", "`s`.`month`", ( $invert ? ("NOT") : () ),
+       "BETWEEN ? AND ?";
+      push @bind, $from, $to;
+    }
+
+    {
+      my ( $from, $to, $invert ) = $srch->time_filter;
+      push @filt, join " ", "`s`.`timeslot`", ( $invert ? ("NOT") : () ),
+       "BETWEEN ? AND ?";
+      push @bind, $from, $to;
+    }
+
+    my %media_filter = (
+      tv       => ["`service_type` = ?", $srch->SERVICE_TV],
+      radio    => ["`service_type` = ?", $srch->SERVICE_RADIO],
+      playable => ["`has_media`"]
+    );
+
+    my @mf = @{ $media_filter{ $srch->media } // [] };
+    if (@mf) {
+      push @filt, shift @mf;
+      push @bind, @mf;
+    }
+  }
+
+  my ($count) = $self->dbh->selectrow_array(
+    join( " ",
+      "SELECT COUNT(*) AS `count` FROM `genome_search`",
+      @filt ? ( "WHERE", join " AND ", @filt ) : () ),
+    {},
+    @bind
+  );
+
+}
+
 sub search {
   my ( $self, @params ) = @_;
 
-  my $srch = Lintilla::DB::Genome::Search->new(
-    @params,
-    index  => 'genome3_idx',
-    source => $self->_search_id( $self->source ),
+  my $options = Lintilla::DB::Genome::Search::Options->new(@params);
+
+  my $srch = Lintilla::DB::Genome::Search::Sphinx->new(
+    options => $options,
+    index   => 'genome3_idx',
+    source  => $self->_search_id( $self->source ),
   );
 
   my $results = $srch->search;
@@ -1135,7 +1192,7 @@ sub search {
   my @ids = map { $_->{doc} } @{ $results->{matches} };
   my $ph = join ', ', map '?', @ids;
 
-  my $o = $srch->order;
+  my $o = $options->order;
   my ( $ord, @extra )
    = $o eq 'rank' ? ( "ORDER BY FIELD(search_id, $ph) ", @ids )
    : $o eq 'asc'  ? ("ORDER BY `when` ASC")
@@ -1182,17 +1239,21 @@ sub search {
 
   my @sids = map { $_->{service_id} } @{ $ssvc->{matches} || [] };
 
-  my $self_link = $srch->self_link;
+  my $self_link  = $options->self_link;
+  my $pagination = Lintilla::DB::Genome::Search::Pagination->new(
+    options => $options,
+    total   => $srch->total
+  );
 
   return (
-    form        => $srch->form,
+    form        => $options->form,
     results     => $results,
     programmes  => $progs,
-    services    => $self->_search_load_services( $srch, @sids ),
-    pagination  => $srch->pagination(10),
+    services    => $self->_search_load_services( $options, @sids ),
+    pagination  => $pagination->pagination(10),
     title       => $self->page_title('Search Results'),
     share_stash => $self->share_stash(
-      title => join( ' ', 'Search for', $srch->q, 'on BBC Genome' ),
+      title => join( ' ', 'Search for', $options->q, 'on BBC Genome' ),
       ( defined $self_link ? ( shareUrl => $self_link ) : () ),
     ),
   );
