@@ -1123,6 +1123,19 @@ sub unstem {
   return @out;
 }
 
+sub _highlight_progs {
+  my ( $self, $progs, $words ) = @_;
+
+  # TODO related_merged
+  my $hl = Text::Highlight->new( words => $words // [] );
+  for my $prog (@$progs) {
+    for my $key ( 'title', 'synopsis' ) {
+      $prog->{"${key}_html"} = $hl->highlight( $prog->{$key} )
+       if exists $prog->{$key};
+    }
+  }
+}
+
 sub _no_query_search {
   my ( $self, $options ) = @_;
 
@@ -1240,13 +1253,7 @@ sub _no_query_search {
    )
    : [];
 
-  my $hl = Text::Highlight->new( words => [] );
-  for my $prog (@$progs) {
-    for my $key ( 'title', 'synopsis' ) {
-      $prog->{"${key}_html"} = $hl->highlight( $prog->{$key} )
-       if exists $prog->{$key};
-    }
-  }
+  $self->_highlight_progs($progs);
 
   my $self_link  = $options->self_link;
   my $pagination = Lintilla::DB::Genome::Search::Pagination->new(
@@ -1320,13 +1327,7 @@ sub _query_search {
   my $kwm  = $srch->keyword_map;
   my @kw   = $self->unstem( $kwm, keys %{ $results->{words} } );
 
-  my $hl = Text::Highlight->new( words => \@kw );
-  for my $prog (@$progs) {
-    for my $key ( 'title', 'synopsis' ) {
-      $prog->{"${key}_html"} = $hl->highlight( $prog->{$key} )
-       if exists $prog->{$key};
-    }
-  }
+  $self->_highlight_progs( $progs, \@kw );
 
   my @sids = map { $_->{service_id} } @{ $ssvc->{matches} || [] };
 
