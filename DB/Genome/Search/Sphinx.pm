@@ -77,6 +77,9 @@ sub _set_filter {
       when ('playable') {
         $sph->SetFilter( has_media => [1] );
       }
+      when ('related') {
+        $sph->SetFilter( has_related => [1] );
+      }
       default {
         die;
       }

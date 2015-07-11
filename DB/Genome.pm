@@ -1173,7 +1173,8 @@ sub _no_query_search {
     my %media_filter = (
       tv       => ["`s`.`service_type` = ?", $options->SERVICE_TV],
       radio    => ["`s`.`service_type` = ?", $options->SERVICE_RADIO],
-      playable => ["`s`.`has_media`"]
+      playable => ["`s`.`has_media`"],
+      related  => ["`s`.`related` IS NOT NULL"]
     );
 
     my @mf = @{ $media_filter{ $options->media } // [] };
