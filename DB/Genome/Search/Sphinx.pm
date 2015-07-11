@@ -139,6 +139,7 @@ sub _do_search {
    ? '@people "' . $opt->q . '"'
    : $opt->q;
 
+  # Main search
   my $qq = $sph->Query( $query, $self->index );
   die $sph->GetLastError unless $qq;
   my $kws = $sph->BuildKeywords( $query, $self->index, 0 );

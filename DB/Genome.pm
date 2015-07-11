@@ -1123,46 +1123,65 @@ sub unstem {
   return @out;
 }
 
-sub _blank_search {
-  my ( $self, $srch ) = @_;
+sub _no_query_search {
+  my ( $self, $options ) = @_;
 
   my @bind = ();
   my @filt = ();
 
-  if ( $srch->adv ) {
+  if ( $options->adv ) {
     push @filt, "`s`.`year` BETWEEN ? AND ?";
-    push @bind, $srch->yf, $srch->yt;
+    push @bind, $options->yf, $options->yt;
 
-    my @df = $srch->day_filter;
+    my @df = $options->day_filter;
     if (@df) {
       push @filt, "`s`.`weekday` IN (" . join( ", ", map "?", @df ) . ")";
       push @bind, @df;
     }
 
     {
-      my ( $from, $to, $invert ) = $srch->month_filter;
+      my ( $from, $to, $invert ) = $options->month_filter;
       push @filt, join " ", "`s`.`month`", ( $invert ? ("NOT") : () ),
        "BETWEEN ? AND ?";
       push @bind, $from, $to;
     }
 
     {
-      my ( $from, $to, $invert ) = $srch->time_filter;
+      my ( $from, $to, $invert ) = $options->time_filter;
       push @filt, join " ", "`s`.`timeslot`", ( $invert ? ("NOT") : () ),
        "BETWEEN ? AND ?";
       push @bind, $from, $to;
     }
 
     my %media_filter = (
-      tv       => ["`service_type` = ?", $srch->SERVICE_TV],
-      radio    => ["`service_type` = ?", $srch->SERVICE_RADIO],
+      tv       => ["`service_type` = ?", $options->SERVICE_TV],
+      radio    => ["`service_type` = ?", $options->SERVICE_RADIO],
       playable => ["`has_media`"]
     );
 
-    my @mf = @{ $media_filter{ $srch->media } // [] };
+    my @mf = @{ $media_filter{ $options->media } // [] };
     if (@mf) {
       push @filt, shift @mf;
       push @bind, @mf;
+    }
+  }
+
+  # Enumerate available services
+  my @services = @{
+    $self->dbh->selectcol_arrayref(
+      join( " ",
+        "SELECT DISTINCT `service_id` FROM `genome_search`",
+        @filt ? ( "WHERE", join " AND ", @filt ) : () ),
+      {},
+      @bind
+    ) // [] };
+
+  # Limit to selected service(s)
+  if ( defined( my $svc = $options->svc ) ) {
+    my @svc = split /,/, $svc;
+    if (@svc) {
+      push @filt, "`service_id` IN(" . join( ", ", map "?", @svc ), ")";
+      push @bind, @svc;
     }
   }
 
@@ -1242,7 +1261,8 @@ sub search {
   my $self_link  = $options->self_link;
   my $pagination = Lintilla::DB::Genome::Search::Pagination->new(
     options => $options,
-    total   => $srch->total
+    total   => $srch->total,
+    window  => 10
   );
 
   return (
@@ -1250,7 +1270,7 @@ sub search {
     results     => $results,
     programmes  => $progs,
     services    => $self->_search_load_services( $options, @sids ),
-    pagination  => $pagination->pagination(10),
+    pagination  => $pagination->pagination,
     title       => $self->page_title('Search Results'),
     share_stash => $self->share_stash(
       title => join( ' ', 'Search for', $options->q, 'on BBC Genome' ),

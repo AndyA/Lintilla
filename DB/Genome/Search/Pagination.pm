@@ -26,6 +26,12 @@ has options => (
   required => 1
 );
 
+has window => (
+  is      => 'ro',
+  isa     => 'Num',
+  default => 10
+);
+
 has total => (
   is       => 'ro',
   isa      => 'Num',
@@ -45,14 +51,15 @@ sub page_link {
 }
 
 sub pagination {
-  my ( $self, $window ) = @_;
+  my $self = shift;
 
-  my $opt   = $self->options;
-  my $cur   = $opt->page;
-  my $first = max( $cur - int( $window / 2 ), 0 );
-  my $last  = min( $first + $window, $self->pages ) - 1;
-  my $from  = $opt->start + 1;
-  my $to    = min( $from + $opt->size - 1, $self->total );
+  my $window = $self->window;
+  my $opt    = $self->options;
+  my $cur    = $opt->page;
+  my $first  = max( $cur - int( $window / 2 ), 0 );
+  my $last   = min( $first + $window, $self->pages ) - 1;
+  my $from   = $opt->start + 1;
+  my $to     = min( $from + $opt->size - 1, $self->total );
 
   return {
     ( $cur > 0
