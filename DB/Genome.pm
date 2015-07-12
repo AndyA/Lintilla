@@ -1179,8 +1179,9 @@ sub _no_query_search {
       my $media = $options->media;
       if ( $media eq "tv" || $media eq "radio" ) {
         push @filt, "`s`.`service_type` = ?";
-        push @bind,
-         $media eq "tv" ? $options->SERVICE_TV : $options->SERVICE_RADIO;
+        push @bind, $media eq "tv"
+         ? $options->SERVICE_TV
+         : $options->SERVICE_RADIO;
       }
       elsif ( $media eq "playable" ) {
         $table = "genome_search_has_media";
