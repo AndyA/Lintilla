@@ -1046,6 +1046,10 @@ sub _search_id {
 sub _search_load_services {
   my ( $self, $srch, @sids ) = @_;
 
+  # Convert incorporated services into the real services they
+  # incoporate
+  @sids = $self->_services_incorporated_to_real(@sids);
+
   my $svcs
    = @sids
    ? $self->dbh->selectall_arrayref(
@@ -1356,10 +1360,60 @@ sub _query_search {
   );
 }
 
-sub search {
-  my ( $self, @params ) = @_;
+sub _services_real_to_incorporated {
+  my ( $self, @ids ) = @_;
 
-  my $options = Lintilla::DB::Genome::Search::Options->new(@params);
+  return unless @ids;
+
+  return @{
+    $self->dbh->selectcol_arrayref(
+      join( " ",
+        "SELECT DISTINCT u1.id",
+        "  FROM genome_uuid_map AS u1,",
+        "       genome_uuid_map AS u2,",
+        "       genome_service_incorporates AS si",
+        " WHERE u1.uuid=si.incorporated_into",
+        "   AND u2.uuid=si.service",
+        "   AND u2.id IN (",
+        join( ", ", map "?", @ids ),
+        ")" ),
+      {},
+      @ids
+    ) };
+}
+
+sub _services_incorporated_to_real {
+  my ( $self, @ids ) = @_;
+
+  return unless @ids;
+
+  return @{
+    $self->dbh->selectcol_arrayref(
+      join( " ",
+        "SELECT DISTINCT u1.id",
+        "  FROM genome_uuid_map AS u1,",
+        "       genome_uuid_map AS u2,",
+        "       genome_service_incorporates AS si",
+        " WHERE u1.uuid=si.service",
+        "   AND u2.uuid=si.incorporated_into",
+        "   AND u2.id IN (",
+        join( ", ", map "?", @ids ),
+        ")" ),
+      {},
+      @ids
+    ) };
+}
+
+sub search {
+  my ( $self, %params ) = @_;
+
+  # Expand real services to include combined services that include them
+  if ( defined $params{svc} ) {
+    $params{svc} = join ",",
+     $self->_services_real_to_incorporated( split /,/, $params{svc} );
+  }
+
+  my $options = Lintilla::DB::Genome::Search::Options->new(%params);
 
   return length( $options->q )
    ? $self->_query_search($options)
