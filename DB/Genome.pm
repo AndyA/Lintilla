@@ -1139,8 +1139,9 @@ sub _highlight_progs {
 sub _no_query_search {
   my ( $self, $options ) = @_;
 
-  my @bind = ();
-  my @filt = ();
+  my @bind  = ();
+  my @filt  = ();
+  my $table = "genome_search";
 
   if ( $options->adv ) {
     push @filt, "`s`.`year` BETWEEN ? AND ?";
@@ -1170,17 +1171,19 @@ sub _no_query_search {
       }
     }
 
-    my %media_filter = (
-      tv       => ["`s`.`service_type` = ?", $options->SERVICE_TV],
-      radio    => ["`s`.`service_type` = ?", $options->SERVICE_RADIO],
-      playable => ["`s`.`has_media`"],
-      related  => ["`s`.`related` IS NOT NULL"]
-    );
-
-    my @mf = @{ $media_filter{ $options->media } // [] };
-    if (@mf) {
-      push @filt, shift @mf;
-      push @bind, @mf;
+    {
+      my $media = $options->media;
+      if ( $media eq "tv" || $media eq "radio" ) {
+        push @filt, "`s`.`service_type` = ?";
+        push @bind,
+         $media eq "tv" ? $options->SERVICE_TV : $options->SERVICE_RADIO;
+      }
+      elsif ( $media eq "playable" ) {
+        $table = "genome_search_has_media";
+      }
+      elsif ( $media eq "related" ) {
+        $table = "genome_search_has_related";
+      }
     }
   }
 
@@ -1188,7 +1191,7 @@ sub _no_query_search {
   my @services = @{
     $self->dbh->selectcol_arrayref(
       join( " ",
-        "SELECT DISTINCT `s`.`service_id` FROM `genome_search` AS `s`",
+        "SELECT DISTINCT `s`.`service_id` FROM `$table` AS `s`",
         @filt ? ( "WHERE", join " AND ", @filt ) : () ),
       {},
       @bind
@@ -1205,7 +1208,7 @@ sub _no_query_search {
 
   my ($count) = $self->dbh->selectrow_array(
     join( " ",
-      "SELECT COUNT(*) AS `count` FROM `genome_search` AS `s`",
+      "SELECT COUNT(*) AS `count` FROM `$table` AS `s`",
       @filt ? ( "WHERE", join " AND ", @filt ) : () ),
     {},
     @bind
@@ -1216,7 +1219,7 @@ sub _no_query_search {
   my @ids = @{
     $self->dbh->selectcol_arrayref(
       join( " ",
-        "SELECT `s`.`_uuid` FROM `genome_search` AS `s`",
+        "SELECT `s`.`_uuid` FROM `$table` AS `s`",
         @filt ? ( "WHERE", join " AND ", @filt ) : (),
         "ORDER BY `when` $dir",
         "LIMIT ?, ?" ),
