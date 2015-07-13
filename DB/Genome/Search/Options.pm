@@ -5,6 +5,7 @@ use v5.10;
 use Moose;
 
 use List::Util qw( min max );
+use Scalar::Util qw( looks_like_number );
 use URI;
 
 with 'Lintilla::Role::Gatherer';
@@ -73,6 +74,16 @@ sub _cmp {
   return -1 unless defined $a;
   return 1  unless defined $b;
   return $a cmp $b;
+}
+
+sub is_valid {
+  my $self = shift;
+  if ( $self->adv ) {
+    return unless looks_like_number( $self->yf );
+    return unless looks_like_number( $self->yt );
+    return unless $self->yf <= $self->yt;
+  }
+  return 1;
 }
 
 sub form {

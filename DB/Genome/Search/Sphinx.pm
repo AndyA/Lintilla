@@ -97,24 +97,12 @@ sub _build_sphinx {
   $sph->SetServer( $host, $port );
 }
 
-sub _is_valid {
-  my $self = shift;
-  my $opt  = $self->options;
-  return unless length $opt->q || config->{empty_search};
-  if ( $opt->adv ) {
-    return unless looks_like_number( $opt->yf );
-    return unless looks_like_number( $opt->yt );
-    return unless $opt->yf <= $opt->yt;
-  }
-  return 1;
-}
-
 sub _do_search {
   my $self = shift;
   my $opt  = $self->options;
 
   return { qq => {}, svc => {}, kws => [] }
-   unless $self->_is_valid;
+   unless $opt->is_valid;
 
   my $sph = $self->_sphinx;
   $sph->Open;

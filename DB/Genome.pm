@@ -1140,8 +1140,10 @@ sub _highlight_progs {
   }
 }
 
-sub _no_query_search {
+sub _search_all {
   my ( $self, $options ) = @_;
+
+  return ( 0, [] ) unless $options->is_valid;
 
   my @bind  = ();
   my @filt  = ();
@@ -1262,6 +1264,15 @@ sub _no_query_search {
    )
    : [];
 
+  return ( $count, $progs, @services );
+
+}
+
+sub _no_query_search {
+  my ( $self, $options ) = @_;
+
+  my ( $count, $progs, @services ) = $self->_search_all($options);
+
   $self->_highlight_progs($progs);
 
   my $self_link  = $options->self_link;
@@ -1283,7 +1294,6 @@ sub _no_query_search {
       ( defined $self_link ? ( shareUrl => $self_link ) : () ),
     ),
   );
-
 }
 
 sub _query_search {
