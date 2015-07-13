@@ -1150,8 +1150,9 @@ sub _search_all {
   my $table = "genome_search";
 
   if ( $options->adv ) {
-    push @filt, "`s`.`year` BETWEEN ? AND ?";
-    push @bind, $options->yf, $options->yt;
+    push @filt, "`s`.`when` >= ? AND `s`.`when` < ?";
+    push @bind, sprintf( '%04d-01-01', $options->yf ),
+     sprintf( '%04d-01-01', $options->yt + 1 );
 
     my @df = $options->day_filter;
     if (@df) {
