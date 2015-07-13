@@ -5,7 +5,6 @@ use v5.10;
 use Dancer qw( config );
 use List::Util qw( min max );
 use Moose;
-use Scalar::Util qw( looks_like_number );
 use Sphinx::Search;
 use URI;
 
