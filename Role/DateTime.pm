@@ -11,8 +11,6 @@ Lintilla::Role::DateTime - Date / time handling
 
 =cut
 
-requires 'config';
-
 use constant YEAR_START => 1923;
 use constant YEAR_END   => 2009;
 
