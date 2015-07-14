@@ -9,6 +9,7 @@ use Sphinx::Search;
 use URI;
 
 with 'Lintilla::Role::Gatherer';
+with 'Lintilla::Role::Sphinx';
 
 no if $] >= 5.018, warnings => "experimental::smartmatch";
 
@@ -23,8 +24,7 @@ use constant MAX_MATCHES => 20_000;
 has index => (
   is       => 'ro',
   isa      => 'Str',
-  required => 1,
-  default  => 'prog_idx',
+  required => 1
 );
 
 has source => (
@@ -39,7 +39,6 @@ has options => (
   required => 1
 );
 
-has _sphinx => ( is => 'ro', lazy => 1, builder => '_build_sphinx' );
 has _search => ( is => 'ro', lazy => 1, builder => '_do_search' );
 
 sub total { shift->search->{total_found} // 0 }
@@ -86,16 +85,6 @@ sub _set_filter {
   }
 }
 
-sub _build_sphinx {
-  my $self = shift;
-  my $sph  = Sphinx::Search->new();
-
-  my $host = config->{sphinx_host} // 'localhost';
-  my $port = config->{sphinx_port} // '9312';
-
-  $sph->SetServer( $host, $port );
-}
-
 sub _do_search {
   my $self = shift;
   my $opt  = $self->options;
@@ -103,7 +92,7 @@ sub _do_search {
   return { qq => {}, svc => {}, kws => [] }
    unless $opt->is_valid;
 
-  my $sph = $self->_sphinx;
+  my $sph = $self->sphinx;
   $sph->Open;
   $sph->SetMatchMode(SPH_MATCH_EXTENDED);
   $sph->SetSortMode(SPH_SORT_RELEVANCE);
