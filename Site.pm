@@ -5,6 +5,7 @@ use Dancer ':syntax';
 
 use Barlesque::Client;
 use Dancer::Plugin::Database;
+use Lintilla::DB::Genome::Blog;
 use Lintilla::DB::Genome::Edit;
 use Lintilla::DB::Genome;
 use Lintilla::DB::Genome::Search::Options;
@@ -113,6 +114,7 @@ sub echo_key {
 
 sub boilerplate($) {
   my $db   = shift;
+  my $dbb  = Lintilla::DB::Genome::Blog->new( dbh => $db->dbh );
   my $dbe  = Lintilla::DB::Genome::Edit->new( dbh => $db->dbh );
   my $srch = Lintilla::DB::Genome::Search::Options->new;
   my $pe   = vars->{personality};
@@ -138,6 +140,7 @@ sub boilerplate($) {
     echo_key       => echo_key(),
     devmode        => !!config->{show_related_merged},
     media_count    => $db->media_count,
+    blog           => $dbb->get_posts("genome"),
   );
 }
 
