@@ -1029,6 +1029,8 @@ sub _programme_query {
      grep defined, @{$prog}{ 'root_service_key', 'subkey' };
     $prog->{service_full} = join ' ',
      grep defined, @{$prog}{ 'service_sub', 'service_name' };
+    $prog->{dayname} = $self->day_name( $prog->{weekday} )
+     if defined $prog->{weekday};
   }
 
   return $progs;
@@ -1246,6 +1248,7 @@ sub _search_all {
       'FROM (',
       '  SELECT',
       '    p.*,',
+      '    dayofweek(`p`.`date`) AS `weekday`,',
       '    s2._key AS parent_service_key,',
       '    s.title AS service_name,',
       '    s2.title AS service_sub,',
@@ -1327,6 +1330,7 @@ sub _query_search {
       'FROM (',
       '  SELECT',
       '    p.*,',
+      '    dayofweek(`p`.`date`) AS `weekday`,',
       '    s2._key AS parent_service_key,',
       '    s.title AS service_name,',
       '    s2.title AS service_sub,',

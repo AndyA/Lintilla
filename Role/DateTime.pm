@@ -16,6 +16,10 @@ requires 'config';
 use constant YEAR_START => 1923;
 use constant YEAR_END   => 2009;
 
+my @DAY_FULL = qw(
+ Sunday Monday Tuesday Wednesday Thursday Friday Saturday
+);
+
 my @DAY = qw(
  Sun Mon Tue Wed Thu Fri Sat
 );
@@ -76,6 +80,12 @@ sub date2epoch {
   my ( $self, $date ) = @_;
   my ( $y, $m, $d ) = $self->decode_date($date);
   return timegm 0, 0, 0, $d, $m - 1, $y;
+}
+
+sub day_name {
+  my ( $self, $daynum ) = @_;
+  return unless $daynum >= 1 && $daynum <= 7;
+  return $DAY_FULL[$daynum - 1];
 }
 
 sub day_for_date {
