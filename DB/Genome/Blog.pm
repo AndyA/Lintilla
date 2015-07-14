@@ -196,6 +196,16 @@ sub cron {
   $self->_update_blog( $options->{name}, $options->{feed} );
 }
 
+sub _pretty {
+  my ( $self, $items ) = @_;
+  for my $item (@$items) {
+    $item->{short_date}  = $self->short_date( $item->{pubdate} );
+    $item->{pretty_date} = $self->pretty_date( $item->{pubdate} );
+  }
+
+  return $items;
+}
+
 sub get_posts {
   my ( $self, $blog, @limit ) = @_;
   my $items = $self->dbh->selectall_arrayref(
@@ -208,10 +218,25 @@ sub get_posts {
     $blog, @limit
   ) // [];
 
-  for my $item (@$items) {
-    $item->{short_date}  = $self->short_date( $item->{pubdate} );
-    $item->{pretty_date} = $self->pretty_date( $item->{pubdate} );
-  }
+  return $self->_pretty($items);
+}
 
-  return $items;
+sub posts_for_programmes {
+  my ( $self, @ids ) = @_;
+
+  return [] unless @ids;
+
+  my $items = $self->dbh->selectall_arrayref(
+    join( " ",
+      "SELECT `bl`.`programme`, `bf`.`title`, `bf`.`link`, `bf`.`pubdate` ",
+      "FROM `genome_blog_feed` AS `bf`, `genome_blog_link` AS `bl` ",
+      "WHERE `bl`.`blog_id`=`bf`.`id` AND `bl`.`programme` IN (",
+      join( ", ", map "?", @ids ),
+      ")",
+      "ORDER BY `bf`.`pubdate` DESC" ),
+    { Slice => {} },
+    @ids
+  );
+
+  return $self->_pretty($items);
 }

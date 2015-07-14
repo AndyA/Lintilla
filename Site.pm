@@ -48,6 +48,8 @@ sub db() {
     related        => config->{show_related} ? 1 : 0,
     related_merged => config->{show_related_merged} ? 1 : 0,
     media          => config->{show_media} ? 1 : 0,
+    blog_search    => config->{blog_search} ? 1 : 0,
+    blog_links     => config->{blog_links} ? 1 : 0,
   );
 }
 

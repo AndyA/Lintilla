@@ -4,6 +4,7 @@ use v5.10;
 
 use Dancer ':syntax';
 use HTML::Tiny;
+use Lintilla::DB::Genome::Blog;
 use Lintilla::DB::Genome::Search::Sphinx;
 use Lintilla::DB::Genome::Search::Options;
 use Lintilla::DB::Genome::Search::Pagination;
@@ -33,10 +34,13 @@ has infax          => ( is => 'ro', isa => 'Bool', default => 0 );
 has related        => ( is => 'ro', isa => 'Bool', default => 0 );
 has related_merged => ( is => 'ro', isa => 'Bool', default => 0 );
 has media          => ( is => 'ro', isa => 'Bool', default => 0 );
+has blog_search    => ( is => 'ro', isa => 'Bool', default => 0 );
+has blog_links     => ( is => 'ro', isa => 'Bool', default => 0 );
 
 has years    => ( is => 'ro', lazy => 1, builder => '_build_years' );
 has decades  => ( is => 'ro', lazy => 1, builder => '_build_decades' );
 has services => ( is => 'ro', lazy => 1, builder => '_build_services' );
+has blog     => ( is => 'ro', lazy => 1, builder => '_build_blog' );
 
 # Slightly beastly gack
 has _pseudo_map => (
@@ -75,6 +79,8 @@ sub _build_decades {
   $dec{ int( $_ / 10 ) * 10 }++ for @{ $self->years };
   return [sort { $a <=> $b } keys %dec];
 }
+
+sub _build_blog { Lintilla::DB::Genome::Blog->new( dbh => shift->dbh ) }
 
 sub service_years {
   my ( $self, $service ) = @_;
@@ -492,6 +498,22 @@ sub _add_media {
   return $rows;
 }
 
+sub _add_blog_links {
+  my ( $self, $rows ) = @_;
+
+  my $posts
+   = $self->group_by(
+    $self->blog->posts_for_programmes( map { $_->{_uuid} } @$rows ),
+    "programme" );
+
+  for my $row (@$rows) {
+    $row->{blog} = delete $posts->{ $row->{_uuid} // [] };
+  }
+
+  return $rows;
+
+}
+
 sub media_count {
   my $self = shift;
 
@@ -508,6 +530,7 @@ sub _add_programme_details {
   $self->_add_related($rows)        if $self->related;
   $self->_add_related_merged($rows) if $self->related_merged;
   $self->_add_media($rows)          if $self->media;
+  $self->_add_blog_links($rows)     if $self->blog_links;
 
   return $rows;
 }
