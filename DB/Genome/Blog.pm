@@ -6,6 +6,7 @@ use Moose;
 
 use DateTime::Format::Mail;
 use LWP::UserAgent;
+use Text::HTMLCleaner;
 use XML::LibXML::XPathContext;
 use XML::LibXML;
 
@@ -82,11 +83,21 @@ sub _decode_rss {
   return @items;
 }
 
+sub _extract_text {
+  my ( $self, @items ) = @_;
+  for my $item (@items) {
+    next unless defined $item->{content};
+    my $tc = Text::HTMLCleaner->new( html => $item->{content} );
+    $item->{full_text} = $tc->text;
+  }
+}
+
 sub _update_blog {
   my ( $self, $name, $uri ) = @_;
 
   my $rss   = $self->_fetch($uri);
   my @items = $self->_decode_rss($rss);
+  $self->_extract_text(@items);
 
   return unless @items;
 
