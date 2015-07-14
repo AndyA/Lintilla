@@ -492,6 +492,14 @@ sub _add_media {
   return $rows;
 }
 
+sub media_count {
+  my $self = shift;
+
+  my ($count)
+   = $self->dbh->selectrow_array("SELECT COUNT(*) FROM `genome_media`");
+  return $count;
+}
+
 sub _add_programme_details {
   my ( $self, $rows ) = @_;
   $self->_add_default_programme_details($rows);

@@ -136,6 +136,7 @@ sub boilerplate($) {
     debug_script   => config->{debug_script},
     echo_key       => echo_key(),
     devmode        => !!config->{show_related_merged},
+    media_count    => $db->media_count,
   );
 }
 
