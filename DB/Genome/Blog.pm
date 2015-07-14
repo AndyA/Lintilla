@@ -16,6 +16,8 @@ with 'Lintilla::Role::JSON';
 with 'Lintilla::Role::Config';
 with 'Lintilla::Role::DateTime';
 
+use constant PURGE => 0;
+
 =head1 NAME
 
 Lintilla::DB::Genome::Blog - Fetch latest post from blog
@@ -110,8 +112,10 @@ sub _update_blog {
           @{$item}{@cols}
         );
       }
-      $self->dbh->do( "DELETE FROM `genome_blog_feed` WHERE `version` < ?",
-        {}, $version );
+      if (PURGE) {
+        $self->dbh->do( "DELETE FROM `genome_blog_feed` WHERE `version` < ?",
+          {}, $version );
+      }
     }
   );
 }
