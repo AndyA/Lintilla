@@ -34,8 +34,8 @@ has infax          => ( is => 'ro', isa => 'Bool', default => 0 );
 has related        => ( is => 'ro', isa => 'Bool', default => 0 );
 has related_merged => ( is => 'ro', isa => 'Bool', default => 0 );
 has media          => ( is => 'ro', isa => 'Bool', default => 0 );
-has blog_search    => ( is => 'ro', isa => 'Bool', default => 0 );
 has blog_links     => ( is => 'ro', isa => 'Bool', default => 0 );
+has blog_search    => ( is => 'ro', isa => 'Num',  default => 0 );
 
 has years    => ( is => 'ro', lazy => 1, builder => '_build_years' );
 has decades  => ( is => 'ro', lazy => 1, builder => '_build_decades' );
@@ -1393,7 +1393,7 @@ sub _query_search {
     window  => 10
   );
 
-  return (
+  my %rv = (
     form        => $options->form,
     results     => $results,
     programmes  => $progs,
@@ -1405,6 +1405,19 @@ sub _query_search {
       ( defined $self_link ? ( shareUrl => $self_link ) : () ),
     ),
   );
+
+  $rv{blog_hits} = $self->_blog_search($options)
+   if $self->blog_search && $options->page == 0;
+
+  return %rv;
+}
+
+sub _blog_search {
+  my ( $self, $options ) = @_;
+  my $blog  = $self->blog;
+  my $posts = $blog->search( $options->q, 0, $self->blog_search );
+  my @ids   = map { $_->{doc} } @{ $posts->{qq}{matches} };
+  return $blog->posts_by_id(@ids);
 }
 
 sub _services_real_to_incorporated {

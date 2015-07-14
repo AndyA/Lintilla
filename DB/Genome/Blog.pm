@@ -7,6 +7,7 @@ use Moose;
 use DateTime::Format::Mail;
 use HTML::LinkExtor;
 use LWP::UserAgent;
+use Sphinx::Search;
 use Text::HTMLCleaner;
 use URI;
 use XML::LibXML::XPathContext;
@@ -18,6 +19,7 @@ with 'Lintilla::Role::DB';
 with 'Lintilla::Role::JSON';
 with 'Lintilla::Role::Config';
 with 'Lintilla::Role::DateTime';
+with 'Lintilla::Role::Sphinx';
 with 'Lintilla::Role::UUID';
 
 =head1 NAME
@@ -25,6 +27,13 @@ with 'Lintilla::Role::UUID';
 Lintilla::DB::Genome::Blog - Fetch latest post from blog
 
 =cut
+
+has index => (
+  is       => 'ro',
+  isa      => 'Str',
+  required => 1,
+  default  => "blog_idx"
+);
 
 sub _fetch {
   my ( $self, $uri ) = @_;
@@ -221,6 +230,28 @@ sub get_posts {
   return $self->_pretty($items);
 }
 
+sub posts_by_id {
+  my ( $self, @ids ) = @_;
+
+  return [] unless @ids;
+
+  my $items = $self->dbh->selectall_arrayref(
+    join( " ",
+      "SELECT `bf`.* ",
+      "FROM `genome_blog_feed` AS `bf`",
+      "WHERE `bf`.`id`  IN (",
+      join( ", ", map "?", @ids ),
+      ")",
+      "ORDER BY FIELD(`bf`.`pubdate`,",
+      join( ", ", map "?", @ids ),
+      ")" ),
+    { Slice => {} },
+    @ids, @ids
+  );
+
+  return $self->_pretty($items);
+}
+
 sub posts_for_programmes {
   my ( $self, @ids ) = @_;
 
@@ -228,7 +259,7 @@ sub posts_for_programmes {
 
   my $items = $self->dbh->selectall_arrayref(
     join( " ",
-      "SELECT `bl`.`programme`, `bf`.`title`, `bf`.`link`, `bf`.`pubdate` ",
+      "SELECT `bl`.`programme`, `bf`.* ",
       "FROM `genome_blog_feed` AS `bf`, `genome_blog_link` AS `bl` ",
       "WHERE `bl`.`blog_id`=`bf`.`id` AND `bl`.`programme` IN (",
       join( ", ", map "?", @ids ),
@@ -240,3 +271,26 @@ sub posts_for_programmes {
 
   return $self->_pretty($items);
 }
+
+sub search {
+  my ( $self, $query, @limits ) = @_;
+
+  my $sph = $self->sphinx;
+
+  $sph->Open;
+  $sph->SetMatchMode(SPH_MATCH_EXTENDED);
+  $sph->SetSortMode(SPH_SORT_RELEVANCE);
+  $sph->SetFieldWeights( { title => 2 } );
+  $sph->SetLimits(@limits) if @limits;
+
+  my $qq = $sph->Query( $query, $self->index );
+  die $sph->GetLastError unless $qq;
+  my $kws = $sph->BuildKeywords( $query, $self->index, 0 );
+  die $sph->GetLastError unless $kws;
+
+  $sph->Close;
+
+  return { qq => $qq, kws => $kws };
+}
+
+1;
