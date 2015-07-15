@@ -134,7 +134,7 @@ sub _update_item {
   my @links = ();
   if ( defined $item->{content} ) {
     my $tc = Text::HTMLCleaner->new( html => $item->{content} );
-    $item->{full_text} = $tc->text;
+    $item->{full_text} = $tc->plain;
     push @links,
      $self->_find_genome_links( $self->_find_links( $item->{content} ) );
   }
