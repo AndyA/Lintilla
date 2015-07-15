@@ -9,6 +9,7 @@ use Lintilla::Util qw( tidy );
 our $VERSION = '0.1';
 
 with 'Lintilla::Role::DB';
+with 'Lintilla::Role::Lock';
 with 'Lintilla::Role::JSON';
 
 =head1 NAME
@@ -27,6 +28,9 @@ have its C<< cron >> method called.
 
 sub run {
   my $self = shift;
+
+  return { status => "LOCKED" } unless $self->acquire_lock;
+
   my $jobs = $self->dbh->selectall_arrayref(
     join( " ",
       "SELECT * FROM `genome_cron`",
@@ -52,6 +56,9 @@ sub run {
       "UPDATE `genome_cron` SET `last_run` = NOW() WHERE `name` = ?",
       {}, $job->{name} );
   }
+
+  $self->release_lock;
+
   return { status => "OK" };
 }
 
