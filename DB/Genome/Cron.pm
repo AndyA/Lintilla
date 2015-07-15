@@ -4,6 +4,8 @@ use v5.10;
 
 use Moose;
 
+use Dancer::Plugin::Database;
+
 use Lintilla::Util qw( tidy );
 
 our $VERSION = '0.1';
@@ -26,18 +28,16 @@ have its C<< cron >> method called.
 
 =cut
 
-sub run {
-  my $self = shift;
-
-  return { status => "LOCKED" } unless $self->acquire_lock;
+sub _run {
+  my ( $self, $lock ) = @_;
 
   my $jobs = $self->dbh->selectall_arrayref(
     join( " ",
       "SELECT * FROM `genome_cron`",
       "WHERE `enabled`",
-      "  AND (",
-      "       `last_run` IS NULL ",
-      "    OR DATE_ADD(`last_run`, INTERVAL `interval` MINUTE) <= NOW())" ),
+      "  AND (`last_run` IS NULL",
+      "    OR DATE_ADD(`last_run`, INTERVAL `interval` MINUTE) <=",
+      "       DATE_ADD(NOW(), INTERVAL 30 SECOND))" ),
     { Slice => {} }
   );
 
@@ -58,9 +58,28 @@ sub run {
       {}, $job->{name} );
   }
 
-  $self->release_lock;
+  $self->release_named_lock($lock);
+}
 
-  return { status => "OK" };
+sub run {
+  my $self = shift;
+
+  my $lock = $self->acquire_lock;
+  return { status => "LOCKED" } unless $lock;
+  my $pid = fork;
+  die "Fork failed: $!" unless defined $pid;
+
+  if ($pid) {
+    $self->dbh->disconnect;
+    return { status => "OK" };
+  }
+
+  # Forked
+
+  my $cron = $self->blessed->new( dbh => database );
+  $cron->_run($lock);
+
+  exit;
 }
 
 =head2 C<< run_job >>

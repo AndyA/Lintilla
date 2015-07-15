@@ -12,14 +12,7 @@ Lintilla::Role::Lock - Database wide lock
 
 requires 'dbh';
 
-has host_key => (
-  is      => 'ro',
-  isa     => 'Str',
-  lazy    => 1,
-  builder => '_b_host_key'
-);
-
-sub _b_host_key {
+sub host_key {
   return join "-", $$, hostname;
 }
 
@@ -68,15 +61,14 @@ sub acquire_lock {
         $host_key
       );
 
-      return 1;
+      return $host_key;
     }
   );
 }
 
-sub release_lock {
-  my ( $self, @key ) = @_;
+sub release_named_lock {
+  my ( $self, $host_key, @key ) = @_;
   my $lock_name = $self->_lock_key(@key);
-  my $host_key  = $self->host_key;
 
   $self->_with_lock(
     sub {
@@ -99,6 +91,11 @@ sub release_lock {
   );
 
   return;
+}
+
+sub release_lock {
+  my ( $self, @key ) = @_;
+  return $self->release_named_lock( $self->host_key, @key );
 }
 
 1;
