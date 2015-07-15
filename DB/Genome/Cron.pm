@@ -40,6 +40,7 @@ sub run {
       "    OR DATE_ADD(`last_run`, INTERVAL `interval` MINUTE) <= NOW())" ),
     { Slice => {} }
   );
+
   for my $job (@$jobs) {
     eval { $self->run_job($job) };
     my ( $status, $message ) = ( 0, "OK" );
