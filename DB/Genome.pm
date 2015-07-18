@@ -3,9 +3,11 @@ package Lintilla::DB::Genome;
 use v5.10;
 
 use Dancer ':syntax';
+use Dancer::Plugin::Database;
 use HTML::Tiny;
 use Lintilla::DB::Genome::Blog;
 use Lintilla::DB::Genome::Search::Sphinx;
+use Lintilla::DB::Genome::Search::SphinxQL;
 use Lintilla::DB::Genome::Search::Options;
 use Lintilla::DB::Genome::Search::Pagination;
 use Lintilla::Filter qw( cook );
@@ -1475,9 +1477,20 @@ sub search {
 
   my $options = Lintilla::DB::Genome::Search::Options->new(%params);
 
-  return length( $options->q )
+  # my $spql = Lintilla::DB::Genome::Search::SphinxQL->new(
+  #   sph     => database("sphinx"),
+  #   index   => "genome3_idx",
+  #   options => $options
+  # );
+
+  my %rv
+   = length( $options->q )
    ? $self->_query_search($options)
    : $self->_no_query_search($options);
+
+  # $rv{sphinxql} = $spql->_do_search($options);
+
+  return %rv;
 }
 
 sub programme {
