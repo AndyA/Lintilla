@@ -35,7 +35,7 @@ sub _b_max_frequency {
 
 sub find_words {
   my $self  = shift;
-  my $text  = join " ", @_;
+  my $text  = join " ", grep defined, @_;
   my @words = $text =~ /([a-z]{3,40})/gi;
   return @words;
 }
