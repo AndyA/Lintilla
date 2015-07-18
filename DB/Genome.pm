@@ -20,6 +20,8 @@ Lintilla::DB::Genome - Genome model
 
 =cut
 
+our $VERSION = '0.1';
+
 use constant YEAR_START       => 1923;
 use constant YEAR_END         => 2009;
 use constant INFAX_CONFIDENCE => 90;
