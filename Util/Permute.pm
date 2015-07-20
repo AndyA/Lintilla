@@ -44,9 +44,23 @@ sub _permute {
 }
 
 sub permute {
-  my ( $self, $cb, @words ) = @_;
+  my ( $self, @words ) = @_;
+  my @cbs = ();
+  while ( @words && ref $words[0] && "CODE" eq ref $words[0] ) {
+    push @cbs, shift @words;
+  }
   $self->_stop(0);
-  return $self->_permute( $cb, [], @words );
+  my @out = ();
+  return $self->_permute(
+    sub {
+      my ( $this, @words ) = @_;
+      $_->( $this, @words ) for @cbs;
+      push @out, \@words;
+    },
+    [],
+    @words
+  );
+  return @out;
 }
 
 1;
