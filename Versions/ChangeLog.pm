@@ -15,8 +15,9 @@ Lintilla::Versions::ChangeLog - Construct versions from changelog, data
 
 with 'Lintilla::Role::ErrorLog';
 
-has data => ( is => 'ro', isa => 'HashRef',  required => 1 );
-has log  => ( is => 'ro', isa => 'ArrayRef', required => 1 );
+has data   => ( is => 'ro', isa => 'HashRef',  required => 1 );
+has log    => ( is => 'ro', isa => 'ArrayRef', required => 1 );
+has sanity => ( is => 'ro', isa => 'Bool',     default  => 1 );
 
 has data_version => (
   is       => 'ro',
@@ -99,6 +100,7 @@ sub _b_sane {
   my $self = shift;
   my (%cur);
 
+  return 1 unless $self->sanity;
   return 1 unless @{ $self->log };
 
   for my $ev ( @{ $self->log } ) {

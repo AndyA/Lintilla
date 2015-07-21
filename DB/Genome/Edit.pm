@@ -205,7 +205,7 @@ sub diff {
 }
 
 sub _programme_versions {
-  my ( $self, $uuid ) = @_;
+  my ( $self, $uuid, @extra ) = @_;
   my $thing = $self->load_thing( 'programme', $uuid );
 
   my $change = $self->decode_data(
@@ -216,13 +216,16 @@ sub _programme_versions {
     )
   );
 
-  my $ver
-   = Lintilla::Versions::ChangeLog->new( data => $thing, log => $change );
+  my $ver = Lintilla::Versions::ChangeLog->new(
+    data   => $thing,
+    log    => $change,
+    @extra
+  );
 }
 
 sub versions {
-  my ( $self, $uuid ) = @_;
-  my $ver = $self->_programme_versions($uuid);
+  my ( $self, $uuid, @extra ) = @_;
+  my $ver = $self->_programme_versions( $uuid, @extra);
 
   return [map { { thing => $ver->at($_), change => $ver->log_at($_) } }
      0 .. $ver->length];
