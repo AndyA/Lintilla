@@ -142,7 +142,7 @@ sub boilerplate($) {
     echo_key       => echo_key(),
     devmode        => !!config->{show_related_merged},
     media_count    => $db->media_count,
-    blog           => $dbb->get_posts("genome"),
+    blog           => $dbb->get_posts("genome", 3),
   );
 }
 
