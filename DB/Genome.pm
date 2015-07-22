@@ -1468,6 +1468,15 @@ sub _services_incorporated_to_real {
     ) };
 }
 
+sub _use_db_search {
+  my ( $self, $options ) = @_;
+  return 0 if defined $options->q && length $options->q;
+  return 1
+   if $options->adv
+   && ( $options->media eq "playable" || $options->media eq "related" );
+  return 0;
+}
+
 sub search {
   my ( $self, %params ) = @_;
 
@@ -1486,9 +1495,9 @@ sub search {
   # );
 
   my %rv
-   = length( $options->q )
-   ? $self->_query_search($options)
-   : $self->_no_query_search($options);
+   = $self->_use_db_search($options)
+   ? $self->_no_query_search($options)
+   : $self->_query_search($options);
 
   # $rv{sphinxql} = $spql->_do_search($options);
 
