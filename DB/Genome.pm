@@ -521,6 +521,8 @@ sub _add_blog_links {
 sub media_count {
   my $self = shift;
 
+  return 0 unless $self->media;
+
   my ($count)
    = $self->dbh->selectrow_array("SELECT COUNT(*) FROM `genome_media`");
   return $count;
