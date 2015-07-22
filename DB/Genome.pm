@@ -1488,18 +1488,10 @@ sub search {
 
   my $options = Lintilla::DB::Genome::Search::Options->new(%params);
 
-  # my $spql = Lintilla::DB::Genome::Search::SphinxQL->new(
-  #   sph     => database("sphinx"),
-  #   index   => "genome3_idx",
-  #   options => $options
-  # );
-
   my %rv
    = $self->_use_db_search($options)
    ? $self->_no_query_search($options)
    : $self->_query_search($options);
-
-  # $rv{sphinxql} = $spql->_do_search($options);
 
   return %rv;
 }
