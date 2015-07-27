@@ -1342,8 +1342,11 @@ sub _query_search {
 
   my $srch = Lintilla::DB::Genome::Search::Sphinx->new(
     options => $options,
-    index   => 'genome3_idx',
     source  => $self->_search_id( $self->source ),
+    indexes => {
+      genome3_idx         => 2,
+      genome3_idx_stemmed => 1
+    }
   );
 
   my $results = $srch->search;

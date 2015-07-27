@@ -2,7 +2,7 @@ package Lintilla::DB::Genome::Search::Sphinx;
 
 use v5.10;
 
-use Dancer qw( config );
+use Dancer "config";
 use List::Util qw( min max );
 use Moose;
 use Sphinx::Search;
@@ -21,10 +21,11 @@ Lintilla::DB::Genome::Search::Sphinx - A Sphinx search
 
 use constant MAX_MATCHES => 20_000;
 
-has index => (
+has indexes => (
   is       => 'ro',
-  isa      => 'Str',
-  required => 1
+  isa      => 'HashRef',
+  required => 1,
+  default  => sub { { genome3_idx => 2, genome3_idx_stemmed => 1 } }
 );
 
 has source => (
@@ -85,6 +86,12 @@ sub _set_filter {
   }
 }
 
+sub _indexes {
+  my $self    = shift;
+  my $weights = $self->indexes;
+  return sort { $weights->{$a} <=> $weights->{$b} } keys %$weights;
+}
+
 sub _do_search {
   my $self = shift;
   my $opt  = $self->options;
@@ -118,10 +125,14 @@ sub _do_search {
    ? '@people "' . $opt->q . '"'
    : $opt->q;
 
+  my @indexes = $self->_indexes;
+
   # Main search
-  my $qq = $sph->Query( $query, $self->index );
+  $sph->SetIndexWeights( $self->indexes );
+
+  my $qq = $sph->Query( $query, join ",", @indexes );
   die $sph->GetLastError unless $qq;
-  my $kws = $sph->BuildKeywords( $query, $self->index, 0 );
+  my $kws = $sph->BuildKeywords( $query, $indexes[0], 0 );
   die $sph->GetLastError unless $kws;
 
   $sph->ResetFilters;
@@ -132,7 +143,7 @@ sub _do_search {
   $sph->SetGroupBy( 'service_id', SPH_GROUPBY_ATTR, 'service_id asc' );
   $sph->SetGroupDistinct('service_id');
   $sph->SetLimits( 0, 1000 );
-  my $svc = $sph->Query( $query, $self->index );
+  my $svc = $sph->Query( $query, join ",", @indexes );
   die $sph->GetLastError unless $svc;
 
   $sph->Close;
