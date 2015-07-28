@@ -2,6 +2,7 @@ package Lintilla::Role::Lock;
 
 use Moose::Role;
 
+use POSIX qw( uname );
 use Sys::Hostname;
 
 =head1 NAME
@@ -47,6 +48,18 @@ sub _with_lock {
   return $rv;
 }
 
+sub _process_valid {
+  my ( $self, $pid ) = @_;
+
+  if ( (uname)[0] eq "Linux" && -d "/proc" ) {
+    return -d sprintf "/proc/%d", $pid;
+  }
+
+  # Fall back on kill - which also returns false if we don't
+  # have permission to signal $pid
+  return kill 0, $pid;
+}
+
 sub _lock_valid {
   my ( $self, $locked_by ) = @_;
 
@@ -59,8 +72,8 @@ sub _lock_valid {
   # Different host - nothing we can do
   return 1 unless $host eq hostname;
 
-  # This host so check whether the PID is a valid process
-  return unless kill 0, $pid;
+  # This host so check whether the PID is a valid process.
+  return unless $self->_process_valid($pid);
 
   return 1;
 }
