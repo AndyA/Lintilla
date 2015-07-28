@@ -16,6 +16,11 @@ sub host_key {
   return join "-", $$, hostname;
 }
 
+sub _decode_host_key {
+  my ( $self, $host_key ) = @_;
+  return split /-/, $host_key;
+}
+
 sub _lock_key {
   my ( $self, @key ) = @_;
   return join "-", $self->blessed, @key;
@@ -42,6 +47,24 @@ sub _with_lock {
   return $rv;
 }
 
+sub _lock_valid {
+  my ( $self, $locked_by ) = @_;
+
+  # NULL => not locked
+  return unless defined $locked_by;
+
+  # Locked by whom?
+  my ( $pid, $host ) = $self->_decode_host_key($locked_by);
+
+  # Different host - nothing we can do
+  return 1 unless $host eq hostname;
+
+  # This host so check whether the PID is a valid process
+  return unless kill 0, $pid;
+
+  return 1;
+}
+
 sub acquire_lock {
   my ( $self, @key ) = @_;
   my $lock_name = $self->_lock_key(@key);
@@ -50,7 +73,7 @@ sub acquire_lock {
   return $self->_with_lock(
     sub {
       my $locked_by = $self->_get_owner($lock_name);
-      return if defined $locked_by;
+      return if $self->_lock_valid($locked_by);
 
       $self->dbh->do(
         join( " ",
