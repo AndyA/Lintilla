@@ -1325,7 +1325,7 @@ sub _no_query_search {
 
   return (
     form        => $options->form,
-    results     => { total_found => $count },
+    results     => { total_found => $count, no_rank => 1 },
     programmes  => $progs,
     services    => $self->_search_load_services( $options, @services ),
     pagination  => $pagination->pagination,
