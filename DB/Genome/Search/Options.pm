@@ -36,8 +36,12 @@ has start => ( is => 'ro', isa => 'Num', required => 1, default => 0 );
 has size  => ( is => 'ro', isa => 'Num', required => 1, default => 20 );
 has q     => ( is => 'ro', isa => 'Str', required => 1, default => '' );
 
-has order =>
- ( is => 'ro', isa => 'Str', required => 1, default => 'rank' );
+has order => (
+  is       => 'ro',
+  isa      => 'Str',
+  required => 1,
+  default  => 'rank'
+);
 
 has mf => ( is => 'ro', isa => 'Num', default => 1 );
 has mt => ( is => 'ro', isa => 'Num', default => 12 );
