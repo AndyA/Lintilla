@@ -14,6 +14,12 @@ with 'Lintilla::Role::DB';
 with 'Lintilla::Role::Lock';
 with 'Lintilla::Role::JSON';
 
+BEGIN {
+  # We don't want to wait for child processes
+  # See #392
+  $SIG{CHLD} = 'IGNORE';
+}
+
 =head1 NAME
 
 Lintilla::DB::Genome::Cron - Periodic tasks
