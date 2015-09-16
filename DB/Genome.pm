@@ -420,6 +420,41 @@ sub _add_infax_links {
   return $rows;
 }
 
+sub _add_flags {
+  my ( $self, $rows ) = @_;
+  my @uids = map { $_->{_uuid} } @$rows;
+
+  if (@uids) {
+    my $irows = $self->dbh->selectall_arrayref(
+      join( ' ',
+        "SELECT e.uuid, e.data",
+        "  FROM genome_changelog AS cl, genome_edit AS e",
+        " WHERE e.state = 'accepted'",
+        "   AND cl.uuid IN (",
+        join( ', ', map '?', @uids ),
+        ")",
+        "   AND cl.edit_id=e.id",
+        " ORDER BY created" ),
+      { Slice => {} },
+      @uids
+    );
+
+    my $data = $self->group_by( $irows, 'uuid' );
+
+    for my $row (@$rows) {
+      my $recs = delete $data->{ $row->{_uuid} } || [];
+      my $flags = {};
+      for my $rec (@$recs) {
+        my $stash = $self->_decode_wide( $rec->{data} );
+        $flags->{$_}++ for @{ $stash->{flags} || [] };
+      }
+      $row->{flags} = $flags;
+    }
+  }
+
+  return $rows;
+}
+
 sub _add_related_merged {
   my ( $self, $rows ) = @_;
   my @uids = map { $_->{_uuid} } @$rows;
@@ -531,6 +566,7 @@ sub media_count {
 sub _add_programme_details {
   my ( $self, $rows ) = @_;
   $self->_add_default_programme_details($rows);
+  $self->_add_flags($rows);
 
   $self->_add_infax_links($rows)    if $self->infax;
   $self->_add_related($rows)        if $self->related;
@@ -1324,9 +1360,9 @@ sub _no_query_search {
   );
 
   return (
-    form        => $options->form,
-    results     => { total_found => $count, no_rank => 1 },
-    programmes  => $progs,
+    form       => $options->form,
+    results    => { total_found => $count, no_rank => 1 },
+    programmes => $progs,
     services    => $self->_search_load_services( $options, @services ),
     pagination  => $pagination->pagination,
     title       => $self->page_title('Search Results'),
