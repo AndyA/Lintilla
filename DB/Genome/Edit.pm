@@ -217,15 +217,15 @@ sub _programme_versions {
   );
 
   my $ver = Lintilla::Versions::ChangeLog->new(
-    data   => $thing,
-    log    => $change,
+    data => $thing,
+    log  => $change,
     @extra
   );
 }
 
 sub versions {
   my ( $self, $uuid, @extra ) = @_;
-  my $ver = $self->_programme_versions( $uuid, @extra);
+  my $ver = $self->_programme_versions( $uuid, @extra );
 
   return [map { { thing => $ver->at($_), change => $ver->log_at($_) } }
      0 .. $ver->length];
@@ -520,11 +520,17 @@ sub list_v2 {
 
 sub _yn { $_[0] ? 'Y' : 'N' }
 
+sub _has_field {
+  my ( $self, $data, $field ) = @_;
+  return unless exists $data->{$field};
+  return if $data->{$field} =~ /^\s*$/;
+  return 1;
+}
+
 sub _has_comment {
   my ( $self, $data ) = @_;
-  return unless exists $data->{comment};
-  return if $data->{comment} =~ /^\s*$/;
-  return 1;
+  return $self->_has_field( $data, 'comment' )
+   || $self->_has_field( $data, 'email' );
 }
 
 sub _submit {
