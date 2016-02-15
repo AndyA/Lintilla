@@ -48,8 +48,8 @@ sub db() {
     related        => config->{show_related} ? 1 : 0,
     related_merged => config->{show_related_merged} ? 1 : 0,
     media          => config->{show_media} ? 1 : 0,
-    blog_search    => config->{blog_search} // 0,
-    blog_links     => config->{blog_links} ? 1 : 0,
+    blog_search => config->{blog_search} // 0,
+    blog_links => config->{blog_links} ? 1 : 0,
   );
 }
 
@@ -141,8 +141,9 @@ sub boilerplate($) {
     debug_script   => config->{debug_script},
     echo_key       => echo_key(),
     devmode        => !!config->{show_related_merged},
+    capture_email  => !!config->{capture_email},
     media_count    => $db->media_count,
-    blog           => $dbb->get_posts("genome", 3),
+    blog           => $dbb->get_posts( "genome", 3 ),
   );
 }
 
