@@ -127,6 +127,17 @@ sub check_vis {
   };
 }
 
+prefix '/edit' => sub {
+  post '/programme/:uuid' => sub {
+    my $uuid = param('uuid');
+    my $db   = db;
+    my $data = $db->_decode( request->body );
+    $db->submit( $uuid, 'programme', 'anon', $data );
+    return { status => 'OK', message => 'Successfully submitted' };
+  };
+  get '/count' => sub { db->edit_state_count };
+};
+
 return 1 unless config->{admin_mode};
 
 prefix '/admin2' => sub {
