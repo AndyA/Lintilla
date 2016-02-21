@@ -240,7 +240,18 @@ sub change_count {
   return $count;
 }
 
-sub edit_state_count {
+sub edit_log_count {
+  my $self = shift;
+  my ($count) = $self->dbh->selectrow_array(
+    join " ",
+    "SELECT COUNT(*)",
+    "FROM genome_editlog",
+    "WHERE old_state IS NOT NULL"
+  );
+  return $count;
+}
+
+sub _edit_state_count {
   my $self     = shift;
   my $by_state = $self->group_by(
     $self->dbh->selectall_arrayref(
@@ -249,7 +260,19 @@ sub edit_state_count {
     ),
     'state'
   );
-  return { map { $_ => $by_state->{$_}[0]{count} } keys %$by_state };
+  my $total = 0;
+  $total += $_->[0]{count} for values %$by_state;
+  return {
+    all => $total,
+    map { $_ => $by_state->{$_}[0]{count} } keys %$by_state
+  };
+}
+
+sub edit_state_count {
+  my $self   = shift;
+  my $counts = $self->_edit_state_count;
+  $counts->{history} = $self->edit_log_count;
+  return $counts;
 }
 
 sub _list_filter {
@@ -384,6 +407,26 @@ sub _edit_list {
   }
 
   return ( $res, @group );
+}
+
+sub edit_log {
+  my ( $self, $start, $count ) = @_;
+
+  return $self->decode_data(
+    $self->dbh->selectall_arrayref(
+      join( " ",
+        "SELECT el.old_state, el.new_state, el.old_data, el.new_data, el.`when` AS edit_time,",
+        "       e.uuid, e.kind,",
+        "       p.`when` AS tx, p.title",
+        "FROM genome_editlog AS el, genome_edit AS e, genome_programmes_v2 AS p",
+        "WHERE el.old_state IS NOT NULL",
+        "  AND el.edit_id = e.id",
+        "  AND e.uuid = p._uuid",
+        "LIMIT ?, ?" ),
+      { Slice => {} },
+      $start, $count
+    )
+  );
 }
 
 # admin v1

@@ -211,6 +211,26 @@ prefix '/admin2' => sub {
     }
   );
 
+  get '/history/:start/:size' => check_vis(
+    'internal',
+    sub {
+      my %params = params;
+
+      my $limit = db->edit_log_count;
+      $params{start} = int( $limit / $params{size} ) * $params{size}
+       if $params{start} >= $limit;
+
+      return {
+        start => $params{start},
+        size  => $params{size},
+        limit => $limit,
+        list  => db->edit_log( $params{start}, $params{size} ),
+        count => db->edit_state_count
+      };
+
+    }
+  );
+
   prefix '/edit' => sub {
     post '/workflow/:id/:action' => check_vis(
       'internal',
