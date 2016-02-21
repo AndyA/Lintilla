@@ -412,21 +412,36 @@ sub _edit_list {
 sub edit_log {
   my ( $self, $start, $count ) = @_;
 
-  return $self->decode_data(
+  my $res = $self->decode_data(
     $self->dbh->selectall_arrayref(
       join( " ",
-        "SELECT el.old_state, el.new_state, el.old_data, el.new_data, el.`when` AS edit_time,",
+        "SELECT el.old_state, el.new_state, el.old_data, el.new_data, el.`when` AS updated,",
         "       e.uuid, e.kind,",
-        "       p.`when` AS tx, p.title",
-        "FROM genome_editlog AS el, genome_edit AS e, genome_programmes_v2 AS p",
+        "       p.`when` AS tx, p.title, p.service_key, ",
+        "       s2._key AS parent_service_key",
+        "FROM genome_editlog AS el,",
+        "     genome_edit AS e,",
+        "     genome_programmes_v2 AS p,",
+        "     genome_services AS s",
+        "LEFT JOIN genome_services AS s2 ON s2._uuid = s._parent",
         "WHERE el.old_state IS NOT NULL",
         "  AND el.edit_id = e.id",
         "  AND e.uuid = p._uuid",
+        "  AND s._uuid = p.service",
+        "ORDER BY el.`when` DESC",
         "LIMIT ?, ?" ),
       { Slice => {} },
       $start, $count
     )
   );
+
+  for my $rc (@$res) {
+    $rc->{link} = $self->strip_uuid( $rc->{uuid} );
+    $rc->{icon} = join '', '/images/logos/',
+     $rc->{parent_service_key} // $rc->{service_key}, '.png';
+  }
+
+  return $res;
 }
 
 # admin v1
