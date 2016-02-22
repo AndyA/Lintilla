@@ -17,6 +17,7 @@ use Lintilla::Site::Cron;
 use Lintilla::Site::Data;
 use Lintilla::Site::Debug;
 use Lintilla::Site::Diagnostic;
+use Lintilla::Site::Edit;
 use Lintilla::Site::Labs;
 use Lintilla::Site::Sync;
 use Lintilla::TT::Context;
