@@ -416,6 +416,7 @@ sub edit_log {
     $self->dbh->selectall_arrayref(
       join( " ",
         "SELECT el.old_state, el.new_state, el.old_data, el.new_data, el.`when` AS updated,",
+        "       e.id AS edit_id, el.id AS editlog_id,",
         "       e.uuid, e.kind,",
         "       p.`when` AS tx, p.title, p.service_key, ",
         "       s2._key AS parent_service_key",
