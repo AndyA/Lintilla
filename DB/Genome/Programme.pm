@@ -123,7 +123,7 @@ sub fetch {
   my ( $self, $uuid ) = @_;
   my $fuuid = $self->format_uuid($uuid);
   my $prog  = $self->dbh->selectrow_hashref(
-    'SELECT `_modified`, `_edit_id`, `title`, `synopsis` FROM `genome_programmes_v2` WHERE `_uuid`=?',
+    'SELECT `_modified`, `_edit_id`, `title`, `synopsis`, `when` FROM `genome_programmes_v2` WHERE `_uuid`=?',
     {}, $fuuid
   );
   $prog->{contributors} = $self->_fetch_contrib($fuuid);

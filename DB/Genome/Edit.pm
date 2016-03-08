@@ -181,7 +181,7 @@ sub diff {
 
   my $edit = $self->dbh->selectrow_hashref(
     join( ' ',
-      'SELECT e.*, p.`title`, p.`synopsis`,',
+      'SELECT e.*, p.`title`, p.`synopsis`, p.`when`, ',
       "  IF(s2.`title` IS NULL, s.`title`, CONCAT_WS(' ', s2.`title`, s.`title`)) AS service",
       'FROM genome_edit AS e, genome_programmes_v2 AS p, genome_services AS s',
       'LEFT JOIN genome_services AS s2 ON s2._uuid=s._parent',
@@ -201,7 +201,7 @@ sub diff {
     link    => $self->strip_uuid( $edit->{uuid} ),
     history => $self->edit_history($id),
     ( map { $_ => $self->_diff( $type, $edit->{$_}, $data->{$_} ) }
-       qw( title synopsis contributors comment )
+       qw( title synopsis contributors comment when )
     ),
   };
 }
@@ -385,7 +385,7 @@ sub _edit_list {
     join( ' ',
       'SELECT *',
       'FROM ( ',
-      '  SELECT d.*, p.title, p.synopsis ',
+      '  SELECT d.*, p.`title`, p.`synopsis`, p.`when` ',
       '  FROM genome_edit_digest AS d, genome_programmes_v2 AS p ',
       '  WHERE p._uuid = d.uuid',
       '  AND (',
@@ -414,6 +414,7 @@ sub _edit_list {
 sub edit_log {
   my ( $self, $start, $count ) = @_;
 
+  # TODO check why when is mapped to tx
   my $res = $self->decode_data(
     $self->dbh->selectall_arrayref(
       join( " ",
@@ -538,6 +539,7 @@ sub _add_versions {
             title        => $rc->{title},
             synopsis     => $rc->{synopsis},
             contributors => $rc->{contributors},
+            when         => $rc->{when},
           },
           new_data => $self->_parse_edit( $rc->{data} ),
           edit_id  => $rc->{id},
@@ -1141,6 +1143,8 @@ sub _parse_edit {
    if defined $edit->{title};
   $rec->{synopsis} = $self->_clean_text( $type, $edit->{synopsis} )
    if defined $edit->{synopsis};
+  # TODO date formatting?
+  $rec->{when} = $edit->{when} if defined $edit->{when};
   $rec->{contributors}
    = $self->_parse_contributors(
     $self->_clean_text( $type, $edit->{contributors} ) )
