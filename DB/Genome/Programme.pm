@@ -8,6 +8,8 @@ use Dancer qw( :syntax );
 with 'Lintilla::Role::DB';
 with 'Lintilla::Role::UUID';
 
+use constant BROADCAST_OFFSET => 5;
+
 sub _parse_contributor_line {
   my ( $self, $ln ) = @_;
   return ( $1, $2 ) if $ln =~ m{^\s*([^:]+):\s*(.+?)\s*$};
@@ -103,17 +105,63 @@ sub store {
       $self->_store_contrib( $uuid, delete $data->{contributors} )
        if exists $data->{contributors};
 
+      my @xb = ();
+      my @xf = ();
+
+      # If 'when' is in the field list we need to find the correct listing
+      # and update the day, month, year, date and broadcast_date fields.
+      if ( defined $data->{when} ) {
+        push @xf,
+         ('`day` = DAY(?)',
+          '`month` = MONTH(?)',
+          '`year` = YEAR(?)',
+          '`date` = DATE(?)',
+          '`broadcast_date` = DATE(DATE_SUB(?, INTERVAL ? HOUR))'
+         );
+
+        push @xb, ( ( $data->{when} ) x 5, BROADCAST_OFFSET );
+
+        # Get the programme service
+        my ($service)
+         = $self->dbh->selectrow_array(
+          "SELECT `service` FROM `genome_programmes_v2` WHERE `_uuid` = ?",
+          {}, $uuid );
+
+        die "Can't find programme $uuid"
+         unless defined $service;
+
+        # And the appropriate listing
+        my ($listing) = $self->dbh->selectrow_array(
+          join( " ",
+            "SELECT `_uuid`",
+            "  FROM `genome_listings_v2`",
+            " WHERE `date` = DATE(DATE_SUB(?, INTERVAL ? HOUR))",
+            "   AND `service` = ?" ),
+          {},
+          $data->{when},
+          BROADCAST_OFFSET,
+          $service
+        );
+
+        die "Can't find listing for $data->{when}"
+         unless defined $listing;
+
+        $data->{listing} = $listing;
+      }
+
       my @f = sort keys %$data;
 
       my @b = @{$data}{@f};
 
       $self->dbh->do(
         join( ' ',
-          'UPDATE', "`genome_programmes_v2`", 'SET',
-          join( ', ', '`_modified`=NOW()', map { "`$_`=?" } '_edit_id', @f ),
+          'UPDATE',
+          "`genome_programmes_v2`",
+          'SET',
+          join( ', ', '`_modified`=NOW()', @xf, map { "`$_`=?" } '_edit_id', @f ),
           'WHERE _uuid=? LIMIT 1' ),
         {},
-        $edit_id, @b, $uuid
+        @xb, $edit_id, @b, $uuid
       );
     }
   );
