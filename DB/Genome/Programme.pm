@@ -6,6 +6,7 @@ use Moose;
 use Dancer qw( :syntax );
 
 with 'Lintilla::Role::DB';
+with 'Lintilla::Role::Source';
 with 'Lintilla::Role::UUID';
 
 use constant BROADCAST_OFFSET => 5;
@@ -175,6 +176,39 @@ sub _update {
 
 =for ref
 
+programme
+  +----------------+------------------+------+-----+---------+-------+
+  | Field          | Type             | Null | Key | Default | Extra |
+  +----------------+------------------+------+-----+---------+-------+
+  | _uuid          | varchar(36)      | NO   | PRI | NULL    |       |
+  | _created       | datetime         | NO   |     | NULL    |       |
+  | _modified      | datetime         | NO   |     | NULL    |       |
+  | _key           | varchar(48)      | NO   | MUL | NULL    |       |
+  | _parent        | varchar(36)      | YES  | MUL | NULL    |       |
+  | _edit_id       | int(10)          | YES  |     | NULL    |       |
+  | source         | varchar(36)      | NO   | MUL | NULL    |       |
+  | service        | varchar(36)      | YES  | MUL | NULL    |       |
+  | service_key    | varchar(48)      | YES  | MUL | NULL    |       |
+  | issue          | varchar(36)      | NO   | MUL | NULL    |       |
+  | issue_key      | varchar(48)      | NO   | MUL | NULL    |       |
+  | listing        | varchar(36)      | YES  | MUL | NULL    |       |
+  | title          | varchar(256)     | NO   |     | NULL    |       |
+  | episode_title  | varchar(256)     | YES  |     | NULL    |       |
+  | episode        | int(11)          | YES  |     | NULL    |       |
+  | synopsis       | text             | YES  |     | NULL    |       |
+  | footnote       | text             | YES  |     | NULL    |       |
+  | text           | text             | YES  |     | NULL    |       |
+  | when           | datetime         | NO   |     | NULL    |       |
+  | duration       | int(10) unsigned | NO   |     | NULL    |       |
+  | type           | varchar(48)      | YES  | MUL | NULL    |       |
+  | year           | int(11)          | NO   | MUL | NULL    |       |
+  | month          | int(11)          | NO   | MUL | NULL    |       |
+  | day            | int(11)          | NO   | MUL | NULL    |       |
+  | date           | date             | YES  | MUL | NULL    |       |
+  | broadcast_date | date             | YES  | MUL | NULL    |       |
+  | page           | int(11)          | YES  |     | NULL    |       |
+  +----------------+------------------+------+-----+---------+-------+
+
 _uuid
   +---------------------------------+---------+
   | found_in                        | count   |
@@ -238,12 +272,68 @@ service
   | labs_service_dates.service     |    68 |
   +--------------------------------+-------+
 
+Minimum fields required for a programme
+
+  when
+  title
+  synopsis
+  service / listing
+  issue
+
 =cut
 
 sub _create {
   my ( $self, $uuid, $data ) = @_;
 
-  die "Can't create a new programme";
+  my @missing = grep { !exists $data->{$_} } qw(
+   when title synopsis service issue duration
+  );
+
+  die "Missing fields in programme: ", join( ", ", @missing )
+   if @missing;
+
+  $data = {
+    _uuid => $uuid,
+    %$data,
+    _key   => $uuid,           # Not like the original but unused
+    type   => "normal",
+    source => $self->source,
+  };
+
+  $data->{listing} //=
+   $self->_listing_for_service_date( $data->{service}, $data->{when} );
+
+  my @f = sort keys %$data;
+  my @b = @{$data}{@f};
+  my @v = ("?") x @b;
+
+  my %xf = (
+    _created  => ["NOW()"],
+    _modified => ["NOW()"],
+    year      => ["YEAR(?)", $data->{when}],
+    month     => ["MONTH(?)", $data->{when}],
+    day       => ["DAY(?)", $data->{when}],
+    date      => ["DATE(?)", $data->{when}],
+    broadcast_date =>
+     ["DATE(DATE_SUB(?, INTERVAL ? HOUR))", $data->{when}, BROADCAST_OFFSET]
+  );
+
+  while ( my ( $field, $expr ) = each %xf ) {
+    next if exists $data->{$field};
+    push @f, $field;
+    push @v, shift @$expr;
+    push @b, @$expr;
+  }
+
+  $self->dbh->do(
+    join( " ",
+      "INSERT INTO `genome_programmes_v2` (",
+      join( ", ", map { "`$_`" } @f ),
+      ") VALUES (", join( ", ", @v ), ")" ),
+    {},
+    @b
+  );
+
   return $uuid;
 }
 
