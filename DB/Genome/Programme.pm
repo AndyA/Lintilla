@@ -171,7 +171,80 @@ sub _update {
   );
 
   return $uuid;
+}
 
+=for ref
+
+_uuid
+  +---------------------------------+---------+
+  | found_in                        | count   |
+  +---------------------------------+---------+
+  | dirty.uuid                      | 9328705 |
+  | genome_changelog.uuid           |   70795 |
+  | genome_contributors._parent     | 4360500 |
+  | genome_coordinates._parent      | 9328685 |
+  | genome_edit.uuid                |   75848 |
+  | genome_edit_digest.uuid         |   75848 |
+  | genome_infax.uuid               | 4119064 |
+  | genome_media._parent            |    3877 |
+  | genome_overrides._uuid          |       1 |
+  | genome_programmes_v2._parent    |   62700 |
+  | genome_programmes_v2._uuid      | 9328705 |
+  | genome_related._parent          |  402335 |
+  | genome_tables._parent           |  401255 |
+  | genome_uuid_map.uuid            | 9328705 |
+  | labs_contributor_programme.uuid | 4356969 |
+  +---------------------------------+---------+
+
+listing
+  +------------------------------+--------+
+  | found_in                     | count  |
+  +------------------------------+--------+
+  | dirty.uuid                   | 471589 |
+  | genome_listings_v2._uuid     | 471589 |
+  | genome_programmes_v2.listing | 471589 |
+  | genome_related._parent       | 127950 |
+  +------------------------------+--------+
+
+issue
+  +-----------------------------+-------+
+  | found_in                    | count |
+  +-----------------------------+-------+
+  | dirty.uuid                  |  4450 |
+  | genome_coordinates.issue    |  4450 |
+  | genome_issues.default_child |  3664 |
+  | genome_issues._uuid         |  4450 |
+  | genome_listings_v2.issue    |  4450 |
+  | genome_programmes_v2.issue  |  4450 |
+  | genome_related.issue        |  4450 |
+  | genome_tables.issue         |  3235 |
+  +-----------------------------+-------+
+
+service
+  +--------------------------------+-------+
+  | found_in                       | count |
+  +--------------------------------+-------+
+  | dirty.uuid                     |    71 |
+  | genome_listings_v2.service     |    71 |
+  | genome_listing_notes.service   |     1 |
+  | genome_programmes_v2.service   |    71 |
+  | genome_services.default_outlet |     8 |
+  | genome_services.preceded_by    |     4 |
+  | genome_services.succeeded_by   |     2 |
+  | genome_services._uuid          |    71 |
+  | genome_service_aliases._parent |    53 |
+  | genome_service_dates.service   |    67 |
+  | genome_uuid_map.uuid           |    71 |
+  | labs_service_dates.service     |    68 |
+  +--------------------------------+-------+
+
+=cut
+
+sub _create {
+  my ( $self, $uuid, $data ) = @_;
+
+  die "Can't create a new programme";
+  return $uuid;
 }
 
 sub store {
@@ -186,7 +259,8 @@ sub store {
   return $self->_update( $uuid, $data )
    if defined $uuid;
 
-  die "Can't create a new programme";
+  # Create new
+  return $self->_create( $self->make_uuid, $data );
 }
 
 sub fetch {
