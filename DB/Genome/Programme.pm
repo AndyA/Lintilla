@@ -97,8 +97,29 @@ sub _fetch_contrib {
   );
 }
 
-sub store {
-  my ( $self, $uuid, $data, $edit_id ) = @_;
+sub _listing_for_service_date {
+  my ( $self, $service, $date ) = @_;
+
+  my ($listing) = $self->dbh->selectrow_array(
+    join( " ",
+      "SELECT `_uuid`",
+      "  FROM `genome_listings_v2`",
+      " WHERE `date` = DATE(DATE_SUB(?, INTERVAL ? HOUR))",
+      "   AND `service` = ?" ),
+    {},
+    $date,
+    BROADCAST_OFFSET,
+    $service
+  );
+
+  die "Can't find listing for $date"
+   unless defined $listing;
+
+  return $listing;
+}
+
+sub _update {
+  my ( $self, $uuid, $data ) = @_;
 
   $self->transaction(
     sub {
@@ -130,23 +151,8 @@ sub store {
         die "Can't find programme $uuid"
          unless defined $service;
 
-        # And the appropriate listing
-        my ($listing) = $self->dbh->selectrow_array(
-          join( " ",
-            "SELECT `_uuid`",
-            "  FROM `genome_listings_v2`",
-            " WHERE `date` = DATE(DATE_SUB(?, INTERVAL ? HOUR))",
-            "   AND `service` = ?" ),
-          {},
-          $data->{when},
-          BROADCAST_OFFSET,
-          $service
-        );
-
-        die "Can't find listing for $data->{when}"
-         unless defined $listing;
-
-        $data->{listing} = $listing;
+        $data->{listing}
+         = $self->_listing_for_service_date( $service, $data->{when} );
       }
 
       my @f = sort keys %$data;
@@ -155,16 +161,32 @@ sub store {
 
       $self->dbh->do(
         join( ' ',
-          'UPDATE',
-          "`genome_programmes_v2`",
-          'SET',
-          join( ', ', '`_modified`=NOW()', @xf, map { "`$_`=?" } '_edit_id', @f ),
+          'UPDATE', "`genome_programmes_v2`", 'SET',
+          join( ', ', '`_modified`=NOW()', @xf, map { "`$_`=?" } @f ),
           'WHERE _uuid=? LIMIT 1' ),
         {},
-        @xb, $edit_id, @b, $uuid
+        @xb, @b, $uuid
       );
     }
   );
+
+  return $uuid;
+
+}
+
+sub store {
+  my ( $self, $uuid, $data, $edit_id ) = @_;
+
+  my $rec = {%$data};
+
+  $rec->{_edit_id} = $edit_id
+   if defined $edit_id;
+
+  # Update existing
+  return $self->_update( $uuid, $data )
+   if defined $uuid;
+
+  die "Can't create a new programme";
 }
 
 sub fetch {
