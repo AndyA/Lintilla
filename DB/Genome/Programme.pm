@@ -330,9 +330,9 @@ sub _create {
   my %xf = (
     _created  => ["NOW()"],
     _modified => ["NOW()"],
-    year      => ["YEAR(?)", $data->{when}],
-    month     => ["MONTH(?)", $data->{when}],
     day       => ["DAY(?)", $data->{when}],
+    month     => ["MONTH(?)", $data->{when}],
+    year      => ["YEAR(?)", $data->{when}],
     date      => ["DATE(?)", $data->{when}],
     broadcast_date =>
      ["DATE(DATE_SUB(?, INTERVAL ? HOUR))", $data->{when}, BROADCAST_OFFSET]
@@ -362,7 +362,7 @@ sub _create {
       "VALUES (?, ?, ?, ?, ?, NOW())" ),
     {},
     $uuid, "Y",
-    substr( $self->strip_uuid($uuid), -16 ), # Crap nonce
+    substr( $self->strip_uuid($uuid), -16 ),    # Crap nonce
     "programme",
     $uuid
   );
