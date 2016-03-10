@@ -119,6 +119,22 @@ sub _listing_for_service_date {
   return $listing;
 }
 
+sub _key {
+  my ( $self, $table, $uuid ) = @_;
+  my ($key)
+   = $self->dbh->selectrow_array(
+    join( " ", "SELECT `_key`", "  FROM `$table`", " WHERE `_uuid` = ?" ),
+    {}, $uuid );
+
+  die "Can't find $uuid in $table"
+   unless defined $key;
+
+  return $key;
+}
+
+sub _service_key { shift->_key( 'genome_services', @_ ) }
+sub _issue_key   { shift->_key( 'genome_issues',   @_ ) }
+
 sub _update {
   my ( $self, $uuid, $data ) = @_;
 
@@ -302,6 +318,10 @@ sub _create {
 
   $data->{listing} //=
    $self->_listing_for_service_date( $data->{service}, $data->{when} );
+  $data->{service_key} //=
+   $self->_service_key( $data->{service} );
+  $data->{issue_key} //=
+   $self->_issue_key( $data->{issue} );
 
   my @f = sort keys %$data;
   my @b = @{$data}{@f};
@@ -332,6 +352,19 @@ sub _create {
       ") VALUES (", join( ", ", @v ), ")" ),
     {},
     @b
+  );
+
+  # Maintain dirty - although we don't use it...
+  $self->dbh->do(
+    join( " ",
+      "INSERT INTO `dirty`",
+      "(`uuid`, `dirty`, `nonce`, `kind`, `key`, `modified`)",
+      "VALUES (?, ?, ?, ?, ?, NOW())" ),
+    {},
+    $uuid, "Y",
+    substr( $self->strip_uuid($uuid), -16 ), # Crap nonce
+    "programme",
+    $uuid
   );
 
   return $uuid;
