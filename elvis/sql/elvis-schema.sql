@@ -1,10 +1,10 @@
 CREATE DATABASE /*!32312 IF NOT EXISTS*/ `elvis`;
 USE `elvis`;
--- MySQL dump 10.15  Distrib 10.0.12-MariaDB, for debian-linux-gnu (x86_64)
+-- MySQL dump 10.15  Distrib 10.0.23-MariaDB, for debian-linux-gnu (x86_64)
 --
 -- Host: localhost    Database: elvis
 -- ------------------------------------------------------
--- Server version	10.0.12-MariaDB-1~wheezy
+-- Server version	10.0.23-MariaDB-1~wheezy
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -103,6 +103,21 @@ CREATE TABLE `elvis_format` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `elvis_hwm`
+--
+
+DROP TABLE IF EXISTS `elvis_hwm`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `elvis_hwm` (
+  `id` int(10) unsigned NOT NULL DEFAULT '0',
+  `seq` double NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `elvis_hwm_seq` (`seq`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `elvis_image`
 --
 
@@ -174,7 +189,7 @@ CREATE TABLE `elvis_keyword` (
   `tabindex` int(5) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`)
-) ENGINE=InnoDB AUTO_INCREMENT=2817 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=11964 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -303,4 +318,4 @@ CREATE TABLE `elvis_subject` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2014-07-15 15:59:04
+-- Dump completed on 2016-04-08 14:15:34

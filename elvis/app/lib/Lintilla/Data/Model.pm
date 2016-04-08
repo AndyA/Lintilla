@@ -237,6 +237,18 @@ sub remove_tag {
     {},
     @id, $acno
   );
+  my ($seq)
+   = $self->dbh->selectrow_array(
+    'SELECT `seq` FROM `elvis_image` WHERE `acno` = ?',
+    {}, $acno );
+  $self->dbh->do(
+    join( ' ',
+      'REPLACE INTO `elvis_hwm` (`id`, `seq`) VALUES',
+      join ', ', map '(?, ?)', @id ),
+    {},
+    @id,
+    ($seq) x @id
+  );
   return { id => \@id };
 
 }
