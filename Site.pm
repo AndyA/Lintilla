@@ -19,6 +19,7 @@ use Lintilla::Site::Debug;
 use Lintilla::Site::Diagnostic;
 use Lintilla::Site::Edit;
 use Lintilla::Site::Labs;
+use Lintilla::Site::Page;
 use Lintilla::Site::Sync;
 use Lintilla::TT::Context;
 use Lintilla::TT::Extensions;
