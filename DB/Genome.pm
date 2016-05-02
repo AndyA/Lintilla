@@ -358,8 +358,8 @@ sub _add_infax_links {
     );
     for my $irow (@$irows) {
       $irow->{pretty_date} = $self->pretty_date( $irow->{when} );
-      $irow->{pretty_time} = sprintf '%02d:%02d',
-       $self->decode_time( $irow->{when} );
+      my ( $hour, $min, $sec ) = $self->decode_time( $irow->{when} );
+      $irow->{pretty_time} = sprintf '%02d:%02d', $hour, $min;
       $irow->{pretty_score} = sprintf '%d',
        INFAX_CONFIDENCE * ( 1 - $irow->{score} );
     }
@@ -649,7 +649,11 @@ sub annual_issues {
 
 sub _build_service_spiel {
   my ( $self, $rec ) = @_;
-  my %case = ( tv => 'television', radio => 'radio', pseudo => 'radio' );
+  my %case = (
+    tv     => 'television',
+    radio  => 'radio',
+    pseudo => 'radio'
+  );
   my $svc  = $rec->{svc};
   my @para = ();
 
@@ -1458,7 +1462,8 @@ sub _use_db_search {
   return 0 if defined $options->q && length $options->q;
   return 1
    if $options->adv
-   && ( $options->media eq "playable" || $options->media eq "related" );
+   && ($options->media eq "playable"
+    || $options->media eq "related" );
   return 0;
 }
 

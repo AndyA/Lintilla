@@ -655,6 +655,12 @@ sub submit {
     $hash );
 }
 
+=head2 C<import_edits>
+
+Import a batch of edits during sync.
+
+=cut
+
 sub import_edits {
   my ( $self, $batch ) = @_;
   for my $edit ( @{ $batch->{edits} } ) {
