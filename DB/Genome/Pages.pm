@@ -142,6 +142,18 @@ sub _load_programme {
   return $prog;
 }
 
+sub _page_stash {
+  my ( $self, $issue, $prog, $page, $default_page ) = @_;
+  my $show_page = $page // $default_page;
+  return {
+    issue        => $issue,
+    image        => sprintf( $issue->{page_image}, $show_page ),
+    default_page => $default_page,
+    page         => $show_page,
+    ( defined $prog ? ( programme => $prog ) : () ),
+  };
+}
+
 sub pages_for_thing {
   my ( $self, $uuid, $page ) = @_;
   my $kind = $self->lookup_kind($uuid);
@@ -150,28 +162,18 @@ sub pages_for_thing {
   if ( $kind eq 'programme' ) {
     my $prog = $self->_load_programme($uuid);
     die "Can't find programme $uuid" unless defined $prog;
+
     my $issue = $self->_load_issue( $prog->{issue} );
     die "Can't find issue for $uuid" unless defined $issue;
-    $page //= $prog->{coordinates}[0]{page} // 1;
 
-    return {
-      issue     => $issue,
-      programme => $prog,
-      image     => sprintf( $issue->{page_image}, $page ),
-      page      => $page,
-    };
+    return $self->_page_stash( $issue, $prog, $page,
+      $prog->{coordinates}[0]{page} // 1 );
   }
   elsif ( $kind eq 'issue' ) {
     my $issue = $self->_load_issue($uuid);
     die "Can't find issue $uuid" unless defined $issue;
 
-    $page //= 1;
-
-    return {
-      issue => $issue,
-      image => sprintf( $issue->{page_image}, $page ),
-      page  => $page,
-    };
+    return $self->_page_stash( $issue, undef, $page, 1 );
   }
   else {
     die "Can't handle a $kind";
