@@ -11,6 +11,7 @@ Lintilla::DB::Genome::Pages - Access page layout (coordinates)
 with 'Lintilla::Role::JSON';
 with 'Lintilla::Role::DB';
 with 'Lintilla::Role::UUID';
+with 'Lintilla::Role::DateTime';
 with 'Lintilla::Role::Genome';
 
 sub _numify {
@@ -103,7 +104,9 @@ sub _load_issue {
   );
 
   for my $iss (@$issue) {
-    $iss->{page_image} = $self->_issue_page_path($iss);
+    $iss->{page_image}        = $self->_issue_page_path($iss);
+    $iss->{pretty_start_date} = $self->pretty_date( $iss->{start_date} );
+    $iss->{pretty_end_date}   = $self->pretty_date( $iss->{end_date} );
   }
 
   return $self->_numify( $issue->[0],
@@ -121,6 +124,10 @@ sub _load_programme {
 
   return unless defined $prog;
 
+  $prog->{pretty_date} = $self->pretty_date( $prog->{when} );
+  my ( $hour, $min, $sec ) = $self->decode_time( $prog->{when} );
+  $prog->{pretty_time} = sprintf '%02d:%02d', $hour, $min;
+
   $prog->{coordinates} = $self->_numify(
     $self->dbh->selectall_arrayref(
       join( ' ',
@@ -136,7 +143,7 @@ sub _load_programme {
 }
 
 sub pages_for_thing {
-  my ( $self, $uuid ) = @_;
+  my ( $self, $uuid, $page ) = @_;
   my $kind = $self->lookup_kind($uuid);
   die "Can't find $uuid" unless defined $kind;
 
@@ -145,7 +152,7 @@ sub pages_for_thing {
     die "Can't find programme $uuid" unless defined $prog;
     my $issue = $self->_load_issue( $prog->{issue} );
     die "Can't find issue for $uuid" unless defined $issue;
-    my $page = $prog->{coordinates}[0]{page} // 1;
+    $page //= $prog->{coordinates}[0]{page} // 1;
 
     return {
       issue     => $issue,
@@ -158,10 +165,12 @@ sub pages_for_thing {
     my $issue = $self->_load_issue($uuid);
     die "Can't find issue $uuid" unless defined $issue;
 
+    $page //= 1;
+
     return {
       issue => $issue,
-      image => sprintf( $issue->{page_image}, 1 ),
-      page  => 1,
+      image => sprintf( $issue->{page_image}, $page ),
+      page  => $page,
     };
   }
   else {

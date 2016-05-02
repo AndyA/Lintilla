@@ -82,10 +82,11 @@ get qr{/page/([0-9a-f]{32})}i => sub {
   my ($uuid) = splat;
   my $db = db;
 
-  my $stash = $db->pages_for_thing($uuid);
+  my $stash = $db->pages_for_thing( $uuid, param('page') );
+  my $title = "Issue " . $stash->{issue}{issue};
 
   template 'page/index.tt',
-   { title => 'Page Viewer', stash => $stash },
+   { title => $title, stash => $stash },
    { layout => 'page' };
 };
 
