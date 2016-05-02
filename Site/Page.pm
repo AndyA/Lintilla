@@ -1,6 +1,8 @@
 package Lintilla::Site::Page;
 
 use Dancer ':syntax';
+use Dancer::Plugin::Database;
+use Lintilla::DB::Genome::Pages;
 use Lintilla::Image::PDF2PNG;
 use Lintilla::Magic::Asset;
 use Path::Class;
@@ -23,6 +25,8 @@ serves page 1 of
 
 =cut
 
+sub db() { Lintilla::DB::Genome::Pages->new( dbh => database ) }
+
 sub our_uri_for {
   my $sn = delete request->env->{SCRIPT_NAME};
   my $uri = request->uri_for( join '/', '', @_ );
@@ -41,10 +45,10 @@ sub cook_uri {
   return $u;
 }
 
-get '/page/**' => sub {
+get '/page/asset/**' => sub {
   my ($path) = splat;
 
-  my @loc = ( 'page', @$path );
+  my @loc = ( 'page', 'asset', @$path );
 
   ( my $page = pop @$path ) =~ s/\.png$//;
 
@@ -72,6 +76,17 @@ get '/page/**' => sub {
   $magic->render or die "Can't render";
 
   return redirect $self, 307;
+};
+
+get qr{/page/([0-9a-f]{32})}i => sub {
+  my ($uuid) = splat;
+  my $db = db;
+
+  my $stash = $db->pages_for_thing($uuid);
+
+  template 'page/index.tt',
+   { title => 'Page Viewer', stash => $stash },
+   { layout => 'page' };
 };
 
 1;

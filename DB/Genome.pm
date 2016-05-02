@@ -33,6 +33,7 @@ with 'Lintilla::Role::DateTime';
 with 'Lintilla::Role::Gatherer';
 with 'Lintilla::Role::Source';
 with 'Lintilla::Role::UUID';
+with 'Lintilla::Role::Genome';
 
 has infax          => ( is => 'ro', isa => 'Bool', default => 0 );
 has related        => ( is => 'ro', isa => 'Bool', default => 0 );
@@ -814,15 +815,6 @@ sub issues_for_year {
     issues   => $self->group_by( $issues, 'month' ),
     approved => $self->group_by( $issues, 'approved_year' ),
   );
-}
-
-sub lookup_uuid {
-  my ( $self, $uuid ) = @_;
-  my @row
-   = $self->dbh->selectrow_hashref( 'SELECT * FROM dirty WHERE uuid=?',
-    {}, $self->format_uuid($uuid) );
-  return unless @row;
-  return $row[0];
 }
 
 sub _services_for_thing {
