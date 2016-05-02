@@ -91,7 +91,7 @@ sub _issue_page_path {
   my ( $self, $issue ) = @_;
   my $key = $self->_issue_key($issue);
   return join '/', '', 'page', 'asset', $issue->{decade}, $issue->{year},
-   $key, $key, '%d.png';
+   $key, $key, '%d.jpg';
 }
 
 sub _load_issue {

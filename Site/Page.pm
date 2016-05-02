@@ -3,7 +3,7 @@ package Lintilla::Site::Page;
 use Dancer ':syntax';
 use Dancer::Plugin::Database;
 use Lintilla::DB::Genome::Pages;
-use Lintilla::Image::PDF2PNG;
+use Lintilla::Image::PDFExtract;
 use Lintilla::Magic::Asset;
 use Path::Class;
 
@@ -17,7 +17,7 @@ Lintilla::Site::Page - Serve pages extracted from PDF
 
 Given a request for
 
-  /page/1940/1943/1009/1009/1.png
+  /page/1940/1943/1009/1009/1.jpg
 
 serves page 1 of
 
@@ -50,7 +50,7 @@ get '/page/asset/**' => sub {
 
   my @loc = ( 'page', 'asset', @$path );
 
-  ( my $page = pop @$path ) =~ s/\.png$//;
+  ( my $page = pop @$path ) =~ s/\.jpg$//;
 
   die "Bad page number"
    unless $page =~ /^\d+$/ && $page > 0 && $page < 500;
@@ -61,10 +61,10 @@ get '/page/asset/**' => sub {
   my $pdf_url
    = cook_uri( our_uri_for( join( '/', 'asset', @$path ) . '.pdf' ) );
 
-  my $p2p = Lintilla::Image::PDF2PNG->new(
+  my $p2p = Lintilla::Image::PDFExtract->new(
     in_url   => $pdf_url,
     out_file => $out_file,
-    page     => $page - 1
+    page     => $page
   );
 
   my $magic = Lintilla::Magic::Asset->new(
