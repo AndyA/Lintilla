@@ -333,9 +333,9 @@ sub _add_default_programme_details {
   }
   for my $row (@$rows) {
     $row->{contrib} = $by_parent{ $row->{_uuid} } || [];
-    $row->{time} = sprintf '%d.%02d', $self->decode_time( $row->{when} );
-    $row->{full_time} = sprintf '%02d:%02d:%02d',
-     $self->decode_time( $row->{when} );
+    my ( $hour, $min, $sec ) = $self->decode_time( $row->{when} );
+    $row->{time} = sprintf '%d.%02d', $hour, $min;
+    $row->{full_time} = sprintf '%02d:%02d:%02d', $hour, $min, $sec;
     $row->{link}        = $self->clean_id( $row->{_uuid} );
     $row->{pretty_date} = $self->pretty_date( $row->{date} );
     $row->{pretty_broadcast_date}
