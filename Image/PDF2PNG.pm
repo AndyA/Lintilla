@@ -36,8 +36,14 @@ sub create {
     $in_tmp . "[$page]", $out_tmp
   );
 
-  @cmd = join( ' ', @cmd, '>', '/tmp/convert.log', '2>&1' );
+  # Bizarre: this doesn't work if we invoke convert directly but
+  # when run in a shell it's fine.
+  @cmd = join( ' ', @cmd );
+  #  @cmd = join( ' ', @cmd, '>', '/tmp/convert.log', '2>&1' );
+
   system @cmd;
+ 
+  #  die "Result: $?" if $?;
   rename $out_tmp, $out_file or die $!;
 
   $in_tmp->parent->rmtree;
