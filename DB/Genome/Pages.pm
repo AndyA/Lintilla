@@ -13,6 +13,7 @@ with 'Lintilla::Role::DB';
 with 'Lintilla::Role::UUID';
 with 'Lintilla::Role::DateTime';
 with 'Lintilla::Role::Genome';
+with 'Lintilla::Role::Source';
 
 sub _numify {
   my ( $self, $hash, @key ) = @_;
