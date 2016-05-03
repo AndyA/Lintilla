@@ -90,6 +90,10 @@ get qr{/page/([0-9a-f]{32})}i => sub {
    { layout => 'page' };
 };
 
+get '/page/data/coords/:uuid/:page' => sub {
+  return db->page_coords( param('uuid'), param('page') );
+};
+
 1;
 
 # vim:ts=2:sw=2:sts=2:et:ft=perl

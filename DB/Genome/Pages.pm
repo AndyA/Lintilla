@@ -15,6 +15,11 @@ with 'Lintilla::Role::DateTime';
 with 'Lintilla::Role::Genome';
 with 'Lintilla::Role::Source';
 
+sub unique(@) {
+  my %seen = ();
+  grep { !$seen{$_}++ } @_;
+}
+
 sub _numify {
   my ( $self, $hash, @key ) = @_;
   return [map { $self->_numify( $_, @key ) } @$hash]
@@ -81,6 +86,53 @@ sub page {
   return $prog;
 }
 
+sub page_coords {
+  my ( $self, $issue, $page ) = @_;
+
+  my $coords = $self->_numify(
+    $self->dbh->selectall_arrayref(
+      join( ' ',
+        'SELECT c.* ',
+        '  FROM genome_coordinates AS c, genome_programmes_v2 AS p ',
+        ' WHERE p.issue = ?',
+        '   AND c._parent = p._uuid ',
+        '   AND c.page = ?',
+        '   AND p.source = ?',
+        ' ORDER BY c._parent, c.index' ),
+      { Slice => {} },
+      $self->format_uuid($issue),
+      $page,
+      $self->source
+    ),
+    qw( x y w h page index )
+  );
+
+  return [] unless @$coords;
+
+  my @uuids = unique map { $_->{_parent} } @$coords;
+
+  my $progs = $self->dbh->selectall_arrayref(
+    join( ' ',
+      'SELECT *',
+      'FROM genome_programmes_v2',
+      'WHERE _uuid IN (',
+      join( ', ', ("?") x @uuids ),
+      ")" ),
+    { Slice => {} },
+    @uuids
+  );
+
+  return [] unless @$progs;
+
+  my $by_parent = $self->group_by( $coords, '_parent' );
+  for my $prog (@$progs) {
+    $self->_pretty_prog($prog);
+    $prog->{coordinates} = delete $by_parent->{ $prog->{_uuid} };
+  }
+
+  return $progs;
+}
+
 sub _issue_key {
   my ( $self, $issue ) = @_;
   return $issue->{default_child_key}
@@ -97,7 +149,7 @@ sub _issue_page_image {
 
 sub _issue_page_data {
   my ( $self, $issue ) = @_;
-  return join '/', '', 'page', 'data',
+  return join '/', '', 'page', 'data', 'coords',
    $self->clean_id( $issue->{_uuid} ), '%d';
 }
 
@@ -121,6 +173,15 @@ sub _load_issue {
     qw( day decade issue month pagecount volume year ) );
 }
 
+sub _pretty_prog {
+  my ( $self, $prog ) = @_;
+
+  $prog->{pretty_date} = $self->pretty_date( $prog->{when} );
+  my ( $hour, $min, $sec ) = $self->decode_time( $prog->{when} );
+  $prog->{pretty_time} = sprintf '%02d:%02d', $hour, $min;
+  $prog->{link} = $self->clean_id( $prog->{_uuid} );
+}
+
 sub _load_programme {
   my ( $self, $uuid ) = @_;
 
@@ -132,9 +193,7 @@ sub _load_programme {
 
   return unless defined $prog;
 
-  $prog->{pretty_date} = $self->pretty_date( $prog->{when} );
-  my ( $hour, $min, $sec ) = $self->decode_time( $prog->{when} );
-  $prog->{pretty_time} = sprintf '%02d:%02d', $hour, $min;
+  $self->_pretty_prog($prog);
 
   $prog->{coordinates} = $self->_numify(
     $self->dbh->selectall_arrayref(
