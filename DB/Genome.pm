@@ -309,12 +309,6 @@ sub resolve_services {
   return $rec;
 }
 
-sub clean_id {
-  my ( $self, $uuid ) = @_;
-  $uuid =~ s/-//g;
-  return $uuid;
-}
-
 sub _add_default_programme_details {
   my ( $self, $rows ) = @_;
   my @uids = map { $_->{_uuid} } @$rows;
@@ -1526,13 +1520,6 @@ sub programme {
      $self->share_stash( title => join( ', ', @desc ) . ' on BBC Genome' ),
     title => $self->page_title(@desc),
   );
-}
-
-sub site_name { 'BBC Genome' }
-
-sub page_title {
-  my ( $self, @title ) = @_;
-  return join ' - ', @title, $self->site_name;
 }
 
 sub share_stash {

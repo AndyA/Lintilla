@@ -27,6 +27,19 @@ sub lookup_kind {
   return $thing->{kind};
 }
 
+sub clean_id {
+  my ( $self, $uuid ) = @_;
+  $uuid =~ s/-//g;
+  return $uuid;
+}
+
+sub site_name { 'BBC Genome' }
+
+sub page_title {
+  my ( $self, @title ) = @_;
+  return join ' - ', @title, $self->site_name;
+}
+
 1;
 
 # vim:ts=2:sw=2:sts=2:et:ft=perl
