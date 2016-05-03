@@ -87,11 +87,17 @@ sub _issue_key {
   return $issue->{_key};
 }
 
-sub _issue_page_path {
+sub _issue_page_image {
   my ( $self, $issue ) = @_;
   my $key = $self->_issue_key($issue);
-  return join '/', '', 'page', 'asset', $issue->{decade}, $issue->{year},
-   $key, $key, '%d.jpg';
+  return join '/', '', 'page', 'asset',
+   $issue->{decade}, $issue->{year}, $key, $key, '%d.jpg';
+}
+
+sub _issue_page_data {
+  my ( $self, $issue ) = @_;
+  return join '/', '', 'page', 'data',
+   $self->clean_id( $issue->{_uuid} ), '%d';
 }
 
 sub _load_issue {
@@ -104,7 +110,8 @@ sub _load_issue {
   );
 
   for my $iss (@$issue) {
-    $iss->{page_image}        = $self->_issue_page_path($iss);
+    $iss->{page_image}        = $self->_issue_page_image($iss);
+    $iss->{page_data}         = $self->_issue_page_data($iss);
     $iss->{pretty_start_date} = $self->pretty_date( $iss->{start_date} );
     $iss->{pretty_end_date}   = $self->pretty_date( $iss->{end_date} );
   }
