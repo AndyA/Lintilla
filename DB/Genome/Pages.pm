@@ -142,8 +142,8 @@ sub page_coords {
   my $by_parent = $self->group_by( $coords, '_parent' );
   for my $prog (@$progs) {
     $self->_pretty_prog($prog);
-    $prog->{coordinates}  = delete $by_parent->{ $prog->{_uuid} };
-    $prog->{contributors} = delete $contrib->{ $prog->{_uuid} };
+    $prog->{coordinates} = delete $by_parent->{ $prog->{_uuid} };
+    $prog->{contributors} = delete $contrib->{ $prog->{_uuid} } // [];
   }
 
   return $progs;
