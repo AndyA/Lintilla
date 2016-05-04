@@ -114,8 +114,8 @@ sub page_coords {
   my $progs = $self->dbh->selectall_arrayref(
     join( ' ',
       'SELECT *',
-      'FROM genome_programmes_v2',
-      'WHERE _uuid IN (',
+      '  FROM genome_programmes_v2',
+      ' WHERE _uuid IN (',
       join( ', ', ("?") x @uuids ),
       ")" ),
     { Slice => {} },
