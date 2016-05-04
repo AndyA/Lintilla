@@ -124,10 +124,26 @@ sub page_coords {
 
   return [] unless @$progs;
 
+  my $contrib = $self->group_by(
+    $self->dbh->selectall_arrayref(
+      join( ' ',
+        'SELECT *',
+        '  FROM genome_contributors',
+        ' WHERE _parent IN (',
+        join( ', ', ("?") x @uuids ),
+        ')',
+        ' ORDER BY `index`' ),
+      { Slice => {} },
+      @uuids
+    ),
+    '_parent'
+  );
+
   my $by_parent = $self->group_by( $coords, '_parent' );
   for my $prog (@$progs) {
     $self->_pretty_prog($prog);
-    $prog->{coordinates} = delete $by_parent->{ $prog->{_uuid} };
+    $prog->{coordinates}  = delete $by_parent->{ $prog->{_uuid} };
+    $prog->{contributors} = delete $contrib->{ $prog->{_uuid} };
   }
 
   return $progs;
