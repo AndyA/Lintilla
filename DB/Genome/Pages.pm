@@ -89,60 +89,61 @@ sub page {
 sub page_coords {
   my ( $self, $issue, $page ) = @_;
 
-  my $coords = $self->_numify(
-    $self->dbh->selectall_arrayref(
+  my @uuids = @{
+    $self->dbh->selectcol_arrayref(
       join( ' ',
-        'SELECT c.* ',
-        '  FROM genome_coordinates AS c, genome_programmes_v2 AS p ',
+        'SELECT DISTINCT c._parent',
+        '  FROM genome_coordinates AS c, genome_programmes_v2 AS p',
         ' WHERE p.issue = ?',
-        '   AND c._parent = p._uuid ',
+        '   AND c._parent = p._uuid',
         '   AND c.page = ?',
-        '   AND p.source = ?',
-        ' ORDER BY c._parent, c.index' ),
-      { Slice => {} },
+        '   AND p.source = ?' ),
+      {},
       $self->format_uuid($issue),
       $page,
       $self->source
-    ),
-    qw( x y w h page index )
-  );
+    ) };
 
-  return [] unless @$coords;
-
-  my @uuids = unique map { $_->{_parent} } @$coords;
+  return [] unless @uuids;
 
   my $progs = $self->dbh->selectall_arrayref(
     join( ' ',
-      'SELECT *',
-      '  FROM genome_programmes_v2',
-      ' WHERE _uuid IN (',
-      join( ', ', ("?") x @uuids ),
-      ")" ),
+      'SELECT * FROM genome_programmes_v2 WHERE _uuid IN (',
+      join( ', ', ("?") x @uuids ), ")" ),
     { Slice => {} },
     @uuids
   );
 
-  return [] unless @$progs;
+  my $coords = $self->group_by(
+    $self->_numify(
+      $self->dbh->selectall_arrayref(
+        join( ' ',
+          'SELECT * FROM genome_coordinates WHERE _parent IN (',
+          join( ', ', ("?") x @uuids ),
+          ')', ' ORDER BY `index`' ),
+        { Slice => {} },
+        @uuids
+      ),
+      qw( x y w h page index )
+    ),
+    '_parent'
+  );
 
   my $contrib = $self->group_by(
     $self->dbh->selectall_arrayref(
       join( ' ',
-        'SELECT *',
-        '  FROM genome_contributors',
-        ' WHERE _parent IN (',
+        'SELECT * FROM genome_contributors WHERE _parent IN (',
         join( ', ', ("?") x @uuids ),
-        ')',
-        ' ORDER BY `index`' ),
+        ')', ' ORDER BY `index`' ),
       { Slice => {} },
       @uuids
     ),
     '_parent'
   );
 
-  my $by_parent = $self->group_by( $coords, '_parent' );
   for my $prog (@$progs) {
     $self->_pretty_prog($prog);
-    $prog->{coordinates} = delete $by_parent->{ $prog->{_uuid} };
+    $prog->{coordinates}  = delete $coords->{ $prog->{_uuid} }  // [];
     $prog->{contributors} = delete $contrib->{ $prog->{_uuid} } // [];
   }
 
