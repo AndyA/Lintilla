@@ -45,55 +45,58 @@ sub cook_uri {
   return $u;
 }
 
-get '/page/asset/**' => sub {
-  my ($path) = splat;
+prefix '/page' => sub {
 
-  my @loc = ( 'page', 'asset', @$path );
+  get '/asset/**' => sub {
+    my ($path) = splat;
 
-  ( my $page = pop @$path ) =~ s/\.jpg$//;
+    my @loc = ( 'page', 'asset', @$path );
 
-  die "Bad page number"
-   unless $page =~ /^\d+$/ && $page > 0 && $page < 500;
+    ( my $page = pop @$path ) =~ s/\.jpg$//;
 
-  my $out_file = file setting('public'), @loc;
-  my $self = our_uri_for(@loc) . '?' . rand();
+    die "Bad page number"
+     unless $page =~ /^\d+$/ && $page > 0 && $page < 500;
 
-  my $pdf_url
-   = cook_uri( our_uri_for( join( '/', 'asset', @$path ) . '.pdf' ) );
+    my $out_file = file setting('public'), @loc;
+    my $self = our_uri_for(@loc) . '?' . rand();
 
-  my $p2p = Lintilla::Image::PDFExtract->new(
-    in_url   => $pdf_url,
-    out_file => $out_file,
-    page     => $page
-  );
+    my $pdf_url
+     = cook_uri( our_uri_for( join( '/', 'asset', @$path ) . '.pdf' ) );
 
-  my $magic = Lintilla::Magic::Asset->new(
-    filename => $out_file,
-    timeout  => 60,
-    provider => $p2p
-  );
+    my $p2p = Lintilla::Image::PDFExtract->new(
+      in_url   => $pdf_url,
+      out_file => $out_file,
+      page     => $page
+    );
 
-  $magic->render or die "Can't render";
+    my $magic = Lintilla::Magic::Asset->new(
+      filename => $out_file,
+      timeout  => 60,
+      provider => $p2p
+    );
 
-  return redirect $self, 307;
-};
+    $magic->render or die "Can't render";
 
-get qr{/page/([0-9a-f]{32})}i => sub {
-  my ($uuid) = splat;
-  my $db = db;
+    return redirect $self, 307;
+  };
 
-  my $stash = $db->pages_for_thing( $uuid, param('page') );
-  my $title = "Issue " . $stash->{issue}{issue};
+  get qr{/([0-9a-f]{32})}i => sub {
+    my ($uuid) = splat;
+    my $db = db;
 
-  template 'page/index.tt',
-   { title => $title, stash => $stash },
-   { layout => 'page' };
-};
+    my $stash = $db->pages_for_thing( $uuid, param('page') );
+    my $title = "Issue " . $stash->{issue}{issue};
 
-get '/page/data/coords/:uuid/:page' => sub {
-  return db->page_coords( param('uuid'), param('page') );
-};
+    template 'page/index.tt',
+     { title => $title, stash => $stash },
+     { layout => 'page' };
+  };
 
-1;
+  get '/data/coords/:uuid/:page' => sub {
+    return db->page_coords( param('uuid'), param('page') );
+  };
+ };
+
+ 1;
 
 # vim:ts=2:sw=2:sts=2:et:ft=perl
