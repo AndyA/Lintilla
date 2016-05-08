@@ -92,11 +92,27 @@ prefix '/page' => sub {
      { layout => 'page' };
   };
 
-  get '/data/coords/:uuid/:page' => sub {
-    return db->page_coords( param('uuid'), param('page') );
-  };
- };
+  prefix '/data' => sub {
 
- 1;
+    # /tree             Decades, years
+    # /tree/UUID        Decades, years, issue year expanded
+    # /tree/year/NNNN   Issues for year NNNN
+
+    get '/tree' => sub {
+      return db->issue_years;
+    };
+
+    get '/tree/year/:year' => sub {
+      return db->issue_year( param('year') );
+    };
+
+    get '/coords/:uuid/:page' => sub {
+      return db->page_coords( param('uuid'), param('page') );
+    };
+
+  };
+};
+
+1;
 
 # vim:ts=2:sw=2:sts=2:et:ft=perl

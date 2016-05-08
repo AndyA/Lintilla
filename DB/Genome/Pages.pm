@@ -2,6 +2,8 @@ package Lintilla::DB::Genome::Pages;
 
 use Moose;
 
+use JSON;
+
 =head1 NAME
 
 Lintilla::DB::Genome::Pages - Access page layout (coordinates)
@@ -263,6 +265,64 @@ sub pages_for_thing {
     die "Can't handle a $kind";
   }
 
+}
+
+sub issue_years {
+  my ($self) = @_;
+  my @years = @{
+    $self->dbh->selectcol_arrayref(
+      "SELECT DISTINCT year FROM genome_issues ORDER BY year") };
+
+  my %dy = ();
+  $dy{ 10 * int( $_ / 10 ) }{$_}++ for @years;
+
+  my @out = ();
+  for my $decade ( sort { $a <=> $b } keys %dy ) {
+    my $dr = {
+      text     => $decade . "s",
+      id       => "d$decade",
+      children => [],
+    };
+    for my $year ( sort { $a <=> $b } keys %{ $dy{$decade} } ) {
+      push @{ $dr->{children} },
+       {text     => $year,
+        id       => $year,
+        children => JSON::true,
+       };
+    }
+    push @out, $dr;
+  }
+  return \@out;
+}
+
+sub issue_year {
+  my ( $self, $year ) = @_;
+
+  my $issue
+   = $self->dbh->selectall_arrayref(
+    'SELECT * FROM genome_issues WHERE year = ?',
+    { Slice => {} }, $year );
+
+  my $by_uuid = $self->stash_by( $issue, '_uuid' );
+  for my $i (@$issue) {
+    delete $by_uuid->{ $i->{_parent} } if $i->{_parent};
+  }
+
+  my @issues = sort { $a->{start_date} cmp $b->{start_date} }
+   map { $_->[0] } values %$by_uuid;
+
+  my @out = ();
+  for my $iss (@issues) {
+    push @out,
+     {id   => $iss->{_uuid},
+      text => join( ", ",
+        $iss->{issue}, $iss->{region}, $self->pretty_date( $iss->{date} ) ),
+      children => [
+        map { { id => join( "/", $iss->{_uuid}, $_ ), text => "Page $_" } }
+         1 .. $iss->{pagecount}
+      ] };
+  }
+  return \@out;
 }
 
 1;
