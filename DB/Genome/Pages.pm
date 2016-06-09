@@ -314,13 +314,10 @@ sub issue_year {
   my @out = ();
   for my $iss (@issues) {
     push @out,
-     {id   => $iss->{_uuid},
-      text => join( ", ",
-        $iss->{issue}, $iss->{region}, $self->pretty_date( $iss->{date} ) ),
-      children => [
-        map { { id => join( "/", $iss->{_uuid}, $_ ), text => "Page $_" } }
-         1 .. $iss->{pagecount}
-      ] };
+     {issue => $iss,
+      id    => $iss->{_uuid},
+      text  => join( ", ", $iss->{issue}, $self->pretty_date( $iss->{date} ) ),
+     };
   }
   return \@out;
 }

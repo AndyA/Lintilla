@@ -47,6 +47,16 @@ sub cook_uri {
 
 prefix '/page' => sub {
 
+  get qr{/([0-9a-f]{32})}i => sub {
+    my ($uuid) = splat;
+    my $stash = db->pages_for_thing( $uuid, param('page') );
+    my $title = "Issue " . $stash->{issue}{issue};
+
+    template 'page/index.tt',
+     { title => $title, stash => $stash },
+     { layout => 'page' };
+  };
+
   get '/asset/**' => sub {
     my ($path) = splat;
 
@@ -78,18 +88,6 @@ prefix '/page' => sub {
     $magic->render or die "Can't render";
 
     return redirect $self, 307;
-  };
-
-  get qr{/([0-9a-f]{32})}i => sub {
-    my ($uuid) = splat;
-    my $db = db;
-
-    my $stash = $db->pages_for_thing( $uuid, param('page') );
-    my $title = "Issue " . $stash->{issue}{issue};
-
-    template 'page/index.tt',
-     { title => $title, stash => $stash },
-     { layout => 'page' };
   };
 
   prefix '/data' => sub {
