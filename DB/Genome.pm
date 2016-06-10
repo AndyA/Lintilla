@@ -39,6 +39,7 @@ has infax          => ( is => 'ro', isa => 'Bool', default => 0 );
 has related        => ( is => 'ro', isa => 'Bool', default => 0 );
 has related_merged => ( is => 'ro', isa => 'Bool', default => 0 );
 has media          => ( is => 'ro', isa => 'Bool', default => 0 );
+has store          => ( is => 'ro', isa => 'Bool', default => 0 );
 has blog_links     => ( is => 'ro', isa => 'Bool', default => 0 );
 has blog_search    => ( is => 'ro', isa => 'Num',  default => 0 );
 
@@ -484,6 +485,30 @@ sub _add_media {
   return $rows;
 }
 
+sub _add_store {
+  my ( $self, $rows ) = @_;
+  my @uids = map { $_->{_uuid} } @$rows;
+
+  if (@uids) {
+    my $irows = $self->dbh->selectall_arrayref(
+      join( ' ',
+        'SELECT * FROM genome_store WHERE _parent IN', '(',
+        join( ', ', map '?', @uids ), ')' ),
+      { Slice => {} },
+      @uids
+    );
+
+    my $store = $self->group_by( $irows, '_parent' );
+
+    for my $row (@$rows) {
+      my $rec = delete $store->{ $row->{_uuid} };
+      $row->{store} = $self->_make_public( $rec || [] );
+    }
+  }
+
+  return $rows;
+}
+
 sub _add_blog_links {
   my ( $self, $rows ) = @_;
 
@@ -519,6 +544,7 @@ sub _add_programme_details {
   $self->_add_related($rows)        if $self->related;
   $self->_add_related_merged($rows) if $self->related_merged;
   $self->_add_media($rows)          if $self->media;
+  $self->_add_store($rows)          if $self->store;
   $self->_add_blog_links($rows)     if $self->blog_links;
 
   return $rows;
