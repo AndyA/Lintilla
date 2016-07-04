@@ -52,6 +52,7 @@ sub db() {
     store          => config->{show_store} ? 1 : 0,
     blog_search => config->{blog_search} // 0,
     blog_links => config->{blog_links} ? 1 : 0,
+    pdf_cutoff => config->{show_pdf_cutoff},
   );
 }
 

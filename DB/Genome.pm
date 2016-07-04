@@ -42,6 +42,7 @@ has media          => ( is => 'ro', isa => 'Bool', default => 0 );
 has store          => ( is => 'ro', isa => 'Bool', default => 0 );
 has blog_links     => ( is => 'ro', isa => 'Bool', default => 0 );
 has blog_search    => ( is => 'ro', isa => 'Num',  default => 0 );
+has pdf_cutoff     => ( is => 'ro', isa => 'Num',  default => 0 );
 
 has years    => ( is => 'ro', lazy => 1, builder => '_build_years' );
 has decades  => ( is => 'ro', lazy => 1, builder => '_build_decades' );
@@ -485,6 +486,15 @@ sub _add_media {
   return $rows;
 }
 
+sub _add_pdf_viewer {
+  my ( $self, $rows ) = @_;
+  my $cutoff = $self->pdf_cutoff;
+  for my $row (@$rows) {
+    $row->{viewer_link} = '/page/' . $row->{link} if $row->{year} <= $cutoff;
+  }
+  return $rows;
+}
+
 sub _add_store {
   my ( $self, $rows ) = @_;
   my @uids = map { $_->{_uuid} } @$rows;
@@ -545,6 +555,7 @@ sub _add_programme_details {
   $self->_add_related_merged($rows) if $self->related_merged;
   $self->_add_media($rows)          if $self->media;
   $self->_add_store($rows)          if $self->store;
+  $self->_add_pdf_viewer($rows)     if $self->pdf_cutoff;
   $self->_add_blog_links($rows)     if $self->blog_links;
 
   return $rows;
@@ -609,7 +620,10 @@ sub _cook_issues {
     map {
       {
         %{ $self->_make_public($_) },
-         link              => $self->clean_id( $self->_issue_id($_) ),
+         link => $self->clean_id( $self->_issue_id($_) ),
+         ( $_->{year} <= $self->pdf_cutoff
+          ? ( viewer_link => '/page/' . $self->clean_id( $self->_issue_id($_) ) )
+          : () ),
          path              => $self->_issue_image_path($_),
          pdf               => $self->_issue_pdf_path($_),
          month_name        => $self->month_names->[$_->{month} - 1],
