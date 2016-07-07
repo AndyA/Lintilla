@@ -42,6 +42,12 @@ use constant BOILERPLATE =>
 use constant URL_SHRINKER =>
  'http://www.bbc.co.uk/modules/share/service/shrink';
 
+sub pdf_cutoff {
+  my $pe = vars->{personality};
+  return 2050 if $pe->personality eq 'internal';
+  return config->{show_pdf_cutoff} // 1800;
+}
+
 sub db() {
   Lintilla::DB::Genome->new(
     dbh            => database,
@@ -52,7 +58,7 @@ sub db() {
     store          => config->{show_store} ? 1 : 0,
     blog_search => config->{blog_search} // 0,
     blog_links => config->{blog_links} ? 1 : 0,
-    pdf_cutoff => config->{show_pdf_cutoff},
+    pdf_cutoff => pdf_cutoff(),
   );
 }
 
