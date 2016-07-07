@@ -258,6 +258,54 @@ sub service_defaults {
   return @got;
 }
 
+sub _find_service_near {
+  my ( $self, $rel, $service, $date ) = @_;
+
+  my ( $oper, $sort )
+   = $rel eq 'before' ? ( '<',  'DESC' )
+   : $rel eq 'after'  ? ( '>=', 'ASC' )
+   :                    die;
+
+  my $key = ( $service eq 'tv' || $service eq 'radio' ) ? 'type' : '_key';
+
+  my $sql = join ' ',
+   'SELECT sd.date, s._uuid, s.has_outlets, s.default_outlet, s._key',
+   'FROM genome_service_dates AS sd, genome_services AS s',
+   "WHERE sd.service=s._uuid AND s.$key=?",
+   'AND s._parent IS NULL',
+   "AND s.hidden = 'N'",
+   "AND sd.date $oper ?",
+   "ORDER BY date $sort, `order` IS NULL $sort, `order` $sort, `title` $sort LIMIT 1";
+
+  my $rs = $self->dbh->selectrow_hashref( $sql, {}, $service, $date );
+  return unless defined $rs;
+  my $dt = $self->date2epoch($date) - $self->date2epoch( $rs->{date} );
+  return { rec => $rs, delta => abs($dt) };
+}
+
+sub service_near {
+  my ( $self, $service, $date ) = @_;
+
+  my @best = (
+    sort { $a->{delta} <=> $b->{delta} } (
+      $self->_find_service_near( before => $service, $date ),
+      $self->_find_service_near( after  => $service, $date )
+    )
+  );
+
+  return ('missing') unless @best;
+  my $rec = $best[0]{rec};
+
+  return ( $rec->{_key}, $rec->{date} ) unless $rec->{has_outlets} eq 'Y';
+
+  my ($subkey)
+   = $self->dbh->selectrow_array(
+    'SELECT subkey FROM genome_services WHERE _uuid=?',
+    {}, $rec->{default_outlet} );
+
+  return ( $rec->{_key}, $subkey, $rec->{date} );
+}
+
 sub resolve_service {
   my ( $self, $service, @spec ) = @_;
 
