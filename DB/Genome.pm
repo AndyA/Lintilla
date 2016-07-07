@@ -669,9 +669,10 @@ sub _cook_issues {
       {
         %{ $self->_make_public($_) },
          link => $self->clean_id( $self->_issue_id($_) ),
-         ( $_->{year} <= $self->pdf_cutoff
+         ($_->{year} <= $self->pdf_cutoff
           ? ( viewer_link => '/page/' . $self->clean_id( $self->_issue_id($_) ) )
-          : () ),
+          : ()
+         ),
          path              => $self->_issue_image_path($_),
          pdf               => $self->_issue_pdf_path($_),
          month_name        => $self->month_names->[$_->{month} - 1],
