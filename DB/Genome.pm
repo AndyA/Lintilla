@@ -589,7 +589,8 @@ sub media_count {
   return 0 unless $self->media;
 
   my ($count)
-   = $self->dbh->selectrow_array("SELECT COUNT(*) FROM `genome_media`");
+   = $self->dbh->selectrow_array(
+    "SELECT COUNT(*) FROM `genome_search` WHERE `has_media`");
   return $count;
 }
 
