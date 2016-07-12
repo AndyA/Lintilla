@@ -278,7 +278,13 @@ sub search {
   my $sph = $self->sphinx;
 
   $sph->Open;
-  $sph->SetMatchMode(SPH_MATCH_EXTENDED);
+
+  {
+    local $SIG{__WARN__} = sub { };
+    # May throw a warning, offend Dancer
+    $sph->SetMatchMode(SPH_MATCH_EXTENDED);
+  }
+
   $sph->SetSortMode(SPH_SORT_RELEVANCE);
   $sph->SetFieldWeights( { title => 2 } );
   $sph->SetLimits(@limits) if @limits;
