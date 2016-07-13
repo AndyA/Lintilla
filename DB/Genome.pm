@@ -33,13 +33,16 @@ with 'Lintilla::Role::DateTime';
 with 'Lintilla::Role::Gatherer';
 with 'Lintilla::Role::Source';
 with 'Lintilla::Role::UUID';
+with 'Lintilla::Role::Genome';
 
 has infax          => ( is => 'ro', isa => 'Bool', default => 0 );
 has related        => ( is => 'ro', isa => 'Bool', default => 0 );
 has related_merged => ( is => 'ro', isa => 'Bool', default => 0 );
 has media          => ( is => 'ro', isa => 'Bool', default => 0 );
+has store          => ( is => 'ro', isa => 'Bool', default => 0 );
 has blog_links     => ( is => 'ro', isa => 'Bool', default => 0 );
 has blog_search    => ( is => 'ro', isa => 'Num',  default => 0 );
+has pdf_cutoff     => ( is => 'ro', isa => 'Num',  default => 0 );
 
 has years    => ( is => 'ro', lazy => 1, builder => '_build_years' );
 has decades  => ( is => 'ro', lazy => 1, builder => '_build_decades' );
@@ -356,12 +359,6 @@ sub resolve_services {
   return $rec;
 }
 
-sub clean_id {
-  my ( $self, $uuid ) = @_;
-  $uuid =~ s/-//g;
-  return $uuid;
-}
-
 sub _add_default_programme_details {
   my ( $self, $rows ) = @_;
   my @uids = map { $_->{_uuid} } @$rows;
@@ -380,9 +377,9 @@ sub _add_default_programme_details {
   }
   for my $row (@$rows) {
     $row->{contrib} = $by_parent{ $row->{_uuid} } || [];
-    $row->{time} = sprintf '%d.%02d', $self->decode_time( $row->{when} );
-    $row->{full_time} = sprintf '%02d:%02d:%02d',
-     $self->decode_time( $row->{when} );
+    my ( $hour, $min, $sec ) = $self->decode_time( $row->{when} );
+    $row->{time} = sprintf '%d.%02d', $hour, $min;
+    $row->{full_time} = sprintf '%02d:%02d:%02d', $hour, $min, $sec;
     $row->{link}        = $self->clean_id( $row->{_uuid} );
     $row->{pretty_date} = $self->pretty_date( $row->{date} );
     $row->{pretty_broadcast_date}
@@ -405,8 +402,8 @@ sub _add_infax_links {
     );
     for my $irow (@$irows) {
       $irow->{pretty_date} = $self->pretty_date( $irow->{when} );
-      $irow->{pretty_time} = sprintf '%02d:%02d',
-       $self->decode_time( $irow->{when} );
+      my ( $hour, $min, $sec ) = $self->decode_time( $irow->{when} );
+      $irow->{pretty_time} = sprintf '%02d:%02d', $hour, $min;
       $irow->{pretty_score} = sprintf '%d',
        INFAX_CONFIDENCE * ( 1 - $irow->{score} );
     }
@@ -537,6 +534,39 @@ sub _add_media {
   return $rows;
 }
 
+sub _add_pdf_viewer {
+  my ( $self, $rows ) = @_;
+  my $cutoff = $self->pdf_cutoff;
+  for my $row (@$rows) {
+    $row->{viewer_link} = '/page/' . $row->{link} if $row->{year} <= $cutoff;
+  }
+  return $rows;
+}
+
+sub _add_store {
+  my ( $self, $rows ) = @_;
+  my @uids = map { $_->{_uuid} } @$rows;
+
+  if (@uids) {
+    my $irows = $self->dbh->selectall_arrayref(
+      join( ' ',
+        'SELECT * FROM genome_store WHERE _parent IN', '(',
+        join( ', ', map '?', @uids ), ')' ),
+      { Slice => {} },
+      @uids
+    );
+
+    my $store = $self->group_by( $irows, '_parent' );
+
+    for my $row (@$rows) {
+      my $rec = delete $store->{ $row->{_uuid} };
+      $row->{store} = $self->_make_public( $rec || [] );
+    }
+  }
+
+  return $rows;
+}
+
 sub _add_blog_links {
   my ( $self, $rows ) = @_;
 
@@ -559,7 +589,8 @@ sub media_count {
   return 0 unless $self->media;
 
   my ($count)
-   = $self->dbh->selectrow_array("SELECT COUNT(*) FROM `genome_media`");
+   = $self->dbh->selectrow_array(
+    "SELECT COUNT(*) FROM `genome_search` WHERE `has_media`");
   return $count;
 }
 
@@ -572,6 +603,8 @@ sub _add_programme_details {
   $self->_add_related($rows)        if $self->related;
   $self->_add_related_merged($rows) if $self->related_merged;
   $self->_add_media($rows)          if $self->media;
+  $self->_add_store($rows)          if $self->store;
+  $self->_add_pdf_viewer($rows)     if $self->pdf_cutoff;
   $self->_add_blog_links($rows)     if $self->blog_links;
 
   return $rows;
@@ -636,7 +669,11 @@ sub _cook_issues {
     map {
       {
         %{ $self->_make_public($_) },
-         link              => $self->_issue_id($_),
+         link => $self->clean_id( $self->_issue_id($_) ),
+         ($_->{year} <= $self->pdf_cutoff
+          ? ( viewer_link => '/page/' . $self->clean_id( $self->_issue_id($_) ) )
+          : ()
+         ),
          path              => $self->_issue_image_path($_),
          pdf               => $self->_issue_pdf_path($_),
          month_name        => $self->month_names->[$_->{month} - 1],
@@ -696,7 +733,11 @@ sub annual_issues {
 
 sub _build_service_spiel {
   my ( $self, $rec ) = @_;
-  my %case = ( tv => 'television', radio => 'radio', pseudo => 'radio' );
+  my %case = (
+    tv     => 'television',
+    radio  => 'radio',
+    pseudo => 'radio'
+  );
   my $svc  = $rec->{svc};
   my @para = ();
 
@@ -862,15 +903,6 @@ sub issues_for_year {
     issues   => $self->group_by( $issues, 'month' ),
     approved => $self->group_by( $issues, 'approved_year' ),
   );
-}
-
-sub lookup_uuid {
-  my ( $self, $uuid ) = @_;
-  my @row
-   = $self->dbh->selectrow_hashref( 'SELECT * FROM dirty WHERE uuid=?',
-    {}, $self->format_uuid($uuid) );
-  return unless @row;
-  return $row[0];
 }
 
 sub _services_for_thing {
@@ -1514,7 +1546,8 @@ sub _use_db_search {
   return 0 if defined $options->q && length $options->q;
   return 1
    if $options->adv
-   && ( $options->media eq "playable" || $options->media eq "related" );
+   && ($options->media eq "playable"
+    || $options->media eq "related" );
   return 0;
 }
 
@@ -1577,13 +1610,6 @@ sub programme {
      $self->share_stash( title => join( ', ', @desc ) . ' on BBC Genome' ),
     title => $self->page_title(@desc),
   );
-}
-
-sub site_name { 'BBC Genome' }
-
-sub page_title {
-  my ( $self, @title ) = @_;
-  return join ' - ', @title, $self->site_name;
 }
 
 sub share_stash {

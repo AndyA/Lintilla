@@ -66,7 +66,7 @@ sub create {
     $tmp_file
   );
 
-  system @cmd and die "convert failed: $?";
+  system @cmd;    # and die "convert failed: $?";
   rename $tmp_file, $out_file or die $!;
   $cleanup->();
 }

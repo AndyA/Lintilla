@@ -13,6 +13,8 @@ use Text::DeepDiff;
 use Text::HTMLCleaner;
 use Time::HiRes qw( time );
 
+use Lintilla::DB::Genome::Programme;
+
 =head1 NAME
 
 Lintilla::DB::Genome::Edit - Editing support
@@ -179,7 +181,7 @@ sub diff {
 
   my $edit = $self->dbh->selectrow_hashref(
     join( ' ',
-      'SELECT e.*, p.`title`, p.`synopsis`,',
+      'SELECT e.*, p.`title`, p.`synopsis`, p.`when`, ',
       "  IF(s2.`title` IS NULL, s.`title`, CONCAT_WS(' ', s2.`title`, s.`title`)) AS service",
       'FROM genome_edit AS e, genome_programmes_v2 AS p, genome_services AS s',
       'LEFT JOIN genome_services AS s2 ON s2._uuid=s._parent',
@@ -199,14 +201,14 @@ sub diff {
     link    => $self->strip_uuid( $edit->{uuid} ),
     history => $self->edit_history($id),
     ( map { $_ => $self->_diff( $type, $edit->{$_}, $data->{$_} ) }
-       qw( title synopsis contributors comment )
+       qw( title synopsis contributors comment when )
     ),
   };
 }
 
 sub _programme_versions {
   my ( $self, $uuid, @extra ) = @_;
-  my $thing = $self->load_thing( 'programme', $uuid );
+  my $thing = $self->fetch_thing( 'programme', $uuid );
 
   my $change = $self->decode_data(
     $self->dbh->selectall_arrayref(
@@ -240,7 +242,18 @@ sub change_count {
   return $count;
 }
 
-sub edit_state_count {
+sub edit_log_count {
+  my $self = shift;
+  my ($count) = $self->dbh->selectrow_array(
+    join " ",
+    "SELECT COUNT(*)",
+    "FROM genome_editlog",
+    "WHERE old_state IS NOT NULL"
+  );
+  return $count;
+}
+
+sub _edit_state_count {
   my $self     = shift;
   my $by_state = $self->group_by(
     $self->dbh->selectall_arrayref(
@@ -249,7 +262,19 @@ sub edit_state_count {
     ),
     'state'
   );
-  return { map { $_ => $by_state->{$_}[0]{count} } keys %$by_state };
+  my $total = 0;
+  $total += $_->[0]{count} for values %$by_state;
+  return {
+    all => $total,
+    map { $_ => $by_state->{$_}[0]{count} } keys %$by_state
+  };
+}
+
+sub edit_state_count {
+  my $self   = shift;
+  my $counts = $self->_edit_state_count;
+  $counts->{history} = $self->edit_log_count;
+  return $counts;
 }
 
 sub _list_filter {
@@ -360,7 +385,7 @@ sub _edit_list {
     join( ' ',
       'SELECT *',
       'FROM ( ',
-      '  SELECT d.*, p.title, p.synopsis ',
+      '  SELECT d.*, p.`title`, p.`synopsis`, p.`when` ',
       '  FROM genome_edit_digest AS d, genome_programmes_v2 AS p ',
       '  WHERE p._uuid = d.uuid',
       '  AND (',
@@ -384,6 +409,43 @@ sub _edit_list {
   }
 
   return ( $res, @group );
+}
+
+sub edit_log {
+  my ( $self, $start, $count ) = @_;
+
+  # TODO check why when is mapped to tx
+  my $res = $self->decode_data(
+    $self->dbh->selectall_arrayref(
+      join( " ",
+        "SELECT el.old_state, el.new_state, el.old_data, el.new_data, el.`when` AS updated,",
+        "       e.id AS edit_id, el.id AS editlog_id,",
+        "       e.uuid, e.kind,",
+        "       p.`when` AS tx, p.title, p.service_key, ",
+        "       s2._key AS parent_service_key",
+        "FROM genome_editlog AS el,",
+        "     genome_edit AS e,",
+        "     genome_programmes_v2 AS p,",
+        "     genome_services AS s",
+        "LEFT JOIN genome_services AS s2 ON s2._uuid = s._parent",
+        "WHERE el.old_state IS NOT NULL",
+        "  AND el.edit_id = e.id",
+        "  AND e.uuid = p._uuid",
+        "  AND s._uuid = p.service",
+        "ORDER BY el.`when` DESC",
+        "LIMIT ?, ?" ),
+      { Slice => {} },
+      $start, $count
+    )
+  );
+
+  for my $rc (@$res) {
+    $rc->{link} = $self->strip_uuid( $rc->{uuid} );
+    $rc->{icon} = join '', '/images/logos/',
+     $rc->{parent_service_key} // $rc->{service_key}, '.png';
+  }
+
+  return $res;
 }
 
 # admin v1
@@ -477,6 +539,7 @@ sub _add_versions {
             title        => $rc->{title},
             synopsis     => $rc->{synopsis},
             contributors => $rc->{contributors},
+            when         => $rc->{when},
           },
           new_data => $self->_parse_edit( $rc->{data} ),
           edit_id  => $rc->{id},
@@ -591,6 +654,12 @@ sub submit {
   return $self->_submit( $uuid, $kind, $who, $data, $state, $parent,
     $hash );
 }
+
+=head2 C<import_edits>
+
+Import a batch of edits during sync.
+
+=cut
 
 sub import_edits {
   my ( $self, $batch ) = @_;
@@ -876,143 +945,6 @@ sub list_stash {
   return $st;
 }
 
-sub _parse_contributor_line {
-  my ( $self, $ln ) = @_;
-  return ( $1, $2 ) if $ln =~ m{^\s*([^:]+):\s*(.+?)\s*$};
-  return ( $1, $2 ) if $ln =~ m{^\s*(\S+)\s*(.+)$};    # handle Title Name
-  return ( 'Unknown', $ln );
-}
-
-sub _parse_contributors {
-  my ( $self, $contrib ) = @_;
-  return $contrib if ref $contrib;
-  my $idx = 0;
-  my @row = ();
-  for my $ln ( split /\n/, $contrib ) {
-    next if $ln =~ m{^\s*$};
-    my ( $type, $name ) = $self->_parse_contributor_line($ln);
-    $type = undef if $type eq 'Unknown';
-    my @np    = split /\s+/, $name;
-    my $last  = pop @np;
-    my $first = @np ? join( ' ', @np ) : undef;
-    push @row,
-     {type       => $type,
-      first_name => $first,
-      last_name  => $last
-     };
-  }
-  return \@row;
-}
-
-sub _strip_contrib {
-  my ( $self, $data ) = @_;
-  for my $row (@$data) {
-    %$row = map { $_ => $row->{$_} } qw( first_name last_name type );
-  }
-  return $data;
-}
-
-sub strip_thing {
-  my ( $self, $kind, $thing ) = @_;
-  die unless $kind eq 'programme';
-  $self->_strip_contrib( $thing->{contributors} )
-   if exists $thing->{contributors};
-}
-
-sub _default_contrib {
-  my ( $self, $data ) = @_;
-  my $idx = 0;
-  for my $row (@$data) {
-    %$row = (
-      index => $idx,
-      group => 'crew',
-      kind  => 'member',
-      code  => undef,
-      %$row
-    );
-    $idx = $row->{index} + 1;
-  }
-  return $data;
-}
-
-sub _put_contrib {
-  my ( $self, $uuid, $contrib ) = @_;
-  $self->transaction(
-    sub {
-      my $data
-       = $self->_default_contrib( $self->_parse_contributors($contrib) );
-      my $fuuid = $self->format_uuid($uuid);
-      $self->dbh->do( 'DELETE FROM genome_contributors WHERE _parent=?',
-        {}, $fuuid );
-      if (@$data) {
-        my %kk = ();
-        %kk = ( %kk, %$_ ) for @$data;
-        delete $kk{_parent};    # override
-        my @f = sort keys %kk;
-        my $val = join ', ', ('?') x @f;
-        $self->dbh->do(
-          join( ' ',
-            'INSERT INTO genome_contributors',
-            '(',
-            join( ', ', map { "`$_`" } '_parent', @f ),
-            ') VALUES',
-            join( ', ', map { "( ?, $val )" } @$data ) ),
-          {},
-          map { $fuuid, @{$_}{@f} } @$data
-        );
-      }
-    }
-  );
-}
-
-sub _put_programme {
-  my ( $self, $uuid, $data, $edit_id ) = @_;
-
-  $self->transaction(
-    sub {
-      $self->_put_contrib( $uuid, delete $data->{contributors} )
-       if exists $data->{contributors};
-
-      my @f = sort keys %$data;
-
-      my @b = @{$data}{@f};
-
-      $self->dbh->do(
-        join( ' ',
-          'UPDATE', "`genome_programmes_v2`", 'SET',
-          join( ', ', '`_modified`=NOW()', map { "`$_`=?" } '_edit_id', @f ),
-          'WHERE _uuid=? LIMIT 1' ),
-        {},
-        $edit_id, @b, $uuid
-      );
-    }
-  );
-}
-
-sub _get_contrib {
-  my ( $self, $uuid ) = @_;
-  return $self->dbh->selectall_arrayref(
-    join( ' ',
-      'SELECT *',
-      'FROM genome_contributors',
-      'WHERE _parent=?',
-      'ORDER BY `index`' ),
-    { Slice => {} },
-    $self->format_uuid($uuid)
-  );
-}
-
-sub _get_programme {
-  my ( $self, $uuid ) = @_;
-  my $fuuid = $self->format_uuid($uuid);
-  my $prog  = $self->dbh->selectrow_hashref(
-    'SELECT `_modified`, `_edit_id`, `title`, `synopsis` FROM `genome_programmes_v2` WHERE `_uuid`=?',
-    {}, $fuuid
-  );
-  $prog->{contributors} = $self->_get_contrib($fuuid);
-  return $prog;
-}
-
 sub _deep_cmp {
   my ( $self, $a, $b ) = @_;
 
@@ -1042,116 +974,109 @@ sub _deep_cmp {
 }
 
 {
-  my %KIND = (
-    programme => {
-      put => sub { shift->_put_programme(@_) },
-      get => sub { shift->_get_programme(@_) }
-    }
-  );
+  my %KIND = ( programme => "Lintilla::DB::Genome::Programme" );
 
-  sub load_thing {
+  sub fetch_thing {
     my ( $self, $kind, $uuid ) = @_;
     my $kh = $KIND{$kind} // die;
-    return $kh->{get}( $self, $uuid );
+    return $kh->new( dbh => $self->dbh )->fetch($uuid);
   }
 
-  sub save_thing {
+  sub store_thing {
     my ( $self, $kind, $uuid, $data, $edit_id ) = @_;
     my $kh = $KIND{$kind} // die;
-    return $kh->{put}( $self, $uuid, $data, $edit_id );
+    return $kh->new( dbh => $self->dbh )->store( $uuid, $data, $edit_id );
   }
+}
 
-  sub _unpack_id {
-    my ( $self, $id ) = @_;
-    return @$id if ref $id;
-    return ( $id, undef );
-  }
+sub _unpack_id {
+  my ( $self, $id ) = @_;
+  return @$id if ref $id;
+  return ( $id, undef );
+}
 
-  sub _apply {
-    my ( $self, $kind, $uuid, $who, $data, $eid, $bump, $hash ) = @_;
-    my ( $edit_id, $editlog_id ) = $self->_unpack_id($eid);
+sub _apply {
+  my ( $self, $kind, $uuid, $who, $data, $eid, $bump, $hash ) = @_;
+  my ( $edit_id, $editlog_id ) = $self->_unpack_id($eid);
 
-    my ($next_id);
-    my $new_data = {%$data};
+  my ($next_id);
+  my $new_data = {%$data};
 
-    $self->transaction(
-      sub {
-        my $kh = $KIND{$kind} // die;
+  $self->transaction(
+    sub {
+      my $old_data = $self->fetch_thing( $kind, $uuid );
+      my ( $old_modified, $old_edit_id )
+       = delete @{$old_data}{ '_modified', '_edit_id' };
+      delete @{$new_data}{ '_modified', '_edit_id' };
 
-        my $old_data = $kh->{get}( $self, $uuid );
-        my ( $old_modified, $old_edit_id )
-         = delete @{$old_data}{ '_modified', '_edit_id' };
-        delete @{$new_data}{ '_modified', '_edit_id' };
-
-        # Only stash data that changes
-        for my $ok ( keys %$old_data ) {
-          delete $old_data->{$ok} unless exists $new_data->{$ok};
-          if ( $self->_deep_cmp( $old_data->{$ok}, $new_data->{$ok} ) ) {
-            delete $old_data->{$ok};
-            delete $new_data->{$ok};
-          }
-        }
-
-        # It'd probably be bad (for sync) to change the way this
-        # hash is computed.
-        my $data_hash = $self->data_hash( $old_data, $new_data );
-
-        # Update if necessary
-        if ( keys %$new_data ) {
-          $self->dbh->do(
-            join( ' ',
-              'INSERT INTO genome_changelog',
-              '(`edit_id`, `editlog_id`, `prev_id`, `uuid`, `kind`, `who`, `created`, `old_data`, `new_data`, `data_hash`)',
-              'VALUES (?, ?, ?, ?, ?, ?, NOW(), ?, ?, ?)' ),
-            {},
-            $edit_id,
-            $editlog_id,
-            $old_edit_id,
-            $self->format_uuid($uuid),
-            $kind, $who,
-            $self->_encode($old_data),
-            $self->_encode($new_data),
-            $data_hash,
-          );
-          $next_id = $self->dbh->last_insert_id( undef, undef, undef, undef );
-        }
-
-        # Always update programme on undo - to change _edit_id
-        if ( defined $next_id || $bump eq 'undo' ) {
-          my $new_edit_id = $next_id;
-          if ( $bump eq 'undo' ) {
-            ($new_edit_id)
-             = $self->dbh->selectrow_array(
-              'SELECT prev_id FROM genome_changelog WHERE id=?',
-              {}, $old_edit_id );
-          }
-          $kh->{put}( $self, $uuid, $new_data, $new_edit_id );
-          $self->bump( 'change', $kind, $bump );
+      # Only stash data that changes
+      for my $ok ( keys %$old_data ) {
+        delete $old_data->{$ok} unless exists $new_data->{$ok};
+        if ( $self->_deep_cmp( $old_data->{$ok}, $new_data->{$ok} ) ) {
+          delete $old_data->{$ok};
+          delete $new_data->{$ok};
         }
       }
-    );
-    return $next_id;
-  }
 
-  sub _undo_edit {
-    my ( $self, $id ) = @_;
-    $self->transaction(
-      sub {
-        my $change
-         = $self->dbh->selectrow_hashref(
-          'SELECT * FROM genome_changelog WHERE id=?',
-          {}, $id );
-        die unless $change;
+      # It'd probably be bad (for sync) to change the way this
+      # hash is computed.
+      my $data_hash = $self->data_hash( $old_data, $new_data );
 
-        # TODO should also roll back the associated edits
-        $self->_apply(
-          @{$change}{ 'kind', 'uuid', 'who' },
-          $self->_decode_wide( $change->{old_data} ),
-          [$change->{edit_id}, $change->{editlog_id}], 'undo'
+      # Update if necessary
+      if ( keys %$new_data ) {
+        $self->dbh->do(
+          join( ' ',
+            'INSERT INTO genome_changelog',
+            '(`edit_id`, `editlog_id`, `prev_id`, `uuid`, `kind`, `who`, `created`, `old_data`, `new_data`, `data_hash`)',
+            'VALUES (?, ?, ?, ?, ?, ?, NOW(), ?, ?, ?)' ),
+          {},
+          $edit_id,
+          $editlog_id,
+          $old_edit_id,
+          $self->format_uuid($uuid),
+          $kind, $who,
+          $self->_encode($old_data),
+          $self->_encode($new_data),
+          $data_hash,
         );
+        $next_id = $self->dbh->last_insert_id( undef, undef, undef, undef );
       }
-    );
-  }
+
+      # Always update programme on undo - to change _edit_id
+      if ( defined $next_id || $bump eq 'undo' ) {
+        my $new_edit_id = $next_id;
+        if ( $bump eq 'undo' ) {
+          ($new_edit_id)
+           = $self->dbh->selectrow_array(
+            'SELECT prev_id FROM genome_changelog WHERE id=?',
+            {}, $old_edit_id );
+        }
+        $self->store_thing( $kind, $uuid, $new_data, $new_edit_id );
+        $self->bump( 'change', $kind, $bump );
+      }
+    }
+  );
+  return $next_id;
+}
+
+sub _undo_edit {
+  my ( $self, $id ) = @_;
+  $self->transaction(
+    sub {
+      my $change
+       = $self->dbh->selectrow_hashref(
+        'SELECT * FROM genome_changelog WHERE id=?',
+        {}, $id );
+      die unless $change;
+
+      # TODO should also roll back the associated edits
+      $self->_apply(
+        @{$change}{ 'kind', 'uuid', 'who' },
+        $self->_decode_wide( $change->{old_data} ),
+        [$change->{edit_id}, $change->{editlog_id}], 'undo'
+      );
+    }
+  );
 }
 
 sub apply {
@@ -1210,6 +1135,12 @@ sub history {
   return \@hist;
 }
 
+sub _parse_contributors {
+  my ( $self, $contrib ) = @_;
+  return Lintilla::DB::Genome::Programme->new( dbh => $self->dbh )
+   ->parse_contributors($contrib);
+}
+
 sub _parse_edit {
   my ( $self, $edit ) = @_;
   my $rec = {};
@@ -1218,6 +1149,8 @@ sub _parse_edit {
    if defined $edit->{title};
   $rec->{synopsis} = $self->_clean_text( $type, $edit->{synopsis} )
    if defined $edit->{synopsis};
+  # TODO date formatting?
+  $rec->{when} = $edit->{when} if defined $edit->{when};
   $rec->{contributors}
    = $self->_parse_contributors(
     $self->_clean_text( $type, $edit->{contributors} ) )

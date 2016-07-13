@@ -7,8 +7,8 @@ use Barlesque::Client;
 use Dancer::Plugin::Database;
 use Lintilla::DB::Genome::Blog;
 use Lintilla::DB::Genome::Edit;
-use Lintilla::DB::Genome;
 use Lintilla::DB::Genome::Search::Options;
+use Lintilla::DB::Genome;
 use Lintilla::Data::Static;
 use Lintilla::Personality;
 use Lintilla::Site::Admin;
@@ -19,6 +19,7 @@ use Lintilla::Site::Debug;
 use Lintilla::Site::Diagnostic;
 use Lintilla::Site::Edit;
 use Lintilla::Site::Labs;
+use Lintilla::Site::Page;
 use Lintilla::Site::Sync;
 use Lintilla::TT::Context;
 use Lintilla::TT::Extensions;
@@ -41,6 +42,12 @@ use constant BOILERPLATE =>
 use constant URL_SHRINKER =>
  'http://www.bbc.co.uk/modules/share/service/shrink';
 
+sub pdf_cutoff {
+  my $pe = vars->{personality};
+  return 2050 if $pe->personality eq 'internal';
+  return config->{show_pdf_cutoff} // 1800;
+}
+
 sub db() {
   Lintilla::DB::Genome->new(
     dbh            => database,
@@ -48,8 +55,10 @@ sub db() {
     related        => config->{show_related} ? 1 : 0,
     related_merged => config->{show_related_merged} ? 1 : 0,
     media          => config->{show_media} ? 1 : 0,
-    blog_search    => config->{blog_search} // 0,
-    blog_links     => config->{blog_links} ? 1 : 0,
+    store          => config->{show_store} ? 1 : 0,
+    blog_search => config->{blog_search} // 0,
+    blog_links => config->{blog_links} ? 1 : 0,
+    pdf_cutoff => pdf_cutoff(),
   );
 }
 
@@ -141,8 +150,9 @@ sub boilerplate($) {
     debug_script   => config->{debug_script},
     echo_key       => echo_key(),
     devmode        => !!config->{show_related_merged},
+    capture_email  => !!config->{capture_email},
     media_count    => $db->media_count,
-    blog           => $dbb->get_posts("genome", 3),
+    blog           => $dbb->get_posts( "genome", 3 ),
   );
 }
 

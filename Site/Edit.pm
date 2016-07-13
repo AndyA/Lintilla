@@ -31,17 +31,6 @@ sub db() {
   return $db;
 }
 
-prefix '/edit' => sub {
-  post '/programme/:uuid' => sub {
-    my $uuid = param('uuid');
-    my $db   = db;
-    my $data = $db->_decode( request->body );
-    $db->submit( $uuid, 'programme', 'anon', $data );
-    return { status => 'OK', message => 'Successfully submitted' };
-  };
-  get '/count' => sub { db->edit_state_count };
-};
-
 sub check_vis {
   my ( $need, $cb ) = @_;
   return sub {

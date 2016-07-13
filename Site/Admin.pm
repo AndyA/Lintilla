@@ -127,6 +127,17 @@ sub check_vis {
   };
 }
 
+prefix '/edit' => sub {
+  post '/programme/:uuid' => sub {
+    my $uuid = param('uuid');
+    my $db   = db;
+    my $data = $db->_decode( request->body );
+    $db->submit( $uuid, 'programme', 'anon', $data );
+    return { status => 'OK', message => 'Successfully submitted' };
+  };
+  get '/count' => sub { db->edit_state_count };
+};
+
 return 1 unless config->{admin_mode};
 
 prefix '/admin2' => sub {
@@ -197,6 +208,26 @@ prefix '/admin2' => sub {
         list  => db->list_v2(%params),
         count => db->edit_state_count
       };
+    }
+  );
+
+  get '/history/:start/:size' => check_vis(
+    'internal',
+    sub {
+      my %params = params;
+
+      my $limit = db->edit_log_count;
+      $params{start} = int( $limit / $params{size} ) * $params{size}
+       if $params{start} >= $limit;
+
+      return {
+        start => $params{start},
+        size  => $params{size},
+        limit => $limit,
+        list  => db->edit_log( $params{start}, $params{size} ),
+        count => db->edit_state_count
+      };
+
     }
   );
 
