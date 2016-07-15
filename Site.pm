@@ -51,14 +51,15 @@ sub pdf_cutoff {
 sub db() {
   Lintilla::DB::Genome->new(
     dbh            => database,
-    infax          => config->{infax_link} ? 1 : 0,
-    related        => config->{show_related} ? 1 : 0,
-    related_merged => config->{show_related_merged} ? 1 : 0,
-    media          => config->{show_media} ? 1 : 0,
-    store          => config->{show_store} ? 1 : 0,
-    blog_search => config->{blog_search} // 0,
-    blog_links => config->{blog_links} ? 1 : 0,
-    pdf_cutoff => pdf_cutoff(),
+    infax          => !!config->{infax_link},
+    related        => !!config->{show_related},
+    related_merged => !!config->{show_related_merged},
+    media          => !!config->{show_media},
+    store          => !!config->{show_store},
+    pdf_viewer     => !!config->{show_pdf_viewer},
+    blog_search    => config->{blog_search} // 0,
+    blog_links     => !!config->{blog_links},
+    pdf_cutoff     => pdf_cutoff(),
   );
 }
 
