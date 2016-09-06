@@ -5,6 +5,7 @@ use Dancer ':syntax';
 
 use Barlesque::Client;
 use Dancer::Plugin::Database;
+use Fenchurch::Core;
 use Lintilla::DB::Genome::Blog;
 use Lintilla::DB::Genome::Edit;
 use Lintilla::DB::Genome::Search::Options;
