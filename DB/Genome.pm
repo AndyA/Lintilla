@@ -507,28 +507,27 @@ sub _add_related {
   return $rows;
 }
 
-sub _add_media {
+sub _add_extra {
   my ( $self, $rows ) = @_;
   my @uids = map { $_->{_uuid} } @$rows;
 
   if (@uids) {
-    my $irows = $self->dbh->selectall_arrayref(
+    my $xrows = $self->dbh->selectall_arrayref(
       join( ' ',
-        'SELECT * FROM genome_media WHERE _parent IN',
+        'SELECT * FROM genome_extra WHERE _parent IN',
         '(', join( ', ', map '?', @uids ),
-        ')', 'ORDER BY `row_num`' ),
+        ')', 'ORDER BY `index`' ),
       { Slice => {} },
       @uids
     );
 
-    my $media = $self->group_by( $irows, '_parent' );
+    my $extra = $self->group_by( $xrows, '_parent', 'kind' );
 
     for my $row (@$rows) {
-      my $rec = delete $media->{ $row->{_uuid} };
-      for my $me (@$rec) {
-        $me->{pretty_duration} = $self->pretty_duration( $me->{duration} );
+      my $rec = delete $extra->{ $row->{_uuid} } // {};
+      while ( my ( $kind, $data ) = each %$rec ) {
+        $row->{$kind} = [map { $self->_decode_wide( $_->{data} ) } @$data];
       }
-      $row->{media} = $self->_make_public( $rec || [] );
     }
   }
 
@@ -541,30 +540,6 @@ sub _add_pdf_viewer {
   for my $row (@$rows) {
     $row->{viewer_link} = '/page/' . $row->{link} if $row->{year} <= $cutoff;
   }
-  return $rows;
-}
-
-sub _add_store {
-  my ( $self, $rows ) = @_;
-  my @uids = map { $_->{_uuid} } @$rows;
-
-  if (@uids) {
-    my $irows = $self->dbh->selectall_arrayref(
-      join( ' ',
-        'SELECT * FROM genome_store WHERE _parent IN', '(',
-        join( ', ', map '?', @uids ), ')' ),
-      { Slice => {} },
-      @uids
-    );
-
-    my $store = $self->group_by( $irows, '_parent' );
-
-    for my $row (@$rows) {
-      my $rec = delete $store->{ $row->{_uuid} };
-      $row->{store} = $self->_make_public( $rec || [] );
-    }
-  }
-
   return $rows;
 }
 
@@ -603,9 +578,8 @@ sub _add_programme_details {
   $self->_add_infax_links($rows)    if $self->infax;
   $self->_add_related($rows)        if $self->related;
   $self->_add_related_merged($rows) if $self->related_merged;
-  $self->_add_media($rows)          if $self->media;
-  $self->_add_store($rows)          if $self->store;
-  $self->_add_blog_links($rows)     if $self->blog_links;
+  $self->_add_extra($rows);
+  $self->_add_blog_links($rows) if $self->blog_links;
   $self->_add_pdf_viewer($rows) if $self->pdf_viewer && $self->pdf_cutoff;
 
   return $rows;
