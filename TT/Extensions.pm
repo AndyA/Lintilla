@@ -136,10 +136,28 @@ $Template::Stash::SCALAR_OPS->{thousands} = sub {
   return $n;
 };
 
+$Template::Stash::SCALAR_OPS->{pretty_duration} = sub {
+  my $secs = shift;
+
+  my @uname = ( 'hour', 'minute', 'second' );
+  my @part  = ();
+  my @hpart = ();
+
+  while ($secs) {
+    my $u  = $secs % 60;
+    my $un = pop @uname;
+    unshift @part, $u;
+    unshift @hpart, $u == 1 ? "$u $un" : "$u ${un}s" if $u;
+    $secs = int( $secs / 60 );
+  }
+
+  return join ', ', @hpart;
+};
+
 {
   my $JSON = sub { JSON->new->canonical->allow_nonref->encode(shift) };
-  $Template::Stash::HASH_OPS->{json} = $JSON;
-  $Template::Stash::LIST_OPS->{json} = $JSON;
+  $Template::Stash::HASH_OPS->{json}   = $JSON;
+  $Template::Stash::LIST_OPS->{json}   = $JSON;
   $Template::Stash::SCALAR_OPS->{json} = $JSON;
 }
 
