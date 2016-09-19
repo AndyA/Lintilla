@@ -37,8 +37,6 @@ with 'Lintilla::Role::Genome';
 has infax          => ( is => 'ro', isa => 'Bool', default => 0 );
 has related        => ( is => 'ro', isa => 'Bool', default => 0 );
 has related_merged => ( is => 'ro', isa => 'Bool', default => 0 );
-has media          => ( is => 'ro', isa => 'Bool', default => 0 );
-has store          => ( is => 'ro', isa => 'Bool', default => 0 );
 has blog_links     => ( is => 'ro', isa => 'Bool', default => 0 );
 has pdf_viewer     => ( is => 'ro', isa => 'Bool', default => 0 );
 has blog_search    => ( is => 'ro', isa => 'Num',  default => 0 );
@@ -560,8 +558,6 @@ sub _add_blog_links {
 
 sub media_count {
   my $self = shift;
-
-  return 0 unless $self->media;
 
   my ($count)
    = $self->dbh->selectrow_array(

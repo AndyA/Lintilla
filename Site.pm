@@ -55,8 +55,6 @@ sub db() {
     infax          => !!config->{infax_link},
     related        => !!config->{show_related},
     related_merged => !!config->{show_related_merged},
-    media          => !!config->{show_media},
-    store          => !!config->{show_store},
     pdf_viewer     => !!config->{show_pdf_viewer},
     blog_search    => config->{blog_search} // 0,
     blog_links     => !!config->{blog_links},
