@@ -17,7 +17,6 @@ our $VERSION = '0.1';
 
 with 'Lintilla::Role::DB';
 with 'Lintilla::Role::JSON';
-with 'Lintilla::Role::Config';
 with 'Lintilla::Role::DateTime';
 with 'Lintilla::Role::Sphinx';
 with 'Lintilla::Role::UUID';

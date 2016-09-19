@@ -28,7 +28,6 @@ use constant INFAX_CONFIDENCE => 90;
 
 with 'Lintilla::Role::DB';
 with 'Lintilla::Role::JSON';
-with 'Lintilla::Role::Config';
 with 'Lintilla::Role::DateTime';
 with 'Lintilla::Role::Gatherer';
 with 'Lintilla::Role::Source';
