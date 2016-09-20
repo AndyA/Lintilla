@@ -26,12 +26,6 @@ sub schema {
         pkey   => '_uuid',
         plural => 'programmes',
       },
-      coordinate => {
-        table    => 'genome_coordinates',
-        child_of => { programme => '_parent' },
-        order    => '+index',
-        plural   => 'coordinates',
-      },
       contributor => {
         table    => 'genome_contributors',
         child_of => { programme => '_parent' },
@@ -42,6 +36,12 @@ sub schema {
         table    => 'genome_related_merged',
         pkey     => '_uuid',
         child_of => { programme => '_parent' },
+      },
+      edit => {
+        table  => 'fenchurch_edit',
+        pkey   => 'uuid',
+        plural => 'edits',
+        json   => ['old_data', 'new_data'],
       },
     }
   );
