@@ -38,23 +38,10 @@ sub schema {
         order    => '+index',
         plural   => 'contributors',
       },
-      #      media => {
-      #        table    => 'genome_media',
-      #        child_of => { programme => '_parent' },
-      #        order    => '+index',
-      #      },
-      #      store => {
-      #        table    => 'genome_store',
-      #        child_of => { programme => '_parent' },
-      #      },
       related => {
         table    => 'genome_related_merged',
         pkey     => '_uuid',
         child_of => { programme => '_parent' },
-      },
-      edit => {
-        table => 'genome_edit',
-        pkey  => 'id',
       },
     }
   );
