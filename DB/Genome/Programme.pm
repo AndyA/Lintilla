@@ -197,8 +197,6 @@ programme
   | Field          | Type             | Null | Key | Default | Extra |
   +----------------+------------------+------+-----+---------+-------+
   | _uuid          | varchar(36)      | NO   | PRI | NULL    |       |
-  | _created       | datetime         | NO   |     | NULL    |       |
-  | _modified      | datetime         | NO   |     | NULL    |       |
   | _key           | varchar(48)      | NO   | MUL | NULL    |       |
   | _parent        | varchar(36)      | YES  | MUL | NULL    |       |
   | _edit_id       | int(10)          | YES  |     | NULL    |       |
@@ -328,8 +326,6 @@ sub _create {
   my @v = ("?") x @b;
 
   my %xf = (
-    _created  => ["NOW()"],
-    _modified => ["NOW()"],
     day       => ["DAY(?)", $data->{when}],
     month     => ["MONTH(?)", $data->{when}],
     year      => ["YEAR(?)", $data->{when}],

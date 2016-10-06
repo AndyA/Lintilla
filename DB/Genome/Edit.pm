@@ -1005,9 +1005,8 @@ sub _apply {
   $self->transaction(
     sub {
       my $old_data = $self->fetch_thing( $kind, $uuid );
-      my ( $old_modified, $old_edit_id )
-       = delete @{$old_data}{ '_modified', '_edit_id' };
-      delete @{$new_data}{ '_modified', '_edit_id' };
+      my $old_edit_id = delete $old_data->{'_edit_id'};
+      delete $new_data->{'_edit_id'};
 
       # Only stash data that changes
       for my $ok ( keys %$old_data ) {
