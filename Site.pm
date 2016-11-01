@@ -106,27 +106,26 @@ sub echo_key {
    @path, 'page';
 }
 
-sub boilerplate($) {
-  my $db   = shift;
-  my $dbb  = Lintilla::DB::Genome::Blog->new( dbh => $db->dbh );
-  my $dbe  = Lintilla::DB::Genome::Edit->new( dbh => $db->dbh );
+sub boilerplate() {
+  my $dbb  = Lintilla::DB::Genome::Blog->new( dbh => db->dbh );
+  my $dbe  = Lintilla::DB::Genome::Edit->new( dbh => db->dbh );
   my $srch = Lintilla::DB::Genome::Search::Options->new;
   my $pe   = vars->{personality};
   return (
-    $db->gather(BOILERPLATE),
+    db->gather(BOILERPLATE),
     barlesque   => barlesque->parts,
     static_base => is_tls()
     ? 'https://static.bbc.co.uk'
     : 'http://static.bbci.co.uk',
     visibility     => $pe->personality,
     change_count   => $dbe->change_count,
-    stash          => sub { $db->stash(shift) },
+    stash          => sub { db->stash(shift) },
     timelist       => sub { $srch->timelist },
-    title          => $db->page_title,
+    title          => db->page_title,
     stations       => $STATIC->get('stations'),
     form           => $srch->form,
     switchview     => $pe->switcher,
-    share_stash    => $db->share_stash,
+    share_stash    => db->share_stash,
     show_external  => !config->{disable_external},
     infax_link     => !!config->{infax_link},
     related_merged => !!config->{show_related_merged},
@@ -134,7 +133,7 @@ sub boilerplate($) {
     echo_key       => echo_key(),
     devmode        => !!config->{show_related_merged},
     capture_email  => !!config->{capture_email},
-    media_count    => $db->media_count,
+    media_count    => db->media_count,
     blog           => $dbb->get_posts( "genome", 3 ),
   );
 }
@@ -153,22 +152,21 @@ hook 'before' => sub {
 };
 
 get '/' => sub {
-  template 'index', { boilerplate db };
+  template 'index', {boilerplate};
 };
 
 sub safe_service_defaults {
-  my ( $db, $service ) = @_;
-  my @dflt = db->service_defaults( param('service') );
+  my $service = shift;
+  my @dflt    = db->service_defaults( param('service') );
   return '/schedules/missing' unless @dflt;
   return join( '/', '/schedules', $service, @dflt );
 }
 
 get '/schedules/missing' => sub {
-  my $db = db;
   template 'schedule',
-   {boilerplate $db,
+   {boilerplate,
     missing  => 1,
-    title    => $db->page_title('Listing Unavailable'),
+    title    => db->page_title('Listing Unavailable'),
     echo_key => echo_key('missing'),
    };
 };
@@ -181,64 +179,58 @@ get '/schedules/:service/near/:date' => sub {
 
 get '/schedules/:service' => sub {
   delete request->env->{SCRIPT_NAME};   # don't include disptch.fcgi in URI
-  redirect safe_service_defaults( db, param('service') );
+  redirect safe_service_defaults( param('service') );
 };
 
 get '/schedules/:service/:date' => sub {
-  my $db = db;
-  my @dflt = $db->service_defaults( param('service'), param('date') );
+  my @dflt = db->service_defaults( param('service'), param('date') );
   if ( @dflt > 1 ) {
     delete request->env->{SCRIPT_NAME};
     redirect join '/', '/schedules', param('service'), @dflt;
     return;
   }
   template 'schedule',
-   {boilerplate $db,
+   {boilerplate,
     echo_key => echo_key( 'schedule', param('service') ),
-    $db->listing_for_schedule( param('service'), param('date') ),
+    db->listing_for_schedule( param('service'), param('date') ),
    };
 };
 
 get '/schedules/:service/:outlet/:date' => sub {
-  my $db = db;
   template 'schedule',
-   {boilerplate $db,
+   {boilerplate,
     echo_key => echo_key( 'schedule', param('service') ),
-    $db->listing_for_schedule(
+    db->listing_for_schedule(
       param('service'), param('outlet'), param('date')
     ),
    };
 };
 
 get '/years/:year' => sub {
-  my $db = db;
   pass unless param('year') =~ /^\d+$/;
   template 'year',
-   {boilerplate $db,
+   {boilerplate,
     echo_key => echo_key( 'year', param('year') ),
-    $db->issues_for_year( param('year') ),
+    db->issues_for_year( param('year') ),
    };
 };
 
 get '/issues' => sub {
-  my $db = db;
   template 'issues',
-   {boilerplate $db,
+   {boilerplate,
     echo_key => echo_key('issues'),
-    $db->annual_issues
+    db->annual_issues
    };
 };
 
 get '/search/:start/:size' => sub {
-  my $db = db;
   template 'search',
-   {boilerplate $db,
+   {boilerplate,
     echo_key => echo_key('search'),
-    $db->search(params) };
+    db->search(params) };
 };
 
 get '/search' => sub {
-  my $db = db;
   delete request->env->{SCRIPT_NAME};
   my $uri = URI->new( request->uri_for('/search/0/20') );
   $uri->query_form(params);
@@ -246,61 +238,56 @@ get '/search' => sub {
 };
 
 get '/help' => sub {
-  my $db = db;
   template 'help',
-   {boilerplate $db,
+   {boilerplate,
     echo_key => echo_key('help'),
     share_stash =>
-     $db->share_stash( title => 'FAQs for the BBC Genome Project' ),
-    title => $db->page_title('FAQs') };
+     db->share_stash( title => 'FAQs for the BBC Genome Project' ),
+    title => db->page_title('FAQs') };
 };
 
 get '/faqs' => sub {
-  my $db = db;
   template 'help',
-   {boilerplate $db,
+   {boilerplate,
     echo_key => echo_key('faqs'),
     share_stash =>
-     $db->share_stash( title => 'FAQs for the BBC Genome Project' ),
-    title => $db->page_title('FAQs') };
+     db->share_stash( title => 'FAQs for the BBC Genome Project' ),
+    title => db->page_title('FAQs') };
 };
 
 get '/about' => sub {
-  my $db = db;
   template 'about',
-   {boilerplate $db,
+   {boilerplate,
     echo_key => echo_key('about'),
     share_stash =>
-     $db->share_stash( title => 'About the BBC Genome Project' ),
-    title => $db->page_title('About this project') };
+     db->share_stash( title => 'About the BBC Genome Project' ),
+    title => db->page_title('About this project') };
 };
 
 get '/style-guide' => sub {
-  my $db = db;
   template 'style-guide',
-   {boilerplate $db,
+   {boilerplate,
     echo_key => echo_key('styleguide'),
     share_stash =>
-     $db->share_stash( title => 'Editing Style Guide for BBC Genome' ),
-    title => $db->page_title('Editing Style Guide') };
+     db->share_stash( title => 'Editing Style Guide for BBC Genome' ),
+    title => db->page_title('Editing Style Guide') };
 };
 
 get qr/\/([0-9a-f]{32})/i => sub {
   my ($uuid) = splat;
-  my $db     = db;
-  my $thing  = $db->lookup_uuid($uuid);
+  my $thing  = db->lookup_uuid($uuid);
   given ( $thing->{kind} ) {
     when ('issue') {
       template 'issue',
-       {boilerplate $db,
+       {boilerplate,
         echo_key => echo_key('issue'),
-        $db->issue_listing($uuid) };
+        db->issue_listing($uuid) };
     }
     when ('programme') {
       template 'programme',
-       {boilerplate $db,
+       {boilerplate,
         echo_key => echo_key('programme'),
-        $db->programme($uuid) };
+        db->programme($uuid) };
     }
     default {
       pass;
@@ -320,7 +307,7 @@ get '/modules/share/service/shrink' => sub {
 any qr{.*} => sub {
   status 'not_found';
   template 'error404',
-   {boilerplate db,
+   {boilerplate,
     echo_key => echo_key('404'),
     path     => request->path
    };
