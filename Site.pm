@@ -6,10 +6,10 @@ use Dancer ':syntax';
 use Barlesque::Client;
 use Dancer::Plugin::Database;
 use Fenchurch::Core;
+use Genome::Factory;
 use Lintilla::DB::Genome::Blog;
 use Lintilla::DB::Genome::Edit;
 use Lintilla::DB::Genome::Search::Options;
-use Lintilla::DB::Genome;
 use Lintilla::Data::Static;
 use Lintilla::Personality;
 use Lintilla::Site::Admin;
@@ -43,24 +43,7 @@ use constant BOILERPLATE =>
 use constant URL_SHRINKER =>
  'http://www.bbc.co.uk/modules/share/service/shrink';
 
-sub pdf_cutoff {
-  my $pe = vars->{personality};
-  return 2050 if $pe->personality eq 'internal';
-  return config->{show_pdf_cutoff} // 1800;
-}
-
-sub db() {
-  Lintilla::DB::Genome->new(
-    dbh            => database,
-    infax          => !!config->{infax_link},
-    related        => !!config->{show_related},
-    related_merged => !!config->{show_related_merged},
-    pdf_viewer     => !!config->{show_pdf_viewer},
-    blog_search    => config->{blog_search} // 0,
-    blog_links     => !!config->{blog_links},
-    pdf_cutoff     => pdf_cutoff(),
-  );
-}
+sub db() { Genome::Factory->model }
 
 sub resources {
   return state $res ||= Lintilla::Tools::Enqueue->new(
