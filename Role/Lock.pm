@@ -24,7 +24,7 @@ sub _decode_host_key {
 
 sub _lock_key {
   my ( $self, @key ) = @_;
-  return join "-", $self->blessed, @key;
+  return join "-", blessed($self), @key;
 }
 
 sub _get_owner {
