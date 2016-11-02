@@ -6,7 +6,6 @@ use Dancer ':syntax';
 use Barlesque::Client;
 use Dancer::Plugin::Database;
 use Genome::Factory;
-use Lintilla::DB::Genome::Blog;
 use Lintilla::DB::Genome::Edit;
 use Lintilla::DB::Genome::Search::Options;
 use Lintilla::Data::Static;
@@ -106,7 +105,7 @@ sub echo_key {
 }
 
 sub boilerplate() {
-  my $dbb  = Lintilla::DB::Genome::Blog->new( dbh => db->dbh );
+  my $dbb  = Genome::Factory->blog_model;
   my $dbe  = Lintilla::DB::Genome::Edit->new( dbh => db->dbh );
   my $srch = Lintilla::DB::Genome::Search::Options->new;
   my $pe   = vars->{personality};
@@ -274,7 +273,7 @@ get '/style-guide' => sub {
 
 get qr/\/([0-9a-f]{32})/i => sub {
   my ($uuid) = splat;
-  my $thing  = db->lookup_uuid($uuid);
+  my $thing = db->lookup_uuid($uuid);
   given ( $thing->{kind} ) {
     when ('issue') {
       template 'issue',
