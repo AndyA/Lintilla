@@ -3,8 +3,8 @@ package Lintilla::Site::Labs::Schedule;
 use Dancer ':syntax';
 
 use Dancer::Plugin::Database;
+use Labs::Factory;
 use Lintilla::Magic::Asset;
-use Lintilla::DB::Genome::Schedule;
 use Path::Class;
 
 =head1 NAME
@@ -35,11 +35,8 @@ prefix '/labs' => sub {
       my $magic = Lintilla::Magic::Asset->new(
         filename => $out_file,
         timeout  => 20,
-        provider => Lintilla::DB::Genome::Schedule->new(
-          out_file => $out_file,
-          dbh      => database
-        ),
-        method => 'create_range'
+        provider => Labs::Factory->schedule_model( out_file => $out_file ),
+        method   => 'create_range'
       );
 
       $magic->render or die "Can't render";
@@ -56,10 +53,9 @@ prefix '/labs' => sub {
       my $magic = Lintilla::Magic::Asset->new(
         filename => $out_file,
         timeout  => 20,
-        provider => Lintilla::DB::Genome::Schedule->new(
+        provider => Labs::Factory->schedule_model(
           slot     => $slot,
           out_file => $out_file,
-          dbh      => database
         ),
         method => 'create_week'
       );

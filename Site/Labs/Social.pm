@@ -3,7 +3,7 @@ package Lintilla::Site::Labs::Social;
 use Dancer ':syntax';
 
 use Dancer::Plugin::Database;
-use Lintilla::DB::Genome::SocialGraph;
+use Labs::Factory;
 
 =head1 NAME
 
@@ -13,7 +13,7 @@ Lintilla::Site::Labs::Social - Social graph
 
 our $VERSION = '0.1';
 
-sub db() { Lintilla::DB::Genome::SocialGraph->new( dbh => database ) }
+sub db() { Labs::Factory->socialgraph_model }
 
 prefix '/labs' => sub {
 
