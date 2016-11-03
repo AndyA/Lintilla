@@ -242,7 +242,7 @@ prefix '/admin2' => sub {
       'internal',
       sub {
         my $db   = db;
-        my $data = $db->_decode( request->body );
+        my $data = $db->json_decode( request->body );
         $db->edit_edit( param('id'), 'admin', $data );
         return { status => 'OK', message => 'Successfully edited' };
       }
