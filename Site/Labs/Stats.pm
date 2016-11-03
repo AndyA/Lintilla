@@ -3,7 +3,7 @@ package Lintilla::Site::Labs::Stats;
 use Dancer ':syntax';
 
 use Dancer::Plugin::Database;
-use Lintilla::DB::Genome::Stats;
+use Labs::Factory;
 
 =head1 NAME
 
@@ -13,7 +13,7 @@ Lintilla::Site::Labs::Stats - Digested stats graphs
 
 our $VERSION = '0.1';
 
-sub db { Lintilla::DB::Genome::Stats->new( dbh => database, @_ ) }
+sub db { Labs::Factory->stats_model(@_) }
 
 prefix '/labs' => sub {
 
