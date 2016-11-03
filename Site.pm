@@ -6,7 +6,6 @@ use Dancer ':syntax';
 use Barlesque::Client;
 use Dancer::Plugin::Database;
 use Genome::Factory;
-use Lintilla::DB::Genome::Edit;
 use Lintilla::DB::Genome::Search::Options;
 use Lintilla::Data::Static;
 use Lintilla::Personality;
@@ -35,13 +34,13 @@ Lintilla::Site - Genome main app
 
 no if $] >= 5.018, warnings => "experimental::smartmatch";
 
-use constant BOILERPLATE =>
- qw( services years decades decade_years month_names short_month_names );
+use constant BOILERPLATE => qw(
+ decade_years decades media_count month_names services share_stash
+ short_month_names years
+);
 
 use constant URL_SHRINKER =>
  'http://www.bbc.co.uk/modules/share/service/shrink';
-
-sub db() { Genome::Factory->model }
 
 sub resources {
   return state $res ||= Lintilla::Tools::Enqueue->new(
@@ -105,25 +104,22 @@ sub echo_key {
 }
 
 sub boilerplate() {
-  my $dbb  = Genome::Factory->blog_model;
-  my $dbe  = Lintilla::DB::Genome::Edit->new( dbh => db->dbh );
   my $srch = Lintilla::DB::Genome::Search::Options->new;
   my $pe   = vars->{personality};
   return (
-    db->gather(BOILERPLATE),
+    Genome::Factory->model->gather(BOILERPLATE),
     barlesque   => barlesque->parts,
     static_base => is_tls()
     ? 'https://static.bbc.co.uk'
     : 'http://static.bbci.co.uk',
     visibility     => $pe->personality,
-    change_count   => $dbe->change_count,
-    stash          => sub { db->stash(shift) },
+    change_count   => Genome::Factory->edit_model->change_count,
+    stash          => sub { Genome::Factory->model->stash(shift) },
     timelist       => sub { $srch->timelist },
-    title          => db->page_title,
+    title          => Genome::Factory->model->page_title,
     stations       => $STATIC->get('stations'),
     form           => $srch->form,
     switchview     => $pe->switcher,
-    share_stash    => db->share_stash,
     show_external  => !config->{disable_external},
     infax_link     => !!config->{infax_link},
     related_merged => !!config->{show_related_merged},
@@ -131,8 +127,7 @@ sub boilerplate() {
     echo_key       => echo_key(),
     devmode        => !!config->{show_related_merged},
     capture_email  => !!config->{capture_email},
-    media_count    => db->media_count,
-    blog           => $dbb->get_posts( "genome", 3 ),
+    blog           => Genome::Factory->blog_model->get_posts( "genome", 3 ),
   );
 }
 
@@ -155,7 +150,7 @@ get '/' => sub {
 
 sub safe_service_defaults {
   my $service = shift;
-  my @dflt    = db->service_defaults( param('service') );
+  my @dflt = Genome::Factory->model->service_defaults( param('service') );
   return '/schedules/missing' unless @dflt;
   return join( '/', '/schedules', $service, @dflt );
 }
@@ -164,7 +159,7 @@ get '/schedules/missing' => sub {
   template 'schedule',
    {boilerplate,
     missing  => 1,
-    title    => db->page_title('Listing Unavailable'),
+    title    => Genome::Factory->model->page_title('Listing Unavailable'),
     echo_key => echo_key('missing'),
    };
 };
@@ -172,7 +167,7 @@ get '/schedules/missing' => sub {
 get '/schedules/:service/near/:date' => sub {
   delete request->env->{SCRIPT_NAME};
   redirect join '/', '/schedules',
-   db->service_near( param('service'), param('date') );
+   Genome::Factory->model->service_near( param('service'), param('date') );
 };
 
 get '/schedules/:service' => sub {
@@ -181,7 +176,8 @@ get '/schedules/:service' => sub {
 };
 
 get '/schedules/:service/:date' => sub {
-  my @dflt = db->service_defaults( param('service'), param('date') );
+  my @dflt = Genome::Factory->model->service_defaults( param('service'),
+    param('date') );
   if ( @dflt > 1 ) {
     delete request->env->{SCRIPT_NAME};
     redirect join '/', '/schedules', param('service'), @dflt;
@@ -190,7 +186,9 @@ get '/schedules/:service/:date' => sub {
   template 'schedule',
    {boilerplate,
     echo_key => echo_key( 'schedule', param('service') ),
-    db->listing_for_schedule( param('service'), param('date') ),
+    Genome::Factory->model->listing_for_schedule(
+      param('service'), param('date')
+    ),
    };
 };
 
@@ -198,7 +196,7 @@ get '/schedules/:service/:outlet/:date' => sub {
   template 'schedule',
    {boilerplate,
     echo_key => echo_key( 'schedule', param('service') ),
-    db->listing_for_schedule(
+    Genome::Factory->model->listing_for_schedule(
       param('service'), param('outlet'), param('date')
     ),
    };
@@ -209,7 +207,7 @@ get '/years/:year' => sub {
   template 'year',
    {boilerplate,
     echo_key => echo_key( 'year', param('year') ),
-    db->issues_for_year( param('year') ),
+    Genome::Factory->model->issues_for_year( param('year') ),
    };
 };
 
@@ -217,7 +215,7 @@ get '/issues' => sub {
   template 'issues',
    {boilerplate,
     echo_key => echo_key('issues'),
-    db->annual_issues
+    Genome::Factory->model->annual_issues
    };
 };
 
@@ -225,7 +223,7 @@ get '/search/:start/:size' => sub {
   template 'search',
    {boilerplate,
     echo_key => echo_key('search'),
-    db->search(params) };
+    Genome::Factory->model->search(params) };
 };
 
 get '/search' => sub {
@@ -238,54 +236,58 @@ get '/search' => sub {
 get '/help' => sub {
   template 'help',
    {boilerplate,
-    echo_key => echo_key('help'),
-    share_stash =>
-     db->share_stash( title => 'FAQs for the BBC Genome Project' ),
-    title => db->page_title('FAQs') };
+    echo_key    => echo_key('help'),
+    share_stash => Genome::Factory->model->share_stash(
+      title => 'FAQs for the BBC Genome Project'
+    ),
+    title => Genome::Factory->model->page_title('FAQs') };
 };
 
 get '/faqs' => sub {
   template 'help',
    {boilerplate,
-    echo_key => echo_key('faqs'),
-    share_stash =>
-     db->share_stash( title => 'FAQs for the BBC Genome Project' ),
-    title => db->page_title('FAQs') };
+    echo_key    => echo_key('faqs'),
+    share_stash => Genome::Factory->model->share_stash(
+      title => 'FAQs for the BBC Genome Project'
+    ),
+    title => Genome::Factory->model->page_title('FAQs') };
 };
 
 get '/about' => sub {
   template 'about',
    {boilerplate,
-    echo_key => echo_key('about'),
-    share_stash =>
-     db->share_stash( title => 'About the BBC Genome Project' ),
-    title => db->page_title('About this project') };
+    echo_key    => echo_key('about'),
+    share_stash => Genome::Factory->model->share_stash(
+      title => 'About the BBC Genome Project'
+    ),
+    title => Genome::Factory->model->page_title('About this project') };
 };
 
 get '/style-guide' => sub {
   template 'style-guide',
    {boilerplate,
-    echo_key => echo_key('styleguide'),
-    share_stash =>
-     db->share_stash( title => 'Editing Style Guide for BBC Genome' ),
-    title => db->page_title('Editing Style Guide') };
+    echo_key    => echo_key('styleguide'),
+    share_stash => Genome::Factory->model->share_stash(
+      title => 'Editing Style Guide for BBC Genome'
+    ),
+    title => Genome::Factory->model->page_title('Editing Style Guide') };
 };
 
 get qr/\/([0-9a-f]{32})/i => sub {
   my ($uuid) = splat;
-  my $thing = db->lookup_uuid($uuid);
+  my $thing = Genome::Factory->model->lookup_uuid($uuid);
   given ( $thing->{kind} ) {
     when ('issue') {
       template 'issue',
        {boilerplate,
         echo_key => echo_key('issue'),
-        db->issue_listing($uuid) };
+        Genome::Factory->model->issue_listing($uuid) };
     }
     when ('programme') {
       template 'programme',
        {boilerplate,
         echo_key => echo_key('programme'),
-        db->programme($uuid) };
+        Genome::Factory->model->programme($uuid) };
     }
     default {
       pass;

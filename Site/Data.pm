@@ -3,7 +3,7 @@ package Lintilla::Site::Data;
 use Dancer ':syntax';
 
 use Dancer::Plugin::Database;
-use Lintilla::DB::Genome;
+use Genome::Factory;
 
 =head1 NAME
 
@@ -13,16 +13,16 @@ Lintilla::Data - Data handlers
 
 prefix '/data' => sub {
   get '/services' => sub {
-    Lintilla::DB::Genome->new( dbh => database )->services;
+    Genome::Factory->model->services;
   };
   get '/years' => sub {
-    Lintilla::DB::Genome->new( dbh => database )->years;
+    Genome::Factory->model->years;
   };
   get '/decades' => sub {
-    Lintilla::DB::Genome->new( dbh => database )->decades;
+    Genome::Factory->model->decades;
   };
   get '/programme/:uuid' => sub {
-    Lintilla::DB::Genome->new( dbh => database )->programme( param('uuid') );
+    Genome::Factory->model->programme( param('uuid') );
   };
 };
 
