@@ -3,7 +3,7 @@ package Lintilla::Site::Sync;
 use Dancer ':syntax';
 use Dancer::Plugin::Database;
 
-use Lintilla::DB::Genome::Edit;
+use Genome::Factory;
 
 =head1 NAME
 
@@ -13,7 +13,7 @@ Lintilla::Site::Sync - Sync endpoints
 
 our $VERSION = '0.1';
 
-sub db() { Lintilla::DB::Genome::Edit->new( dbh => database ) }
+sub db() { Genome::Factory->edit_model }
 
 prefix '/sync' => sub {
   get '/changes/:since' => sub {

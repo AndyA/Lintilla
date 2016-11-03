@@ -3,10 +3,10 @@ package Lintilla::Site::Edit;
 use Dancer ':syntax';
 
 use Dancer::Plugin::Database;
+use Genome::Factory;
 use JSON qw();
 use Lintilla::Broadcast::Client;
 use Lintilla::Broadcast::Server;
-use Lintilla::DB::Genome::Edit;
 use Time::HiRes qw( time );
 
 =head1 NAME
@@ -21,7 +21,7 @@ my $CLIENT = Lintilla::Broadcast::Client->new;
 my $SERVER = Lintilla::Broadcast::Server->new->listen;
 
 sub db() {
-  my $db = Lintilla::DB::Genome::Edit->new( dbh => database );
+  my $db = Genome::Factory->edit_model;
   $db->on_bump(
     sub {
       my $path = shift;
