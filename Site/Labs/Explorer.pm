@@ -3,7 +3,7 @@ package Lintilla::Site::Labs::Explorer;
 use Dancer ':syntax';
 
 use Dancer::Plugin::Database;
-use Lintilla::DB::Genome::Explorer;
+use Labs::Factory;
 
 =head1 NAME
 
@@ -13,7 +13,7 @@ Lintilla::Site::Labs::Explorer - Schedule explorer
 
 our $VERSION = '0.1';
 
-sub db() { Lintilla::DB::Genome::Explorer->new( dbh => database ) }
+sub db() { Labs::Factory->explorer_model }
 
 prefix '/labs' => sub {
 
