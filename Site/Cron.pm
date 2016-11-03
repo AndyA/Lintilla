@@ -2,7 +2,7 @@ package Lintilla::Site::Cron;
 
 use Dancer ':syntax';
 use Dancer::Plugin::Database;
-use Lintilla::DB::Genome::Cron;
+use Genome::Factory;
 
 =head1 NAME
 
@@ -10,10 +10,7 @@ Lintilla::Site::Cron - Run cron jobs
 
 =cut
 
-get "/cron" => sub {
-  my $cron = Lintilla::DB::Genome::Cron->new( dbh => database );
-  return $cron->run;
-};
+get "/cron" => sub { Genome::Factory->cron->run };
 
 1;
 
