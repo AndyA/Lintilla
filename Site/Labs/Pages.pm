@@ -3,7 +3,7 @@ package Lintilla::Site::Labs::Pages;
 use Dancer ':syntax';
 
 use Dancer::Plugin::Database;
-use Lintilla::DB::Genome::Pages;
+use Labs::Factory;
 
 =head1 NAME
 
@@ -13,7 +13,7 @@ Lintilla::Site::Labs::Pages - OCR Page regions
 
 our $VERSION = '0.1';
 
-sub db() { Lintilla::DB::Genome::Pages->new( dbh => database ) }
+sub db() { Labs::Factory->pages_model }
 
 prefix '/labs' => sub {
 

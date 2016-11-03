@@ -2,10 +2,10 @@ package Lintilla::Site::Page;
 
 use Dancer ':syntax';
 use Dancer::Plugin::Database;
-use Lintilla::DB::Genome::Pages;
 use Lintilla::Image::PDFExtract;
 use Lintilla::Magic::Asset;
 use Path::Class;
+use Genome::Factory;
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ serves page 1 of
 
 =cut
 
-sub db() { Lintilla::DB::Genome::Pages->new( dbh => database ) }
+sub db() { Genome::Factory->pages_model }
 
 sub our_uri_for {
   my $sn = delete request->env->{SCRIPT_NAME};
