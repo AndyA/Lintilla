@@ -5,10 +5,10 @@ use v5.10;
 use Dancer ':syntax';
 
 use Dancer::Plugin::Database;
+use Genome::Factory;
 use JSON qw();
 use Lintilla::Broadcast::Client;
 use Lintilla::Broadcast::Server;
-use Lintilla::DB::Genome::Edit;
 use Lintilla::Tools::Enqueue;
 use Time::HiRes qw( time );
 
@@ -108,7 +108,7 @@ sub resources {
 }
 
 sub db() {
-  my $db = Lintilla::DB::Genome::Edit->new( dbh => database );
+  my $db = Genome::Factory->edit_model;
   $db->on_bump(
     sub {
       my $path = shift;
@@ -131,7 +131,7 @@ prefix '/edit' => sub {
   post '/programme/:uuid' => sub {
     my $uuid = param('uuid');
     my $db   = db;
-    my $data = $db->_decode( request->body );
+    my $data = $db->json_decode( request->body );
     $db->submit( $uuid, 'programme', 'anon', $data );
     return { status => 'OK', message => 'Successfully submitted' };
   };
