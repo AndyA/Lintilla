@@ -7,7 +7,7 @@ use Time::HiRes qw( sleep time );
 
 use base qw( Exporter );
 
-our @EXPORT_OK = qw( wait_for_file tidy );
+our @EXPORT_OK = qw( wait_for_file tidy unique make_public );
 our %EXPORT_TAGS = ( all => [@EXPORT_OK] );
 
 =head1 NAME
@@ -32,6 +32,31 @@ sub tidy {
   my $s = shift;
   s/^\s+//, s/\s+$//, s/\s+/ /g for $s;
   return $s;
+}
+
+sub unique(@) {
+  my %seen = ();
+  grep { !$seen{$_}++ } @_;
+}
+
+sub make_public($);
+
+sub make_public($) {
+  my $in = shift;
+  return $in unless ref $in;
+
+  return [map { make_public($_) } @$in]
+   if 'ARRAY' eq ref $in;
+
+  die "Bad!" unless 'HASH' eq ref $in;
+
+  my $out = {};
+  while ( my ( $k, $v ) = each %$in ) {
+    ( my $kk = $k ) =~ s/^_+//g;
+    $out->{$kk} = make_public($v);
+  }
+
+  return $out;
 }
 
 1;
