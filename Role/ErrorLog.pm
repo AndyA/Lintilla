@@ -2,7 +2,7 @@ package Lintilla::Role::ErrorLog;
 
 use Moose::Role;
 
-use Lintilla::Sync::ErrorLog;
+use Genome::Sync::ErrorLog;
 
 =head1 NAME
 
@@ -12,13 +12,13 @@ Lintilla::Role::ErrorLog - ErrorLog mixin
 
 has error_log => (
   is      => 'ro',
-  isa     => 'Lintilla::Sync::ErrorLog',
+  isa     => 'Genome::Sync::ErrorLog',
   lazy    => 1,
   builder => '_b_errorlog',
   handles => [qw( fatal error warn note debug )]
 );
 
-sub _b_errorlog { Lintilla::Sync::ErrorLog->new }
+sub _b_errorlog { Genome::Sync::ErrorLog->new }
 
 1;
 
