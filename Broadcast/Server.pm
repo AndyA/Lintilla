@@ -11,16 +11,18 @@ Lintilla::Broadcast::Server - Broadcast listener server
 
 =cut
 
-with 'Lintilla::Role::JSON';
-with 'Lintilla::Broadcast::Role::Connection';
-
 has _select => (
   is      => 'ro',
   lazy    => 1,
-  builder => '_build_select',
+  builder => '_b_select',
 );
 
-sub _build_select { IO::Select->new( shift->_server_socket ) }
+with qw(
+ Fenchurch::Core::Role::JSON
+ Lintilla::Broadcast::Role::Connection
+);
+
+sub _b_select { IO::Select->new( shift->_server_socket ) }
 
 sub listen {
   my $self = shift;
@@ -39,7 +41,7 @@ sub poll {
   return unless @r;
   my $sock = $self->_server_socket;
   my $addr = recv( $sock, my $msg, $self->max_message, 0 );
-  return $self->_decode($msg);
+  return $self->json_decode($msg);
 }
 
 1;

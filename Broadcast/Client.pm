@@ -10,13 +10,15 @@ Lintilla::Broadcast::Client - Broadcast sender client
 
 =cut
 
-with 'Lintilla::Role::JSON';
-with 'Lintilla::Broadcast::Role::Connection';
+with qw(
+ Fenchurch::Core::Role::JSON
+ Lintilla::Broadcast::Role::Connection
+);
 
 sub send {
   my ( $self, $msg ) = @_;
 
-  my $enc = $self->_encode($msg);
+  my $enc = $self->json_encode($msg);
   die "Message too large" if length $msg > $self->max_message;
 
   send( $self->_client_socket, $enc, 0, $self->_broadcast_addr )

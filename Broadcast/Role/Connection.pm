@@ -17,26 +17,26 @@ has _client_socket => (
   is        => 'ro',
   lazy      => 1,
   predicate => '_has_client_socket',
-  builder   => '_build_client_socket',
+  builder   => '_b_client_socket',
 );
 
 has _server_socket => (
   is        => 'ro',
   lazy      => 1,
   predicate => '_has_server_socket',
-  builder   => '_build_server_socket',
+  builder   => '_b_server_socket',
 );
 
 has _any_addr => (
   is      => 'ro',
   lazy    => 1,
-  builder => '_build_any_addr',
+  builder => '_b_any_addr',
 );
 
 has _broadcast_addr => (
   is      => 'ro',
   lazy    => 1,
-  builder => '_build_broadcast_addr',
+  builder => '_b_broadcast_addr',
 );
 
 sub DEMOLISH {
@@ -57,9 +57,9 @@ sub _udp_socket {
   return $sock;
 }
 
-sub _build_client_socket { shift->_udp_socket }
+sub _b_client_socket { shift->_udp_socket }
 
-sub _build_server_socket {
+sub _b_server_socket {
   my $self = shift;
   my $sock = $self->_udp_socket;
 
@@ -69,9 +69,9 @@ sub _build_server_socket {
   return $sock;
 }
 
-sub _build_any_addr { sockaddr_in( shift->port, INADDR_ANY ) }
+sub _b_any_addr { sockaddr_in( shift->port, INADDR_ANY ) }
 
-sub _build_broadcast_addr {
+sub _b_broadcast_addr {
   sockaddr_in( shift->port, INADDR_BROADCAST );
 }
 
