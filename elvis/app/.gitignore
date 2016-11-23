@@ -3,5 +3,6 @@
 /Makefile
 /blib/
 /exif/
+/node_modules/
 /pm_to_blib
 /watermarked/
