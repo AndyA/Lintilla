@@ -1,12 +1,16 @@
 {
-   "author" : "Andy Armstrong <andy@hexten.net>",
-   "description" : "Elvis Image Library",
-   "devDependencies" : {
-      "canvas" : "^1.6.2",
-      "node-dir" : "^0.1.16"
-   },
-   "license" : "ISC",
-   "name" : "elvis-app",
-   "repository" : "git@github.com:AndyA/lintilla.git",
-   "version" : "1.0.0"
+  "author": "Andy Armstrong <andy@hexten.net>",
+  "description": "Elvis Image Library",
+  "devDependencies": {
+    "canvas": "^1.6.2",
+    "mkdirp": "^0.5.1",
+    "node-dir": "^0.1.16",
+    "node-getopt": "^0.2.3",
+    "rsvp": "^3.3.3"
+  },
+  "license": "ISC",
+  "name": "elvis-app",
+  "repository": "git@github.com:AndyA/lintilla.git",
+  "version": "1.0.0",
+  "dependencies": {}
 }
