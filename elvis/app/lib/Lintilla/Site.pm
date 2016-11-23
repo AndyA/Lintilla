@@ -8,8 +8,8 @@ use Lintilla::Site::Data;
 our $VERSION = '0.1';
 
 sub our_uri_for {
-  my $sn = delete request->env->{SCRIPT_NAME};
-  my $uri = request->uri_for( join '/', @_ );
+  my $sn  = delete request->env->{SCRIPT_NAME};
+  my $uri = request->uri_for(@_);
   request->env->{SCRIPT_NAME} = $sn;
   return $uri;
 }
