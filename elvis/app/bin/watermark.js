@@ -87,12 +87,6 @@ let wm = loadImage(config.watermark).catch(function(err) {
 
 });
 
-function sleep(n) {
-  return new RSVP.Promise(function(resolve, reject) {
-    setTimeout(resolve, n);
-  });
-}
-
 function getStream(name, cvs) {
   if (path.extname(name).toLowerCase() === ".png")
     return cvs.pngStream({
@@ -121,6 +115,12 @@ function loadImage(name) {
     let img = new Canvas.Image;
     img.src = imgData;
     return img;
+  });
+}
+
+function sleep(n) {
+  return new RSVP.Promise(function(resolve, reject) {
+    setTimeout(resolve, n);
   });
 }
 
