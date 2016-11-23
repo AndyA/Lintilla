@@ -106,12 +106,12 @@ function getStream(name, cvs) {
 }
 
 function saveImage(name, cvs) {
-  let istm = fs.createWriteStream(name);
-  let ostm = getStream(name, cvs);
+  let ostm = fs.createWriteStream(name);
+  let istm = getStream(name, cvs);
   return new RSVP.Promise(function(resolve, reject) {
-    ostm.on('end', resolve);
-    ostm.on('error', reject);
-    ostm.pipe(istm);
+    istm.on('end', resolve);
+    istm.on('error', reject);
+    istm.pipe(ostm);
   });
 }
 
