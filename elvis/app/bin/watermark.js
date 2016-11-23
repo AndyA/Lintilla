@@ -2,13 +2,13 @@
 
 "use strict";
 
-const Getopt = require('node-getopt');
-const dir = require('node-dir');
-const RSVP = require('rsvp');
-const fs = require('fs');
-const path = require('path');
 const Canvas = require('canvas');
+const Getopt = require('node-getopt');
+const RSVP = require('rsvp');
+const df = promisify(require('node-dir').files);
+const fs = require('fs');
 const mkdirp = promisify(require('mkdirp'));
+const path = require('path');
 
 const okExtension = ['.jpeg', '.jpg', '.png'];
 
@@ -33,8 +33,6 @@ let config = Object.assign({
 
 if (config.watermark === undefined)
   throw new Error("--watermark is a required option");
-
-const df = promisify(dir.files);
 
 let wm = loadImage(config.watermark).catch(function(err) {
   console.log("Can't load " + config.watermark + ": ", err);
