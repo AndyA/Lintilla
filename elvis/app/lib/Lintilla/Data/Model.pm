@@ -85,7 +85,11 @@ sub search {
   $size = MAX_PAGE if $size > MAX_PAGE;
 
   my $sph = Sphinx::Search->new();
-  $sph->SetMatchMode(SPH_MATCH_EXTENDED);
+  {
+    local $SIG{__WARN__} = sub { };
+    # May throw a warning, offend Dancer
+    $sph->SetMatchMode(SPH_MATCH_EXTENDED);
+  }
   $sph->SetSortMode(SPH_SORT_RELEVANCE);
   $sph->SetLimits( $start, $size );
   my $results = $sph->Query( $query, 'elvis_idx' );
