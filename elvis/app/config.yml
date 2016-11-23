@@ -39,8 +39,14 @@ plugins:
     dbi_params:
       RaiseError: 1
       AutoCommit: 1
+      AutoInactiveDestroy: 1
     on_connect_do:
       - "SET SQL_MODE='TRADITIONAL'"
+      - "SET character_set_client = latin1"
+      - "SET character_set_connection = latin1"
+      - "SET character_set_database = latin1"
+      - "SET character_set_results = latin1"
+      - "SET character_set_server = latin1"
     log_queries: 1
 
 engines:
