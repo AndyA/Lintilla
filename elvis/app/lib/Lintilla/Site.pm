@@ -7,10 +7,17 @@ use Lintilla::Site::Data;
 
 our $VERSION = '0.1';
 
+sub our_uri_for {
+  my $sn = delete request->env->{SCRIPT_NAME};
+  my $uri = request->uri_for( join '/', @_ );
+  request->env->{SCRIPT_NAME} = $sn;
+  return $uri;
+}
+
 get '/' => sub {
   template 'index',
    {q      => '',
-    ds     => request->uri_for('/data/page/:size/:start'),
+    ds     => our_uri_for('/data/page/:size/:start'),
     config => { mode => 'normal' } };
 };
 
@@ -22,7 +29,7 @@ get '/search' => sub {
   my $q = param('q');
   template 'index',
    {q  => $q,
-    ds => request->uri_for( '/data/search/:size/:start', { q => $q } ),
+    ds => our_uri_for( '/data/search/:size/:start', { q => $q } ),
     config => { mode => 'normal' },
    };
 };
@@ -34,7 +41,7 @@ get '/by/:field/:value' => sub {
   die unless $value =~ /^\d+$/;
   template 'index',
    {q      => '',
-    ds     => request->uri_for("/data/by/:size/:start/$field/$value"),
+    ds     => our_uri_for("/data/by/:size/:start/$field/$value"),
     config => { mode => 'normal' },
    };
 };
@@ -45,7 +52,7 @@ get '/workflow/:id/:markid' => sub {
   die unless $id =~ /^\d+$/ && $markid =~ /^\d+$/;
   template 'index',
    {q      => '',
-    ds     => request->uri_for("/data/tag/:size/:start/$id"),
+    ds     => our_uri_for("/data/tag/:size/:start/$id"),
     config => {
       mode        => 'workflow',
       workflow_id => $id,
@@ -59,7 +66,7 @@ get '/tag/:id' => sub {
   die unless $id =~ /^\d+$/;
   template 'index',
    {q      => '',
-    ds     => request->uri_for("/data/tag/:size/:start/$id"),
+    ds     => our_uri_for("/data/tag/:size/:start/$id"),
     config => { mode => 'normal' },
    };
 };
