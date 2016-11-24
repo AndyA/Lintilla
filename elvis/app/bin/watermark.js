@@ -18,6 +18,7 @@ let opt = new Getopt([
   ['', 'height=PERCENT', 'Max height of watermark (percent, default: 100)'],
   ['x', 'hpos=PERCENT', 'Horizontal position of watermark (percent)'],
   ['y', 'vpos=PERCENT', 'Vertical position of watermark (percent)'],
+  ['a', 'alpha=PERCENT', 'Alpha blending (percent, default: 100)'],
   ['o', 'output=DIR', 'Output directory (default "watermark")'],
   ['h', 'help', 'Show this help'],
 ]).bindHelp();
@@ -28,6 +29,7 @@ let config = Object.assign({
   height: 100,
   hpos: 50,
   vpos: 50,
+  alpha: 100,
   output: "watermarked"
 }, opt.parsedOption.options);
 
@@ -51,10 +53,11 @@ let wm = loadImage(config.watermark).catch(function(err) {
             let cvs = new Canvas(img.width, img.height);
             let ctx = cvs.getContext("2d");
 
-            let width = parseFloat(config.width) / 100;
-            let height = parseFloat(config.height) / 100;
-            let hpos = parseFloat(config.hpos) / 100;
-            let vpos = parseFloat(config.vpos) / 100;
+            let width = parsePercent(config.width);
+            let height = parsePercent(config.height);
+            let hpos = parsePercent(config.hpos);
+            let vpos = parsePercent(config.vpos);
+            let alpha = parsePercent(config.alpha);
 
             let maxw = img.width * width;
             let maxh = img.height * height;
@@ -65,8 +68,11 @@ let wm = loadImage(config.watermark).catch(function(err) {
             let ox = Math.round((img.width - ow) * hpos);
             let oy = Math.round((img.height - oh) * vpos);
 
+            ctx.save();
             ctx.drawImage(img, 0, 0);
+            ctx.globalAlpha = alpha;
             ctx.drawImage(iwm, ox, oy, ow, oh);
+            ctx.restore();
 
             return mkdirp(path.dirname(out)).then(function() {
               return saveImage(out, cvs);
@@ -84,6 +90,10 @@ let wm = loadImage(config.watermark).catch(function(err) {
   }
 
 });
+
+function parsePercent(x) {
+  return parseFloat(x) / 100;
+}
 
 function getStream(name, cvs) {
   if (path.extname(name).toLowerCase() === ".png")
