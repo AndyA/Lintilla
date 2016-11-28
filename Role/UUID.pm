@@ -2,7 +2,7 @@ package Lintilla::Role::UUID;
 
 use Moose::Role;
 
-use UUID::Tiny ':std';
+use UUID::Tiny ();
 
 =head1 NAME
 
@@ -10,7 +10,7 @@ Lintilla::Role::UUID - Handle UUIDs
 
 =cut
 
-sub make_uuid { create_uuid_as_string(UUID_V4) }
+sub make_uuid { UUID::Tiny::create_uuid_as_string(UUID::Tiny::UUID_V4) }
 
 sub format_uuid {
   my ( $self, $uuid ) = @_;
