@@ -45,8 +45,9 @@ sub deep_diff {
     my @out = ();
     for my $idx ( 0 .. $lim ) {
       my $diff = deep_diff( $a->[$idx], $b->[$idx], $tag_a, $tag_b );
-      push @out, $diff;
+      $out[$idx] = $diff if defined $diff;
     }
+    return unless @out;
     return \@out;
   }
 
@@ -58,6 +59,7 @@ sub deep_diff {
       my $diff = deep_diff( $a->{$key}, $b->{$key}, $tag_a, $tag_b );
       $out{$key} = $diff if defined $diff;
     }
+    return unless keys %out;
     return \%out;
   }
 
