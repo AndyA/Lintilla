@@ -20,7 +20,9 @@ Lintilla::Util::Dancer - Dancer related utilities
 
 sub _our_uri_for {
   my $sn = delete request->env->{SCRIPT_NAME};
-  my $uri = request->uri_for( join '/', '', @_ );
+  my $path = join '/', '', @_;
+  $path =~ s!^//!/!;
+  my $uri = request->uri_for($path);
   request->env->{SCRIPT_NAME} = $sn;
   return $uri;
 }
