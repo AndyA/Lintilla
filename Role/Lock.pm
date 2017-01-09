@@ -4,6 +4,7 @@ use Moose::Role;
 
 use POSIX qw( uname );
 use Sys::Hostname;
+use Time::HiRes qw( sleep time );
 
 =head1 NAME
 
@@ -11,7 +12,7 @@ Lintilla::Role::Lock - Database wide lock
 
 =cut
 
-requires 'dbh';
+requires 'db';
 
 sub host_key {
   return join "-", $$, hostname;
@@ -31,8 +32,8 @@ sub _get_owner {
   my ( $self, $lock_name ) = @_;
 
   my ($owner)
-   = $self->dbh->selectrow_array(
-    "SELECT `locked_by` FROM `genome_distributed_lock` WHERE `name` = ?",
+   = $self->db->selectrow_array(
+    "SELECT {locked_by} FROM {:distributed_lock} WHERE {name} = ?",
     {}, $lock_name );
 
   return $owner;
@@ -40,10 +41,10 @@ sub _get_owner {
 
 sub _with_lock {
   my ( $self, $code ) = @_;
-  $self->dbh->do("LOCK TABLES `genome_distributed_lock` WRITE");
+  $self->db->do("LOCK TABLES {:distributed_lock} WRITE");
   my $rv = eval { $code->() };
   my $err = $@;
-  $self->dbh->do("UNLOCK TABLES");
+  $self->db->do("UNLOCK TABLES");
   die $err if $err;
   return $rv;
 }
@@ -88,9 +89,9 @@ sub acquire_lock {
       my $locked_by = $self->_get_owner($lock_name);
       return if $self->_lock_valid($locked_by);
 
-      $self->dbh->do(
+      $self->db->do(
         join( " ",
-          "REPLACE INTO `genome_distributed_lock` (`name`, `locked_by`, `when`)",
+          "REPLACE INTO {:distributed_lock} ({name}, {locked_by}, {when})",
           "VALUES (?, ?, NOW())" ),
         {},
         $lock_name,
@@ -100,6 +101,24 @@ sub acquire_lock {
       return $host_key;
     }
   );
+}
+
+sub wait_for_lock {
+  my ( $self, $timeout, @key ) = @_;
+  my $lock = $self->acquire_lock(@key);
+  return $lock if defined $lock;
+
+  my $deadline = time + $timeout;
+  my $sleep    = 0.01;
+
+  while ( time < $deadline ) {
+    sleep $sleep;
+    my $lock = $self->acquire_lock(@key);
+    return $lock if defined $lock;
+    $sleep *= 1.3;
+  }
+
+  return;
 }
 
 sub release_named_lock {
@@ -114,11 +133,11 @@ sub release_named_lock {
        "Attempt to release a lock we don't hold (expected $host_key, got $locked_by)"
        unless defined $locked_by && $locked_by eq $host_key;
 
-      $self->dbh->do(
+      $self->db->do(
         join( " ",
-          "UPDATE `genome_distributed_lock`",
-          "SET `locked_by` = NULL, `when` = NOW()",
-          "WHERE `name` = ? AND `locked_by` = ?" ),
+          "UPDATE {:distributed_lock}",
+          "SET {locked_by} = NULL, {when} = NOW()",
+          "WHERE {name} = ? AND {locked_by} = ?" ),
         {},
         $lock_name,
         $host_key
