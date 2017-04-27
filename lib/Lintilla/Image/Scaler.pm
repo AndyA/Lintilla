@@ -52,16 +52,29 @@ sub fit {
 }
 
 sub create {
-  my $self     = shift;
+  my $self = shift;
+
+  my $spec     = $self->spec;
   my $out_file = $self->out_file;
   ( my $tmp_file = $out_file ) =~ s/\.([^.]+)$/.tmp.$1/;
   my ( $src, $cleanup ) = $self->_find_source;
 
+  my ( $sw, $sh ) = @{$spec}{ 'width', 'height' };
   my ( $iw, $ih ) = imgsize("$src");
   my ( $ow, $oh ) = $self->fit( $iw, $ih );
 
   my @cmd = (
-    'convert', $src, -strip => -resize => "${ow}x${oh}",
+    'convert',
+    $src,
+    -strip => -resize => "${ow}x${oh}",
+    ( $spec->{pad}
+      ? (
+        -gravity    => 'center',
+        -background => 'black',
+        -extent     => "${sw}x${sh}"
+       )
+      : ()
+    ),
     -quality => $self->spec->{quality},
     $tmp_file
   );
