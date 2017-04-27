@@ -59,22 +59,24 @@ sub create {
   ( my $tmp_file = $out_file ) =~ s/\.([^.]+)$/.tmp.$1/;
   my ( $src, $cleanup ) = $self->_find_source;
 
-  my ( $sw, $sh ) = @{$spec}{ 'width', 'height' };
   my ( $iw, $ih ) = imgsize("$src");
   my ( $ow, $oh ) = $self->fit( $iw, $ih );
+
+  my @extra = ();
+  if ( $spec->{pad} ) {
+    my ( $sw, $sh ) = @{$spec}{ 'width', 'height' };
+    push @extra,
+     (-gravity    => 'center',
+      -background => 'black',
+      -extent     => "${sw}x${sh}"
+     );
+  }
 
   my @cmd = (
     'convert',
     $src,
     -strip => -resize => "${ow}x${oh}",
-    ( $spec->{pad}
-      ? (
-        -gravity    => 'center',
-        -background => 'black',
-        -extent     => "${sw}x${sh}"
-       )
-      : ()
-    ),
+    @extra,
     -quality => $self->spec->{quality},
     $tmp_file
   );
