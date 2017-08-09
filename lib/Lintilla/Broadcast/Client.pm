@@ -11,6 +11,7 @@ Lintilla::Broadcast::Client - Broadcast sender client
 =cut
 
 with qw(
+ Fenchurch::Core::Role::Logger
  Fenchurch::Core::Role::JSON
  Lintilla::Broadcast::Role::Connection
 );
