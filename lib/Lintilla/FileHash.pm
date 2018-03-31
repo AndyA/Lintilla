@@ -12,7 +12,7 @@ use Lintilla::FileHash::File;
 
 =head1 NAME
 
-Lintilla::FileHash::File - A hashed file
+Lintilla::FileHash - md5 hashes for files
 
 =cut
 

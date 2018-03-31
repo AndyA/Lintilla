@@ -12,7 +12,7 @@ use Time::HiRes qw( time );
 
 =head1 NAME
 
-Lintilla::FileHash - Per file MD5 hashes
+Lintilla::FileHash::File - Calculate MD5 for (volatile) file
 
 =cut
 
