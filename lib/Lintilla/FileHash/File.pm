@@ -70,7 +70,12 @@ sub hash {
   # Need to check file
   my $last_mtime = $self->_last_mtime;
   my $obj        = $self->object;
-  my $mtime      = $obj->stat->mtime;
+
+  # Allow missing file
+  return "0" x 32
+   unless -r $obj;
+
+  my $mtime = $obj->stat->mtime;
 
   # Modified?
   if ( defined $last_mtime && $mtime == $last_mtime ) {
