@@ -1,6 +1,12 @@
 .*.sw?
 .AppleDouble/
 .DS_Store
+<<<<<<< HEAD
 .gdb_history
 /*.tmp/
 Session.vim
+=======
+/.build
+/.prove
+/Session.vim
+>>>>>>> 8602d9b3d877106bfa9850774a44f2732d8b3d8e
