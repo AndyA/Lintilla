@@ -9,7 +9,7 @@ use URI::QueryParam;
 
 use base qw( Exporter );
 
-our @EXPORT_OK = qw( our_uri_for cache_bust );
+our @EXPORT_OK   = qw( our_uri_for cache_bust );
 our %EXPORT_TAGS = ( all => [@EXPORT_OK] );
 
 =head1 NAME
@@ -19,7 +19,7 @@ Lintilla::Util::Dancer - Dancer related utilities
 =cut
 
 sub _our_uri_for {
-  my $sn = delete request->env->{SCRIPT_NAME};
+  my $sn   = delete request->env->{SCRIPT_NAME};
   my $path = join '/', '', @_;
   $path =~ s!^//!/!;
   my $uri = request->uri_for($path);
@@ -31,13 +31,23 @@ sub our_uri_for {
   my $uri = _our_uri_for(@_);
 
   # public_uri override
-  my $public_uri = config->{public_uri};
-  return $uri unless defined $public_uri;
+  my $public_uri        = config->{public_uri};
+  my $public_uri_scheme = config->{public_uri_scheme};
 
-  my $pu = URI->new($public_uri);
-  $pu->path_query( $uri->path_query );
+  if ( defined $public_uri ) {
+    my $pu = URI->new($public_uri);
+    $pu->path_query( $uri->path_query );
+    return $pu;
+  }
 
-  return $pu;
+  if ( defined $public_uri_scheme ) {
+    my $pu = URI->new($uri);
+    $pu->scheme($public_uri_scheme);
+    return $pu;
+  }
+
+  return $uri;
+
 }
 
 sub cache_bust {
