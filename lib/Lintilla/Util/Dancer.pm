@@ -42,8 +42,10 @@ sub our_uri_for {
 
   if ( defined $public_uri_scheme ) {
     my $pu = URI->new($uri);
-    $pu->scheme($public_uri_scheme);
-    return $pu;
+    unless ( $pu->_port ) {
+      $pu->scheme($public_uri_scheme);
+      return $pu;
+    }
   }
 
   return $uri;
